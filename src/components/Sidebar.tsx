@@ -4,6 +4,8 @@ import { NavLink } from 'react-router-dom'
 type SidebarProps = {
   mobileOpen: boolean
   onClose: () => void
+  collapsed: boolean
+  onToggleCollapse: () => void
 }
 
 type SidebarLink = {
@@ -112,22 +114,52 @@ const links: SidebarLink[] = [
   { label: 'Calendar', to: '/calendar', icon: CalendarIcon },
 ]
 
-export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
+const ChevronLeftIcon = ({ className }: IconProps) => (
+  <svg
+    className={className}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={2}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="m15 18-6-6 6-6" />
+  </svg>
+)
+
+const ChevronRightIcon = ({ className }: IconProps) => (
+  <svg
+    className={className}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={2}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="m9 18 6-6-6-6" />
+  </svg>
+)
+
+export default function Sidebar({ mobileOpen, onClose, collapsed, onToggleCollapse }: SidebarProps) {
   const baseClasses =
-    'fixed inset-y-0 left-0 z-40 flex flex-col border-r border-slate-200 bg-white shadow-lg transition-all duration-300 dark:border-slate-800 dark:bg-slate-900 md:static md:flex md:shadow-none'
-  const widthClasses = 'md:w-64'
+    'fixed inset-y-0 left-0 z-40 flex h-screen flex-col border-r border-slate-200 bg-white shadow-lg transition-all duration-300 dark:border-slate-800 dark:bg-slate-900 md:fixed md:flex md:shadow-none'
+  const widthClasses = collapsed ? 'md:w-20' : 'md:w-64'
   const translateClasses = mobileOpen
     ? 'translate-x-0 w-64 md:translate-x-0'
     : '-translate-x-full w-64 md:translate-x-0'
 
   return (
     <aside className={`${baseClasses} ${widthClasses} ${translateClasses}`}>
-      <div className="flex items-center justify-between px-4 py-4">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-sm font-semibold uppercase text-white">
+      <div className="flex flex-shrink-0 items-center justify-between border-b border-slate-200 px-4 py-4 dark:border-slate-800">
+        <div className={`flex items-center gap-3 ${collapsed ? 'md:justify-center' : ''}`}>
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-sm font-semibold uppercase text-white flex-shrink-0">
             CP
           </div>
-          <span className="text-base font-semibold text-slate-800 dark:text-white">Care Panel</span>
+          <span className={`text-base font-semibold text-slate-800 dark:text-white transition-opacity duration-300 ${collapsed ? 'md:hidden' : ''}`}>
+            Care Panel
+          </span>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -137,9 +169,21 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
           >
             Close
           </button>
+          <button
+            type="button"
+            className="hidden rounded-md border border-slate-200 p-2 text-slate-600 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800 md:flex"
+            onClick={onToggleCollapse}
+            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            {collapsed ? (
+              <ChevronRightIcon className="h-5 w-5" />
+            ) : (
+              <ChevronLeftIcon className="h-5 w-5" />
+            )}
+          </button>
         </div>
       </div>
-      <nav className="flex flex-1 flex-col gap-1 px-2 pb-6">
+      <nav className="flex flex-1 flex-col gap-1 overflow-y-auto px-2 pb-6">
         {links.map((link) => {
           const Icon = link.icon
           return (
@@ -150,15 +194,19 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
               className={({ isActive }) =>
                 [
                   'flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition',
+                  collapsed ? 'md:justify-center md:px-3' : '',
                   isActive
                     ? 'bg-blue-600 text-white'
                     : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800',
                 ].join(' ')
               }
               onClick={onClose}
+              title={collapsed ? link.label : undefined}
             >
               <Icon className="h-5 w-5 flex-shrink-0" />
-              <span className="whitespace-nowrap">{link.label}</span>
+              <span className={`whitespace-nowrap transition-opacity duration-300 ${collapsed ? 'md:hidden' : ''}`}>
+                {link.label}
+              </span>
             </NavLink>
           )
         })}

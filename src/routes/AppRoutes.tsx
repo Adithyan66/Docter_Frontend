@@ -7,6 +7,7 @@ import Dashboard from '@pages/Dashboard'
 import Login from '@pages/Login'
 import Patients from '@pages/Patients'
 import Treatments from '@pages/Treatments'
+import AddTreatment from '@pages/AddTreatment'
 
 export default function AppRoutes() {
   return (
@@ -18,6 +19,7 @@ export default function AppRoutes() {
           <Route path="/patients" element={<Patients />} />
           <Route path="/patient/add" element={<AddPatients />} />
           <Route path="/treatments" element={<Treatments />} />
+          <Route path="/treatments/add" element={<AddTreatment />} />
           <Route path="/calendar" element={<Calendar />} />
         </Route>
       </Route>
