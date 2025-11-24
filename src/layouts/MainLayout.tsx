@@ -7,7 +7,6 @@ import { logout } from '@redux/slices/authSlice'
 
 export default function MainLayout() {
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [collapsed, setCollapsed] = useState(false)
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
   const userEmail = useAppSelector((state) => state.auth.user?.email ?? null)
@@ -20,12 +19,7 @@ export default function MainLayout() {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 transition dark:bg-slate-950 dark:text-white">
       <div className="flex min-h-screen">
-        <Sidebar
-          collapsed={collapsed}
-          mobileOpen={mobileOpen}
-          onClose={() => setMobileOpen(false)}
-          onToggleCollapse={() => setCollapsed((prev) => !prev)}
-        />
+        <Sidebar mobileOpen={mobileOpen} onClose={() => setMobileOpen(false)} />
         {mobileOpen && (
           <div
             className="fixed inset-0 z-30 bg-black/50 md:hidden"
