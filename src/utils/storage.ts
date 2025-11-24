@@ -45,3 +45,14 @@ export function getStoredAuth() {
   return { user, accessToken, refreshToken, isAuthenticated }
 }
 
+export function getRefreshToken() {
+  if (!isBrowser()) return null
+  return window.localStorage.getItem(REFRESH_TOKEN_KEY)
+}
+
+export function updateTokens(accessToken: string, refreshToken: string) {
+  if (!isBrowser()) return
+  window.localStorage.setItem(ACCESS_TOKEN_KEY, accessToken)
+  window.localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken)
+}
+

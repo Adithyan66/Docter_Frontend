@@ -1,10 +1,8 @@
-import { useMemo, useState, type ChangeEvent, type ReactNode } from 'react'
+import { useMemo, useState, useEffect, type ChangeEvent, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
-import {
-  createTreatment,
-  requestTreatmentImageUpload,
-  type TreatmentPayload,
-} from '@api/treatments'
+import toast from 'react-hot-toast'
+import { createTreatment, type TreatmentPayload } from '@api/treatments'
+import { S3Service } from '@services/s3Service'
 
 type TreatmentFormState = {
   name: string
@@ -61,13 +59,32 @@ const inputStyles =
 const textareaStyles =
   'w-full bg-transparent border-0 border-b-2 border-slate-200 px-0 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-colors focus:border-blue-500 resize-none dark:border-slate-700 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-blue-400'
 
+const processEscapeSequences = (text: string): string => {
+  return text
+    .replace(/\\n/g, '\n')
+    .replace(/\\t/g, '\t')
+    .replace(/\\r/g, '\r')
+    .replace(/\\\\/g, '\\')
+    .replace(/\\'/g, "'")
+    .replace(/\\"/g, '"')
+}
+
 export default function AddTreatment() {
   const navigate = useNavigate()
   const [form, setForm] = useState<TreatmentFormState>(() => createBlankForm())
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isUploadingImages, setIsUploadingImages] = useState(false)
-  const [errorMessage, setErrorMessage] = useState('')
-  const [successMessage, setSuccessMessage] = useState('')
+  const [pendingImages, setPendingImages] = useState<File[]>([])
+  const [pendingImagePreviews, setPendingImagePreviews] = useState<string[]>([])
+
+  useEffect(() => {
+    const previews = pendingImages.map((file) => URL.createObjectURL(file))
+    setPendingImagePreviews(previews)
+
+    return () => {
+      previews.forEach((url) => URL.revokeObjectURL(url))
+    }
+  }, [pendingImages])
 
   const handleFieldChange = (field: keyof TreatmentFormState, value: string | boolean) => {
     setForm((prev) => ({
@@ -114,55 +131,49 @@ export default function AddTreatment() {
     handleFieldChange(field, typeof form[field] === 'boolean' ? false : '')
   }
 
-  const handleImageUpload = async (event: ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = (event: ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files
     if (!files?.length) return
 
-    setIsUploadingImages(true)
-    setErrorMessage('')
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+    const maxFileSize = 5 * 1024 * 1024
+    const validFiles: File[] = []
 
-    try {
-      const uploadedUrls: string[] = []
-      for (const file of Array.from(files)) {
-        const { uploadUrl, publicUrl } = await requestTreatmentImageUpload()
-        await fetch(uploadUrl, {
-          method: 'PUT',
-          body: file,
-          headers: {
-            'Content-Type': file.type || 'application/octet-stream',
-          },
-        })
-        uploadedUrls.push(publicUrl)
+    for (const file of Array.from(files)) {
+      if (!file.type.startsWith('image/')) {
+        toast.error('Please select an image file')
+        event.target.value = ''
+        return
       }
 
-      setForm((prev) => ({
-        ...prev,
-        images: [...prev.images, ...uploadedUrls],
-      }))
-    } catch (error) {
-      setErrorMessage('Image upload failed. Please try again.')
-    } finally {
-      setIsUploadingImages(false)
-      event.target.value = ''
+      if (file.size > maxFileSize) {
+        toast.error('File size must be less than 5MB')
+        event.target.value = ''
+        return
+      }
+
+      if (!allowedTypes.includes(file.type)) {
+        toast.error('Only JPEG, PNG, and WebP images are allowed')
+        event.target.value = ''
+        return
+      }
+
+      validFiles.push(file)
     }
+
+    setPendingImages((prev) => [...prev, ...validFiles])
+    event.target.value = ''
+  }
+
+  const removePendingImage = (index: number) => {
+    setPendingImages((prev) => prev.filter((_, i) => i !== index))
   }
 
   const submitForm = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    setErrorMessage('')
-    setSuccessMessage('')
 
-    const requiredFields: Array<keyof TreatmentFormState> = [
-      'name',
-      'minDuration',
-      'maxDuration',
-      'minFees',
-      'maxFees',
-    ]
-
-    const missing = requiredFields.filter((field) => !`${form[field]}`.trim())
-    if (missing.length) {
-      setErrorMessage('Please fill all required fields.')
+    if (!form.name.trim()) {
+      toast.error('Name is required.')
       return
     }
 
@@ -185,39 +196,63 @@ export default function AddTreatment() {
     })
 
     if (numericErrors) {
-      setErrorMessage('Numeric fields must contain valid numbers.')
+      toast.error('Numeric fields must contain valid numbers.')
       return
     }
 
-    const payload: TreatmentPayload = {
-      name: form.name.trim(),
-      description: form.description.trim() || undefined,
-      minDuration: Number(form.minDuration),
-      maxDuration: Number(form.maxDuration),
-      avgDuration: form.avgDuration ? Number(form.avgDuration) : undefined,
-      minFees: Number(form.minFees),
-      maxFees: Number(form.maxFees),
-      avgFees: form.avgFees ? Number(form.avgFees) : undefined,
-      materialsUsed: [],
-      steps: form.steps,
-      aftercare: form.aftercare,
-      followUpRequired: form.followUpRequired,
-      followUpAfterDays:
-        form.followUpRequired && form.followUpAfterDays
-          ? Number(form.followUpAfterDays)
-          : undefined,
-      risks: form.risks,
-      images: form.images,
-    }
-
     setIsSubmitting(true)
+    setIsUploadingImages(true)
+
     try {
+      const uploadedUrls: string[] = [...form.images]
+
+      if (pendingImages.length > 0) {
+        for (const file of pendingImages) {
+          const { publicUrl } = await S3Service.uploadImage(
+            'Treatment-Images',
+            file
+          )
+          if (publicUrl) {
+            uploadedUrls.push(publicUrl)
+          }
+        }
+      }
+
+      setIsUploadingImages(false)
+
+      const payload: TreatmentPayload = {
+        name: form.name.trim(),
+        description: form.description.trim() || undefined,
+        minDuration: form.minDuration ? Number(form.minDuration) : 0,
+        maxDuration: form.maxDuration ? Number(form.maxDuration) : 0,
+        avgDuration: form.avgDuration ? Number(form.avgDuration) : undefined,
+        minFees: form.minFees ? Number(form.minFees) : 0,
+        maxFees: form.maxFees ? Number(form.maxFees) : 0,
+        avgFees: form.avgFees ? Number(form.avgFees) : undefined,
+        steps: form.steps,
+        aftercare: form.aftercare,
+        followUpRequired: form.followUpRequired,
+        followUpAfterDays:
+          form.followUpRequired && form.followUpAfterDays
+            ? Number(form.followUpAfterDays)
+            : undefined,
+        risks: form.risks,
+        images: uploadedUrls,
+      }
+
       await createTreatment(payload)
-      setSuccessMessage('Treatment created successfully.')
+      toast.success('Treatment created successfully.')
       setForm(createBlankForm())
+      setPendingImages([])
       setTimeout(() => navigate('/treatments'), 800)
-    } catch (error) {
-      setErrorMessage('Unable to save treatment. Please try again.')
+    } catch (error: any) {
+      setIsUploadingImages(false)
+      const errorMessage =
+        error?.response?.data?.error?.message ||
+        error?.response?.data?.message ||
+        error?.message ||
+        'Unable to save treatment. Please try again.'
+      toast.error(errorMessage)
     } finally {
       setIsSubmitting(false)
     }
@@ -239,8 +274,9 @@ export default function AddTreatment() {
       aftercare: form.aftercare,
       risks: form.risks,
       images: form.images,
+      pendingImages,
     }),
-    [form]
+    [form, pendingImages]
   )
 
   return (
@@ -268,13 +304,6 @@ export default function AddTreatment() {
           )}
         </button>
       </div>
-      {(errorMessage || successMessage) && (
-        <div
-          className={`rounded-lg border-l-4 px-4 py-3 text-sm ${errorMessage ? 'border-red-500 bg-red-50/80 text-red-700 dark:border-red-400 dark:bg-red-900/20 dark:text-red-300' : 'border-green-500 bg-green-50/80 text-green-700 dark:border-green-400 dark:bg-green-900/20 dark:text-green-300'}`}
-        >
-          {errorMessage || successMessage}
-        </div>
-      )}
       <form id="add-treatment-form" onSubmit={submitForm} className="space-y-8">
         <div className="flex flex-col gap-8 xl:flex-row">
           <div className="flex flex-1 flex-col gap-6">
@@ -306,7 +335,7 @@ export default function AddTreatment() {
               <SectionCard title="Duration (months)">
                 <div className="space-y-5">
                   <div>
-                    <label className={labelStyles}>Minimum*</label>
+                    <label className={labelStyles}>Minimum</label>
                     <input
                       type="number"
                       min="0"
@@ -315,11 +344,10 @@ export default function AddTreatment() {
                       value={form.minDuration}
                       onChange={(event) => handleFieldChange('minDuration', event.target.value)}
                       placeholder="0"
-                      required
                     />
                   </div>
                   <div>
-                    <label className={labelStyles}>Maximum*</label>
+                    <label className={labelStyles}>Maximum</label>
                     <input
                       type="number"
                       min="0"
@@ -328,7 +356,6 @@ export default function AddTreatment() {
                       value={form.maxDuration}
                       onChange={(event) => handleFieldChange('maxDuration', event.target.value)}
                       placeholder="0"
-                      required
                     />
                   </div>
                   <div>
@@ -348,7 +375,7 @@ export default function AddTreatment() {
               <SectionCard title="Fees">
                 <div className="space-y-5">
                   <div>
-                    <label className={labelStyles}>Minimum*</label>
+                    <label className={labelStyles}>Minimum</label>
                     <input
                       type="number"
                       min="0"
@@ -356,11 +383,10 @@ export default function AddTreatment() {
                       value={form.minFees}
                       onChange={(event) => handleFieldChange('minFees', event.target.value)}
                       placeholder="0"
-                      required
                     />
                   </div>
                   <div>
-                    <label className={labelStyles}>Maximum*</label>
+                    <label className={labelStyles}>Maximum</label>
                     <input
                       type="number"
                       min="0"
@@ -368,7 +394,6 @@ export default function AddTreatment() {
                       value={form.maxFees}
                       onChange={(event) => handleFieldChange('maxFees', event.target.value)}
                       placeholder="0"
-                      required
                     />
                   </div>
                   <div>
@@ -497,29 +522,20 @@ export default function AddTreatment() {
                     className="flex cursor-pointer items-center justify-between rounded-lg border-2 border-dashed border-slate-300 bg-slate-50/50 px-5 py-4 text-sm font-medium text-slate-600 transition-all hover:border-blue-400 hover:bg-blue-50/50 dark:border-slate-700 dark:bg-slate-800/30 dark:text-slate-300 dark:hover:border-blue-500 dark:hover:bg-blue-900/20"
                   >
                     <span className="flex items-center gap-2">
-                      {isUploadingImages ? (
-                        <>
-                          <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-400 border-t-transparent"></span>
-                          Uploading...
-                        </>
-                      ) : (
-                        <>
-                          <svg
-                            className="h-5 w-5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M12 4v16m8-8H4"
-                            />
-                          </svg>
-                          Upload reference images
-                        </>
-                      )}
+                      <svg
+                        className="h-5 w-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 4v16m8-8H4"
+                        />
+                      </svg>
+                      Select reference images
                     </span>
                     <input
                       id="treatment-images"
@@ -528,15 +544,15 @@ export default function AddTreatment() {
                       accept="image/*"
                       className="hidden"
                       onChange={handleImageUpload}
-                      disabled={isUploadingImages}
+                      disabled={isSubmitting}
                     />
-                    {form.images.length > 0 && (
+                    {(form.images.length > 0 || pendingImages.length > 0) && (
                       <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700 dark:bg-blue-900/40 dark:text-blue-200">
-                        {form.images.length} added
+                        {form.images.length + pendingImages.length} selected
                       </span>
                     )}
                   </label>
-                  {!!form.images.length && (
+                  {(form.images.length > 0 || pendingImages.length > 0) && (
                     <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
                       {form.images.map((image, index) => (
                         <div
@@ -562,6 +578,30 @@ export default function AddTreatment() {
                           </button>
                         </div>
                       ))}
+                      {pendingImages.map((_, index) => (
+                        <div
+                          key={`pending-${index}`}
+                          className="group relative aspect-square overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800"
+                        >
+                          <img
+                            src={pendingImagePreviews[index]}
+                            alt={`Pending upload ${index + 1}`}
+                            className="h-full w-full object-cover opacity-75"
+                          />
+                          <div className="absolute inset-0 flex items-center justify-center bg-slate-900/40">
+                            <span className="rounded-full bg-yellow-500 px-2 py-1 text-xs font-semibold text-white">
+                              Pending
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-white/95 text-xs font-semibold text-slate-700 opacity-0 shadow-md transition-all group-hover:opacity-100 hover:bg-red-50 hover:text-red-600 dark:bg-slate-900/95 dark:text-slate-200 dark:hover:bg-red-900/30 dark:hover:text-red-400"
+                            onClick={() => removePendingImage(index)}
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>
@@ -576,8 +616,8 @@ export default function AddTreatment() {
                     {summaryData.name}
                   </h2>
                   {summaryData.description && (
-                    <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
-                      {summaryData.description}
+                    <p className="mt-2 whitespace-pre-wrap text-sm text-slate-600 dark:text-slate-300">
+                      {processEscapeSequences(summaryData.description)}
                     </p>
                   )}
                 </div>
@@ -708,28 +748,70 @@ export default function AddTreatment() {
                     Images
                   </span>
                   <div className="flex-1">
-                    {summaryData.images.length > 0 ? (
-                      <div className="grid grid-cols-3 gap-2">
-                        {summaryData.images.map((image, index) => (
-                          <div
-                            key={`summary-image-${image}`}
-                            className="group relative aspect-square overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700"
-                          >
-                            <img src={image} alt="" className="h-full w-full object-cover" />
-                            <button
-                              type="button"
-                              className="absolute right-1 top-1 rounded-full bg-white/90 px-1.5 py-0.5 text-xs font-semibold text-slate-700 opacity-0 transition group-hover:opacity-100 dark:bg-slate-900/80 dark:text-slate-200"
-                              onClick={() => {
-                                setForm((prev) => ({
-                                  ...prev,
-                                  images: prev.images.filter((_, i) => i !== index),
-                                }))
-                              }}
-                            >
-                              ×
-                            </button>
+                    {summaryData.images.length > 0 || summaryData.pendingImages.length > 0 ? (
+                      <div className="space-y-3">
+                        {summaryData.images.length > 0 && (
+                          <div className="grid grid-cols-3 gap-2">
+                            {summaryData.images.map((image, index) => (
+                              <div
+                                key={`summary-image-${image}`}
+                                className="group relative aspect-square overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700"
+                              >
+                                <img src={image} alt="" className="h-full w-full object-cover" />
+                                <button
+                                  type="button"
+                                  className="absolute right-1 top-1 rounded-full bg-white/90 px-1.5 py-0.5 text-xs font-semibold text-slate-700 opacity-0 transition group-hover:opacity-100 dark:bg-slate-900/80 dark:text-slate-200"
+                                  onClick={() => {
+                                    setForm((prev) => ({
+                                      ...prev,
+                                      images: prev.images.filter((_, i) => i !== index),
+                                    }))
+                                  }}
+                                >
+                                  ×
+                                </button>
+                              </div>
+                            ))}
                           </div>
-                        ))}
+                        )}
+                        {summaryData.pendingImages.length > 0 && (
+                          <div>
+                            <div className="mb-2 flex items-center gap-2">
+                              <span className="text-xs font-medium text-yellow-600 dark:text-yellow-400">
+                                Pending upload ({summaryData.pendingImages.length})
+                              </span>
+                              {isUploadingImages && (
+                                <span className="h-3 w-3 animate-spin rounded-full border-2 border-yellow-500 border-t-transparent"></span>
+                              )}
+                            </div>
+                            <div className="grid grid-cols-3 gap-2">
+                              {summaryData.pendingImages.map((_, index) => (
+                                <div
+                                  key={`summary-pending-${index}`}
+                                  className="group relative aspect-square overflow-hidden rounded-lg border-2 border-dashed border-yellow-400 dark:border-yellow-500"
+                                >
+                                  <img
+                                    src={pendingImagePreviews[index]}
+                                    alt=""
+                                    className="h-full w-full object-cover opacity-60"
+                                  />
+                                  <div className="absolute inset-0 flex items-center justify-center bg-slate-900/30">
+                                    <span className="rounded-full bg-yellow-500 px-2 py-0.5 text-xs font-semibold text-white">
+                                      Pending
+                                    </span>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    className="absolute right-1 top-1 rounded-full bg-white/90 px-1.5 py-0.5 text-xs font-semibold text-slate-700 opacity-0 transition group-hover:opacity-100 dark:bg-slate-900/80 dark:text-slate-200"
+                                    onClick={() => removePendingImage(index)}
+                                  >
+                                    ×
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     ) : (
                       <span className="text-sm text-slate-500 dark:text-slate-400">None</span>
