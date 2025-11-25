@@ -20,6 +20,7 @@ export default function AppRoutes() {
           <Route path="/patient/add" element={<AddPatients />} />
           <Route path="/treatments" element={<Treatments />} />
           <Route path="/treatments/add" element={<AddTreatment />} />
+          <Route path="/treatments/edit/:id" element={<AddTreatment />} />
           <Route path="/calendar" element={<Calendar />} />
         </Route>
       </Route>

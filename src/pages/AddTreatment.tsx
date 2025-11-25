@@ -1,8 +1,14 @@
 import { useMemo, useState, useEffect, type ChangeEvent, type ReactNode } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import { createTreatment, type TreatmentPayload } from '@api/treatments'
+import {
+  createTreatment,
+  getTreatment,
+  updateTreatment,
+  type TreatmentPayload,
+} from '@api/treatments'
 import { S3Service } from '@services/s3Service'
+import TreatmentCard from '@components/treatment/TreatmentCard'
 
 type TreatmentFormState = {
   name: string
@@ -71,8 +77,11 @@ const processEscapeSequences = (text: string): string => {
 
 export default function AddTreatment() {
   const navigate = useNavigate()
+  const { id } = useParams<{ id: string }>()
+  const isEditMode = !!id
   const [form, setForm] = useState<TreatmentFormState>(() => createBlankForm())
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isLoading, setIsLoading] = useState(isEditMode)
   const [isUploadingImages, setIsUploadingImages] = useState(false)
   const [pendingImages, setPendingImages] = useState<File[]>([])
   const [pendingImagePreviews, setPendingImagePreviews] = useState<string[]>([])
@@ -85,6 +94,47 @@ export default function AddTreatment() {
       previews.forEach((url) => URL.revokeObjectURL(url))
     }
   }, [pendingImages])
+
+  useEffect(() => {
+    if (isEditMode && id) {
+      const fetchTreatment = async () => {
+        try {
+          setIsLoading(true)
+          const treatment = await getTreatment(id)
+          setForm({
+            name: treatment.name || '',
+            description: treatment.description || '',
+            minDuration: treatment.minDuration?.toString() || '',
+            maxDuration: treatment.maxDuration?.toString() || '',
+            avgDuration: treatment.avgDuration?.toString() || '',
+            minFees: treatment.minFees?.toString() || '',
+            maxFees: treatment.maxFees?.toString() || '',
+            avgFees: treatment.avgFees?.toString() || '',
+            followUpRequired: treatment.followUpRequired || false,
+            followUpAfterDays: treatment.followUpAfterDays?.toString() || '',
+            steps: treatment.steps || [],
+            currentStep: '',
+            aftercare: treatment.aftercare || [],
+            currentAftercare: '',
+            risks: treatment.risks || [],
+            currentRisk: '',
+            images: treatment.images || [],
+          })
+        } catch (error: any) {
+          const errorMessage =
+            error?.response?.data?.error?.message ||
+            error?.response?.data?.message ||
+            error?.message ||
+            'Unable to load treatment. Please try again.'
+          toast.error(errorMessage)
+          navigate('/treatments')
+        } finally {
+          setIsLoading(false)
+        }
+      }
+      fetchTreatment()
+    }
+  }, [isEditMode, id, navigate])
 
   const handleFieldChange = (field: keyof TreatmentFormState, value: string | boolean) => {
     setForm((prev) => ({
@@ -240,10 +290,15 @@ export default function AddTreatment() {
         images: uploadedUrls,
       }
 
-      await createTreatment(payload)
-      toast.success('Treatment created successfully.')
-      setForm(createBlankForm())
-      setPendingImages([])
+      if (isEditMode && id) {
+        await updateTreatment(id, payload)
+        toast.success('Treatment updated successfully.')
+      } else {
+        await createTreatment(payload)
+        toast.success('Treatment created successfully.')
+        setForm(createBlankForm())
+        setPendingImages([])
+      }
       setTimeout(() => navigate('/treatments'), 800)
     } catch (error: any) {
       setIsUploadingImages(false)
@@ -279,13 +334,25 @@ export default function AddTreatment() {
     [form, pendingImages]
   )
 
+  if (isLoading) {
+    return (
+      <section className="flex items-center justify-center space-y-6">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
+      </section>
+    )
+  }
+
   return (
     <section className="space-y-6">
       <div className="flex flex-col gap-4 rounded-2xl bg-white/60 p-6 backdrop-blur-sm dark:bg-slate-900/60 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Add Treatment</h1>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+            {isEditMode ? 'Edit Treatment' : 'Add Treatment'}
+          </h1>
           <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-            Build standardized treatment templates for your care team.
+            {isEditMode
+              ? 'Update treatment template details.'
+              : 'Build standardized treatment templates for your care team.'}
           </p>
         </div>
         <button
@@ -297,10 +364,10 @@ export default function AddTreatment() {
           {isSubmitting ? (
             <>
               <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
-              Saving...
+              {isEditMode ? 'Updating...' : 'Saving...'}
             </>
           ) : (
-            'Save Treatment'
+            isEditMode ? 'Update Treatment' : 'Save Treatment'
           )}
         </button>
       </div>
@@ -609,217 +676,42 @@ export default function AddTreatment() {
             </div>
           </div>
           <aside className="xl:sticky xl:top-6 xl:h-fit xl:w-96">
-            <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-5 dark:border-slate-800 dark:bg-slate-900/50">
-              <div className="space-y-5">
-                <div className="text-center">
-                  <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
-                    {summaryData.name}
-                  </h2>
-                  {summaryData.description && (
-                    <p className="mt-2 whitespace-pre-wrap text-sm text-slate-600 dark:text-slate-300">
-                      {processEscapeSequences(summaryData.description)}
-                    </p>
-                  )}
-                </div>
-                <div className="text-sm text-slate-700 dark:text-slate-200">
-                  {summaryData.minDuration || summaryData.maxDuration || summaryData.avgDuration
-                    ? `Min: ${summaryData.minDuration || '-'} months / Max: ${summaryData.maxDuration || '-'} months / Avg: ${summaryData.avgDuration || '-'} months`
-                    : 'No duration set'}
-                </div>
-                <div className="text-sm text-slate-700 dark:text-slate-200">
-                  {summaryData.minFees || summaryData.maxFees || summaryData.avgFees
-                    ? `Min: ${summaryData.minFees || '-'} / Max: ${summaryData.maxFees || '-'} / Avg: ${summaryData.avgFees || '-'}`
-                    : 'No fees set'}
-                </div>
-                <div className="flex items-start gap-3">
-                  <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                    Follow up
-                  </span>
-                  <div className="flex-1 space-y-1">
-                    {summaryData.followUpRequired ? (
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-sm text-slate-700 dark:text-slate-200">
-                          {summaryData.followUpAfterDays
-                            ? `Yes - ${summaryData.followUpAfterDays} days`
-                            : 'Yes'}
-                        </span>
-                        <button
-                          type="button"
-                          className="text-slate-500 hover:text-red-600 dark:text-slate-400 dark:hover:text-red-400"
-                          onClick={() => {
-                            clearField('followUpRequired')
-                            clearField('followUpAfterDays')
-                          }}
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ) : (
-                      <span className="text-sm text-slate-500 dark:text-slate-400">No</span>
-                    )}
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                    Procedure Steps
-                  </span>
-                  <div className="flex-1 space-y-1">
-                    {summaryData.steps.length > 0 ? (
-                      summaryData.steps.map((step, index) => (
-                        <div
-                          key={`summary-step-${index}`}
-                          className="flex items-start justify-between gap-2"
-                        >
-                          <span className="flex-1 text-sm text-slate-700 dark:text-slate-200">
-                            {index + 1}. {step}
-                          </span>
-                          <button
-                            type="button"
-                            className="text-slate-500 hover:text-red-600 dark:text-slate-400 dark:hover:text-red-400"
-                            onClick={() => removeArrayEntry('steps', index)}
-                          >
-                            ×
-                          </button>
-                        </div>
-                      ))
-                    ) : (
-                      <span className="text-sm text-slate-500 dark:text-slate-400">None</span>
-                    )}
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                    Aftercare
-                  </span>
-                  <div className="flex-1 space-y-1">
-                    {summaryData.aftercare.length > 0 ? (
-                      summaryData.aftercare.map((entry, index) => (
-                        <div
-                          key={`summary-aftercare-${index}`}
-                          className="flex items-start justify-between gap-2"
-                        >
-                          <span className="flex-1 text-sm text-slate-700 dark:text-slate-200">
-                            {entry}
-                          </span>
-                          <button
-                            type="button"
-                            className="text-slate-500 hover:text-red-600 dark:text-slate-400 dark:hover:text-red-400"
-                            onClick={() => removeArrayEntry('aftercare', index)}
-                          >
-                            ×
-                          </button>
-                        </div>
-                      ))
-                    ) : (
-                      <span className="text-sm text-slate-500 dark:text-slate-400">None</span>
-                    )}
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                    Risks
-                  </span>
-                  <div className="flex-1 space-y-1">
-                    {summaryData.risks.length > 0 ? (
-                      summaryData.risks.map((entry, index) => (
-                        <div
-                          key={`summary-risk-${index}`}
-                          className="flex items-start justify-between gap-2"
-                        >
-                          <span className="flex-1 text-sm text-slate-700 dark:text-slate-200">
-                            {entry}
-                          </span>
-                          <button
-                            type="button"
-                            className="text-slate-500 hover:text-red-600 dark:text-slate-400 dark:hover:text-red-400"
-                            onClick={() => removeArrayEntry('risks', index)}
-                          >
-                            ×
-                          </button>
-                        </div>
-                      ))
-                    ) : (
-                      <span className="text-sm text-slate-500 dark:text-slate-400">None</span>
-                    )}
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                    Images
-                  </span>
-                  <div className="flex-1">
-                    {summaryData.images.length > 0 || summaryData.pendingImages.length > 0 ? (
-                      <div className="space-y-3">
-                        {summaryData.images.length > 0 && (
-                          <div className="grid grid-cols-3 gap-2">
-                            {summaryData.images.map((image, index) => (
-                              <div
-                                key={`summary-image-${image}`}
-                                className="group relative aspect-square overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700"
-                              >
-                                <img src={image} alt="" className="h-full w-full object-cover" />
-                                <button
-                                  type="button"
-                                  className="absolute right-1 top-1 rounded-full bg-white/90 px-1.5 py-0.5 text-xs font-semibold text-slate-700 opacity-0 transition group-hover:opacity-100 dark:bg-slate-900/80 dark:text-slate-200"
-                                  onClick={() => {
-                                    setForm((prev) => ({
-                                      ...prev,
-                                      images: prev.images.filter((_, i) => i !== index),
-                                    }))
-                                  }}
-                                >
-                                  ×
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                        {summaryData.pendingImages.length > 0 && (
-                          <div>
-                            <div className="mb-2 flex items-center gap-2">
-                              <span className="text-xs font-medium text-yellow-600 dark:text-yellow-400">
-                                Pending upload ({summaryData.pendingImages.length})
-                              </span>
-                              {isUploadingImages && (
-                                <span className="h-3 w-3 animate-spin rounded-full border-2 border-yellow-500 border-t-transparent"></span>
-                              )}
-                            </div>
-                            <div className="grid grid-cols-3 gap-2">
-                              {summaryData.pendingImages.map((_, index) => (
-                                <div
-                                  key={`summary-pending-${index}`}
-                                  className="group relative aspect-square overflow-hidden rounded-lg border-2 border-dashed border-yellow-400 dark:border-yellow-500"
-                                >
-                                  <img
-                                    src={pendingImagePreviews[index]}
-                                    alt=""
-                                    className="h-full w-full object-cover opacity-60"
-                                  />
-                                  <div className="absolute inset-0 flex items-center justify-center bg-slate-900/30">
-                                    <span className="rounded-full bg-yellow-500 px-2 py-0.5 text-xs font-semibold text-white">
-                                      Pending
-                                    </span>
-                                  </div>
-                                  <button
-                                    type="button"
-                                    className="absolute right-1 top-1 rounded-full bg-white/90 px-1.5 py-0.5 text-xs font-semibold text-slate-700 opacity-0 transition group-hover:opacity-100 dark:bg-slate-900/80 dark:text-slate-200"
-                                    onClick={() => removePendingImage(index)}
-                                  >
-                                    ×
-                                  </button>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <span className="text-sm text-slate-500 dark:text-slate-400">None</span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
+            <TreatmentCard
+              treatment={{
+                name: summaryData.name,
+                description: summaryData.description,
+                minDuration: summaryData.minDuration,
+                maxDuration: summaryData.maxDuration,
+                avgDuration: summaryData.avgDuration,
+                minFees: summaryData.minFees,
+                maxFees: summaryData.maxFees,
+                avgFees: summaryData.avgFees,
+                followUpRequired: summaryData.followUpRequired,
+                followUpAfterDays: summaryData.followUpAfterDays,
+                steps: summaryData.steps,
+                aftercare: summaryData.aftercare,
+                risks: summaryData.risks,
+                images: summaryData.images,
+                pendingImages: summaryData.pendingImages,
+                pendingImagePreviews,
+                isUploadingImages,
+              }}
+              onRemoveStep={(index) => removeArrayEntry('steps', index)}
+              onRemoveAftercare={(index) => removeArrayEntry('aftercare', index)}
+              onRemoveRisk={(index) => removeArrayEntry('risks', index)}
+              onRemoveImage={(index) => {
+                setForm((prev) => ({
+                  ...prev,
+                  images: prev.images.filter((_, i) => i !== index),
+                }))
+              }}
+              onRemovePendingImage={removePendingImage}
+              onClearFollowUp={() => {
+                clearField('followUpRequired')
+                clearField('followUpAfterDays')
+              }}
+              processEscapeSequences={processEscapeSequences}
+            />
           </aside>
         </div>
       </form>
