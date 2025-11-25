@@ -8,6 +8,8 @@ import Login from '@pages/Login'
 import Patients from '@pages/Patients'
 import Treatments from '@pages/Treatments'
 import AddTreatment from '@pages/AddTreatment'
+import Clinics from '@pages/Clinics'
+import AddClinic from '@pages/AddClinic'
 
 export default function AppRoutes() {
   return (
@@ -21,6 +23,9 @@ export default function AppRoutes() {
           <Route path="/treatments" element={<Treatments />} />
           <Route path="/treatments/add" element={<AddTreatment />} />
           <Route path="/treatments/edit/:id" element={<AddTreatment />} />
+          <Route path="/clinics" element={<Clinics />} />
+          <Route path="/clinics/add" element={<AddClinic />} />
+          <Route path="/clinics/edit/:id" element={<AddClinic />} />
           <Route path="/calendar" element={<Calendar />} />
         </Route>
       </Route>

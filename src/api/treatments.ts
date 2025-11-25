@@ -92,3 +92,15 @@ export const deleteTreatment = async (id: string) => {
   return data.data
 }
 
+export type TreatmentName = {
+  id: string
+  name: string
+}
+
+export const getTreatmentNames = async (params?: { search?: string }): Promise<TreatmentName[]> => {
+  const { data } = await httpClient.get<ApiResponse<TreatmentName[]>>('treatment/names', {
+    params,
+  })
+  return data.data
+}
+
