@@ -1,5 +1,3 @@
-import type { ReactNode } from 'react'
-
 type ConfirmationModalProps = {
   isOpen: boolean
   onClose: () => void
@@ -53,4 +51,5 @@ export default function ConfirmationModal({
     </div>
   )
 }
+
 

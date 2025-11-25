@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useState } from 'react'
 
 type TreatmentData = {
   name: string
@@ -58,6 +58,18 @@ export default function TreatmentCard({
   processEscapeSequences = defaultProcessEscapeSequences,
 }: TreatmentCardProps) {
   const processText = processEscapeSequences
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null)
+  const [imageError, setImageError] = useState(false)
+
+  const openLightbox = (src: string) => {
+    setImageError(false)
+    setLightboxImage(src)
+  }
+
+  const closeLightbox = () => {
+    setLightboxImage(null)
+    setImageError(false)
+  }
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-5 dark:border-slate-800 dark:bg-slate-900/50">
@@ -236,7 +248,12 @@ export default function TreatmentCard({
                         key={`image-${image}-${index}`}
                         className="group relative aspect-square overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700"
                       >
-                        <img src={image} alt="" className="h-full w-full object-cover" />
+                        <img
+                          src={image}
+                          alt=""
+                          className="h-full w-full cursor-zoom-in object-cover"
+                          onClick={() => openLightbox(image)}
+                        />
                         {onRemoveImage && (
                           <button
                             type="button"
@@ -271,7 +288,8 @@ export default function TreatmentCard({
                             <img
                               src={preview}
                               alt=""
-                              className="h-full w-full object-cover opacity-60"
+                              className="h-full w-full cursor-zoom-in object-cover opacity-60"
+                              onClick={() => openLightbox(preview)}
                             />
                             <div className="absolute inset-0 flex items-center justify-center bg-slate-900/30">
                               <span className="rounded-full bg-yellow-500 px-2 py-0.5 text-xs font-semibold text-white">
@@ -299,6 +317,37 @@ export default function TreatmentCard({
           </div>
         </div>
       </div>
+      {lightboxImage && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+          onClick={closeLightbox}
+        >
+          <div
+            className="relative max-h-full max-w-4xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={closeLightbox}
+              className="absolute right-2 top-2 rounded-full bg-black/70 px-2 py-1 text-lg text-white hover:bg-black/80"
+            >
+              ×
+            </button>
+            {imageError ? (
+              <div className="rounded-lg bg-white px-6 py-4 text-center text-sm font-semibold text-red-600 dark:bg-slate-900 dark:text-red-400">
+                Failed to load image.
+              </div>
+            ) : (
+              <img
+                src={lightboxImage}
+                alt="Treatment reference"
+                className="max-h-[80vh] max-w-full rounded-lg object-contain"
+                onError={() => setImageError(true)}
+              />
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

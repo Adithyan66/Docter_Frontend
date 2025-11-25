@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { getTreatments, deleteTreatment, type Treatment } from '@api/treatments'
+import ConfirmationModal from '@components/common/ConfirmationModal'
+import Pagination from '@components/common/Pagination'
 import TreatmentCard from '@components/treatment/TreatmentCard'
-import ConfirmationModal from '@components/treatment/ConfirmationModal'
-import Pagination from '@components/treatment/Pagination'
 import { useDebounce } from '@hooks/utils/useDebounce'
 
 const PlusIcon = () => (
@@ -131,12 +131,45 @@ export default function Treatments() {
 
   return (
     <section className="space-y-6">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div>
+      <div className="flex flex-col gap-4 rounded-2xl bg-white/60 p-6 backdrop-blur-sm dark:bg-slate-900/60 lg:flex-row lg:items-center lg:gap-6">
+        <div className="flex-1">
           <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">Treatments</h1>
           <p className="text-slate-600 dark:text-slate-300">
             Manage standard treatments, timelines, and resources.
           </p>
+        </div>
+        <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center lg:max-w-xl">
+          <input
+            type="text"
+            placeholder="Search by name or description..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="flex-1 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-blue-400"
+          />
+          <div className="flex gap-3">
+            <select
+              value={sortBy}
+              onChange={(e) =>
+                setSortBy(e.target.value as 'fees' | 'duration' | 'createdAt' | '')
+              }
+              className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm text-slate-900 outline-none transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:focus:border-blue-400"
+            >
+              <option value="">Sort by</option>
+              <option value="fees">Fees</option>
+              <option value="duration">Duration</option>
+              <option value="createdAt">Date Created</option>
+            </select>
+            {sortBy && (
+              <select
+                value={sortOrder}
+                onChange={(e) => setSortOrder(e.target.value as 'asc' | 'desc')}
+                className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm text-slate-900 outline-none transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:focus:border-blue-400"
+              >
+                <option value="asc">Ascending</option>
+                <option value="desc">Descending</option>
+              </select>
+            )}
+          </div>
         </div>
         <button
           type="button"
@@ -146,42 +179,6 @@ export default function Treatments() {
           <PlusIcon />
           Add Treatment
         </button>
-      </div>
-
-      <div className="flex flex-col gap-4 rounded-2xl bg-white/60 p-6 backdrop-blur-sm dark:bg-slate-900/60 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex-1">
-          <input
-            type="text"
-            placeholder="Search by name or description..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-blue-400"
-          />
-        </div>
-        <div className="flex gap-3">
-          <select
-            value={sortBy}
-            onChange={(e) =>
-              setSortBy(e.target.value as 'fees' | 'duration' | 'createdAt' | '')
-            }
-            className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm text-slate-900 outline-none transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:focus:border-blue-400"
-          >
-            <option value="">Sort by</option>
-            <option value="fees">Fees</option>
-            <option value="duration">Duration</option>
-            <option value="createdAt">Date Created</option>
-          </select>
-          {sortBy && (
-            <select
-              value={sortOrder}
-              onChange={(e) => setSortOrder(e.target.value as 'asc' | 'desc')}
-              className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm text-slate-900 outline-none transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:focus:border-blue-400"
-            >
-              <option value="asc">Ascending</option>
-              <option value="desc">Descending</option>
-            </select>
-          )}
-        </div>
       </div>
 
       {isLoading ? (
