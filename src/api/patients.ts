@@ -98,3 +98,8 @@ export const getPatients = async (
   return data.data
 }
 
+export const getPatientById = async (id: string): Promise<Patient> => {
+  const { data } = await httpClient.get<ApiResponse<Patient>>(`patient/${id}`)
+  return data.data
+}
+
