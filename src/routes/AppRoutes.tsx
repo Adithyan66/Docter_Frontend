@@ -6,6 +6,7 @@ import AddPatients from '@pages/AddPatients'
 import Dashboard from '@pages/Dashboard'
 import Login from '@pages/Login'
 import Patients from '@pages/Patients'
+import PatientDetails from '@pages/PatientDetails'
 import Treatments from '@pages/Treatments'
 import AddTreatment from '@pages/AddTreatment'
 import Clinics from '@pages/Clinics'
@@ -19,6 +20,7 @@ export default function AppRoutes() {
         <Route element={<MainLayout />}>
           <Route path="/" element={<Dashboard />} />
           <Route path="/patients" element={<Patients />} />
+          <Route path="/patients/:id" element={<PatientDetails />} />
           <Route path="/patient/add" element={<AddPatients />} />
           <Route path="/treatments" element={<Treatments />} />
           <Route path="/treatments/add" element={<AddTreatment />} />

@@ -3,6 +3,7 @@ import httpClient from '@api/httpClient'
 import type { ImageUploadType } from '@models/imageUpload'
 
 export interface UploadResponse {
+  data: UploadResponse | PromiseLike<UploadResponse>
   uploadUrl: string
   imageKey: string
   publicUrl: string

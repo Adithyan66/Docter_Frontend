@@ -1,4 +1,4 @@
-export type ImageUploadType = 'Treatment-Images' | 'Clinic-Images'
+export type ImageUploadType = 'Treatment-Images' | 'Clinic-Images' | 'patient-profile'
 
 export type ImageUploadPayload = {
   fileExtension: string
