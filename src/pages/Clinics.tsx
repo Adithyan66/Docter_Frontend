@@ -199,6 +199,7 @@ export default function Clinics() {
                 key={clinic.id}
                 clinic={{
                   name: clinic.name,
+                  clinicId: clinic.clinicId,
                   address: clinic.address,
                   city: clinic.city,
                   state: clinic.state,
@@ -208,7 +209,13 @@ export default function Clinics() {
                   website: clinic.website,
                   locationUrl: clinic.locationUrl,
                   workingDays: clinic.workingDays,
-                  treatments: clinic.treatments,
+                  treatments: clinic.treatments
+                    ? clinic.treatments.map((t) =>
+                        typeof t === 'string'
+                          ? { id: t, name: 'Unknown' }
+                          : { id: t.id, name: t.name || 'Unknown' }
+                      )
+                    : undefined,
                   images: clinic.images,
                   notes: clinic.notes,
                   isActive: clinic.isActive,

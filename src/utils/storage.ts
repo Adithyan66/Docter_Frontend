@@ -1,8 +1,8 @@
 import type { UserSummary } from '@models/auth'
 
-const ACCESS_TOKEN_KEY = 'accessToken'
-const REFRESH_TOKEN_KEY = 'refreshToken'
-const USER_KEY = 'user'
+const ACCESS_TOKEN_KEY = import.meta.env.VITE_ACCESS_TOKEN_KEY || 'accessToken'
+const REFRESH_TOKEN_KEY = import.meta.env.VITE_REFRESH_TOKEN_KEY || 'refreshToken'
+const USER_KEY = import.meta.env.VITE_USER_KEY || 'user'
 
 type PersistPayload = {
   accessToken: string

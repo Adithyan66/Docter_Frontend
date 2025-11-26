@@ -15,6 +15,7 @@ export type WorkingDay = {
 
 export type ClinicPayload = {
   name: string
+  clinicId?: string
   address?: string
   city?: string
   state?: string
@@ -33,6 +34,7 @@ export type ClinicPayload = {
 export type Clinic = {
   id: string
   name: string
+  clinicId?: string
   address?: string
   city?: string
   state?: string

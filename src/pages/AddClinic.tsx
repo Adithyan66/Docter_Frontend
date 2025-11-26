@@ -20,6 +20,7 @@ type WorkingDayForm = {
 
 type ClinicFormState = {
   name: string
+  clinicId: string
   address: string
   city: string
   state: string
@@ -38,6 +39,7 @@ type ClinicFormState = {
 
 const createBlankForm = (): ClinicFormState => ({
   name: '',
+  clinicId: '',
   address: '',
   city: '',
   state: '',
@@ -55,7 +57,7 @@ const createBlankForm = (): ClinicFormState => ({
   treatments: [],
   images: [],
   notes: '',
-  isActive: true,
+  isActive: true,  
 })
 
 const SectionCard = ({ title, children }: { title: string; children: ReactNode }) => (
@@ -133,6 +135,7 @@ export default function AddClinic() {
 
           setForm({
             name: clinic.name || '',
+            clinicId: clinic.clinicId || '',
             address: clinic.address || '',
             city: clinic.city || '',
             state: clinic.state || '',
@@ -189,10 +192,20 @@ export default function AddClinic() {
     }
   }
 
+  const validateClinicId = (clinicId: string): boolean => {
+    if (!clinicId.trim()) return false
+    return /^[A-Z]{3}$/.test(clinicId)
+  }
+
   const handleFieldChange = (field: keyof ClinicFormState, value: any) => {
     if (field === 'phone') {
       const numericValue = value.replace(/\D/g, '')
       setForm((prev) => ({ ...prev, [field]: numericValue }))
+      return
+    }
+    if (field === 'clinicId') {
+      const uppercaseValue = value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 3)
+      setForm((prev) => ({ ...prev, [field]: uppercaseValue }))
       return
     }
     setForm((prev) => ({ ...prev, [field]: value }))
@@ -288,6 +301,16 @@ export default function AddClinic() {
       return
     }
 
+    if (!isEditMode && !form.clinicId.trim()) {
+      toast.error('Clinic ID is required.')
+      return
+    }
+
+    if (!isEditMode && !validateClinicId(form.clinicId)) {
+      toast.error('Clinic ID must be exactly 3 uppercase letters (e.g., ABC).')
+      return
+    }
+
     if (form.email.trim() && !validateEmail(form.email)) {
       toast.error('Please enter a valid email address.')
       return
@@ -307,12 +330,16 @@ export default function AddClinic() {
     setIsUploadingImages(true)
 
     try {
-      const uploadedUrls: string[] = [...form.images]
+      let uploadedUrls: string[] = []
+
+      if (isEditMode) {
+        uploadedUrls = (form.images || []).filter((url) => url && url.trim().length > 0)
+      }
 
       if (pendingImages.length > 0) {
         for (const file of pendingImages) {
           const { publicUrl } = await S3Service.uploadImage('Clinic-Images', file)
-          if (publicUrl) {
+          if (publicUrl && publicUrl.trim().length > 0) {
             uploadedUrls.push(publicUrl)
           }
         }
@@ -348,6 +375,7 @@ export default function AddClinic() {
         await updateClinic(id, payload)
         toast.success('Clinic updated successfully.')
       } else {
+        payload.clinicId = form.clinicId.trim().toUpperCase()
         await createClinic(payload)
         toast.success('Clinic created successfully.')
         setForm(createBlankForm())
@@ -379,6 +407,7 @@ export default function AddClinic() {
 
       return {
         name: form.name,
+        clinicId: form.clinicId,
         address: form.address,
         city: form.city,
         state: form.state,
@@ -491,6 +520,31 @@ export default function AddClinic() {
                         </span>
                       </label>
                     </div>
+                  </div>
+                  <div>
+                    <label className={labelStyles}>Clinic ID*</label>
+                    <input
+                      type="text"
+                      className={`${inputStyles} ${!isEditMode && form.clinicId.trim() && !validateClinicId(form.clinicId)
+                        ? 'border-red-500 focus:border-red-500 dark:border-red-500'
+                        : ''}`}
+                      value={form.clinicId}
+                      onChange={(event) => handleFieldChange('clinicId', event.target.value)}
+                      placeholder="ABC (3 uppercase letters)"
+                      maxLength={3}
+                      required={!isEditMode}
+                      disabled={isEditMode}
+                    />
+                    {!isEditMode && form.clinicId.trim() && !validateClinicId(form.clinicId) && (
+                      <p className="mt-1 text-xs text-red-600 dark:text-red-400">
+                        Must be exactly 3 uppercase letters (e.g., ABC)
+                      </p>
+                    )}
+                    {isEditMode && (
+                      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                        Clinic ID cannot be changed after creation
+                      </p>
+                    )}
                   </div>
                   <div>
                     <label className={labelStyles}>Address</label>
@@ -832,6 +886,7 @@ export default function AddClinic() {
             <ClinicCard
               clinic={{
                 name: summaryData.name,
+                clinicId: summaryData.clinicId,
                 address: summaryData.address,
                 city: summaryData.city,
                 state: summaryData.state,

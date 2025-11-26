@@ -28,7 +28,7 @@ export default function AppRoutes() {
           <Route path="/clinics/edit/:id" element={<AddClinic />} />
           <Route path="/calendar" element={<Calendar />} />
         </Route>
-      </Route>
+      </Route> 
     </Routes>
   )
 }

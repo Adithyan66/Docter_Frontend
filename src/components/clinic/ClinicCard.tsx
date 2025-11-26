@@ -2,6 +2,7 @@ import { useState } from 'react'
 
 type ClinicData = {
   name: string
+  clinicId?: string
   address?: string
   city?: string
   state?: string
@@ -116,6 +117,11 @@ export default function ClinicCard({
           <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
             {clinic.name || 'Name: -'}
           </h2>
+          {clinic.clinicId && (
+            <p className="mt-1 text-sm font-medium text-slate-600 dark:text-slate-400">
+              ID: {clinic.clinicId}
+            </p>
+          )}
         </div>
 
         <div className="flex items-start gap-3">
