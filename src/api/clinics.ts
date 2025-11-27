@@ -100,3 +100,15 @@ export const deleteClinic = async (id: string) => {
   return data.data
 }
 
+export type ClinicName = {
+  id: string
+  name: string
+}
+
+export const getClinicNames = async (params?: { search?: string }): Promise<ClinicName[]> => {
+  const { data } = await httpClient.get<ApiResponse<ClinicName[]>>('clinic/names', {
+    params,
+  })
+  return data.data
+}
+

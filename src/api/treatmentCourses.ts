@@ -1,0 +1,57 @@
+import httpClient from './httpClient'
+
+type ApiResponse<T> = {
+  success: boolean
+  data: T
+  message?: string
+  timestamp?: string
+}
+
+export type TreatmentCourseStatus = 'active' | 'paused' | 'completed' | 'cancelled'
+
+export type TreatmentCoursePayload = {
+  doctorId: string
+  patientId: string
+  clinicId?: string
+  treatmentId: string
+  startDate: string
+  expectedEndDate?: string
+  totalCost: number
+  totalPaid?: number
+  isPaymentCompleted?: boolean
+  isMedicallyCompleted?: boolean
+  status?: TreatmentCourseStatus
+  notes?: string
+}
+
+export type TreatmentCourse = {
+  id: string
+  doctorId: string
+  patientId: string
+  clinicId?: string
+  treatmentId: string
+  startDate: string
+  expectedEndDate?: string
+  totalCost: number
+  totalPaid: number
+  isPaymentCompleted: boolean
+  isMedicallyCompleted: boolean
+  status: TreatmentCourseStatus
+  notes?: string
+  visits: string[]
+  payments: string[]
+  isDeleted: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export const createTreatmentCourse = async (
+  payload: TreatmentCoursePayload
+): Promise<TreatmentCourse> => {
+  const { data } = await httpClient.post<ApiResponse<TreatmentCourse>>(
+    'treatment-course/add',
+    payload
+  )
+  return data.data
+}
+

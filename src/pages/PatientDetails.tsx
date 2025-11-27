@@ -2,11 +2,15 @@ import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { getPatientById, type Patient } from '@api/patients'
+import { useAppSelector } from '@hooks/store'
+import CreateTreatmentCourseModal from '@components/treatment/CreateTreatmentCourseModal'
 
 export default function PatientDetails() {
   const { id } = useParams<{ id: string }>()
   const [patient, setPatient] = useState<Patient | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const doctorId = useAppSelector((state) => state.auth.user?.id || '')
 
   useEffect(() => {
     const fetchPatient = async () => {
@@ -82,9 +86,29 @@ export default function PatientDetails() {
   return (
     <section className="space-y-6">
       <div className="rounded-2xl bg-white/60 p-6 backdrop-blur-sm dark:bg-slate-900/60">
-        <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">Patient Details</h1>
-        <p className="text-slate-600 dark:text-slate-300">View comprehensive patient information</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">Patient Details</h1>
+            <p className="text-slate-600 dark:text-slate-300">View comprehensive patient information</p>
+          </div>
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-all hover:bg-blue-500 dark:bg-blue-500 dark:hover:bg-blue-400"
+          >
+            Create Treatment Course
+          </button>
+        </div>
       </div>
+
+      <CreateTreatmentCourseModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        patientId={patient.id}
+        doctorId={doctorId}
+        onSuccess={() => {
+          setIsModalOpen(false)
+        }}
+      />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="lg:col-span-1">
