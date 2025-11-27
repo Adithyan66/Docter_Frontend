@@ -55,3 +55,8 @@ export const createTreatmentCourse = async (
   return data.data
 }
 
+export const getTreatmentCourseById = async (id: string): Promise<TreatmentCourse> => {
+  const { data } = await httpClient.get<ApiResponse<TreatmentCourse>>(`treatment-course/${id}`)
+  return data.data
+}
+

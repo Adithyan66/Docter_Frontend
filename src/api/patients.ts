@@ -32,6 +32,11 @@ export type PatientPayload = {
   isActive?: boolean
 }
 
+export type TreatmentCourseSummary = {
+  id: string
+  treatmentName: string
+}
+
 export type Patient = {
   id: string
   patientId: string
@@ -53,6 +58,7 @@ export type Patient = {
   email?: string
   tags?: string[]
   isActive?: boolean
+  treatmentCourses?: TreatmentCourseSummary[]
   createdAt: string
   updatedAt: string
 }
