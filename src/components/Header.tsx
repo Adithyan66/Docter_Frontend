@@ -11,6 +11,7 @@ export default function Header({ onMenuClick, onLogout, userEmail }: HeaderProps
   const { theme, toggleTheme } = useTheme()
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [currentDateTime, setCurrentDateTime] = useState('')
 
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -18,6 +19,18 @@ export default function Header({ onMenuClick, onLogout, userEmail }: HeaderProps
     }
     document.addEventListener('fullscreenchange', handleFullscreenChange)
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange)
+  }, [])
+
+  useEffect(() => {
+    const updateDateTime = () => {
+      const now = new Date()
+      const dateStr = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+      const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })
+      setCurrentDateTime(`${dateStr} · ${timeStr}`)
+    }
+    updateDateTime()
+    const interval = setInterval(updateDateTime, 1000)
+    return () => clearInterval(interval)
   }, [])
 
   const toggleFullscreen = () => {
@@ -30,7 +43,7 @@ export default function Header({ onMenuClick, onLogout, userEmail }: HeaderProps
 
   return (
     <>
-      <header className="flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <header className="flex items-center justify-between border-b border-slate-200 bg-white px-4 py-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
       <div className="flex items-center gap-3">
         <button
           type="button"
@@ -39,7 +52,22 @@ export default function Header({ onMenuClick, onLogout, userEmail }: HeaderProps
         >
           Menu
         </button>
-        <h1 className="text-lg font-semibold text-slate-800 dark:text-white">Doctor Hub</h1>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            aria-label="Alarm clock"
+            className="flex  items-center justify-center"
+          >
+            <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth={1.8}>
+              <circle cx="12" cy="13" r="7" />
+              <path d="M12 9v4l2.5 2.5" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M7 4l-1.5 1.5M17 4l1.5 1.5" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M5.5 2.5h13" strokeLinecap="round" />
+              <path d="M9 20h6" strokeLinecap="round" />
+            </svg>
+          </button>
+          <h1 className="text-lg font-semibold text-slate-800 dark:text-white">{currentDateTime}</h1>
+        </div>
       </div>
       <div className="flex items-center gap-4">
     
