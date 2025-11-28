@@ -143,7 +143,7 @@ export default function Sidebar({ mobileOpen, onClose, collapsed, onToggleCollap
     'group relative flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium tracking-tight transition-transform duration-300 ease-out hover:translate-x-1'
   const collapsedLinkClasses = collapsed ? 'md:justify-center md:px-3' : ''
   const activeLinkClasses =
-    'bg-gradient-to-r from-blue-600 via-blue-500 to-blue-400 text-white shadow-sm ring-1 ring-blue-500/30 transition-colors sidebar-link-active'
+    'bg-gradient-to-r from-blue-600 via-blue-500 to-blue-100 text-white shadow-sm ring-1 ring-blue-500/30 transition-colors sidebar-link-active'
   const inactiveLinkClasses =
     'text-slate-700 hover:text-blue-600 transition-colors dark:text-slate-300 dark:hover:text-blue-400'
 
