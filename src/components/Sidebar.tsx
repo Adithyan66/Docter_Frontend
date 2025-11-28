@@ -1,5 +1,7 @@
 import type { JSX } from 'react'
 import { NavLink } from 'react-router-dom'
+import icon from '@assets/icon.png'
+import './Sidebar.css'
 
 type SidebarProps = {
   mobileOpen: boolean
@@ -130,76 +132,50 @@ const links: SidebarLink[] = [
   { label: 'Calendar', to: '/calendar', icon: CalendarIcon },
 ]
 
-const ChevronLeftIcon = ({ className }: IconProps) => (
-  <svg
-    className={className}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth={2}
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="m15 18-6-6 6-6" />
-  </svg>
-)
-
-const ChevronRightIcon = ({ className }: IconProps) => (
-  <svg
-    className={className}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth={2}
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="m9 18 6-6-6-6" />
-  </svg>
-)
-
 export default function Sidebar({ mobileOpen, onClose, collapsed, onToggleCollapse }: SidebarProps) {
   const baseClasses =
-    'fixed inset-y-0 left-0 z-40 flex h-screen flex-col border-r border-slate-200 bg-white shadow-lg transition-all duration-300 dark:border-slate-800 dark:bg-slate-900 md:fixed md:flex md:shadow-none'
+    'fixed inset-y-0 left-0 z-40 flex h-screen flex-col border-r border-slate-100 bg-white/95 shadow-lg transition-all duration-300 ease-in-out backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900 md:fixed md:flex md:shadow-none'
   const widthClasses = collapsed ? 'md:w-20' : 'md:w-64'
   const translateClasses = mobileOpen
     ? 'translate-x-0 w-64 md:translate-x-0'
     : '-translate-x-full w-64 md:translate-x-0'
+  const linkBaseClasses =
+    'group relative flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium tracking-tight transition-transform duration-300 ease-out hover:translate-x-1'
+  const collapsedLinkClasses = collapsed ? 'md:justify-center md:px-3' : ''
+  const activeLinkClasses =
+    'bg-gradient-to-r from-blue-600 via-blue-500 to-blue-400 text-white shadow-sm ring-1 ring-blue-500/30 transition-colors sidebar-link-active'
+  const inactiveLinkClasses =
+    'text-slate-700 hover:text-blue-600 transition-colors dark:text-slate-300 dark:hover:text-blue-400'
 
   return (
     <aside className={`${baseClasses} ${widthClasses} ${translateClasses}`}>
-      <div className="flex flex-shrink-0 items-center justify-between border-b border-slate-200 px-4 py-4 dark:border-slate-800">
+      <div className="flex flex-shrink-0 items-center justify-between border-b border-slate-200/70 px-4 py-4 dark:border-slate-800">
         <div className={`flex items-center gap-3 ${collapsed ? 'md:justify-center' : ''}`}>
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-sm font-semibold uppercase text-white flex-shrink-0">
-            CP
-          </div>
-          <span className={`text-base font-semibold text-slate-800 dark:text-white transition-opacity duration-300 ${collapsed ? 'md:hidden' : ''}`}>
-            Care Panel
-          </span>
-        </div>
-        <div className="flex items-center gap-2">
           <button
             type="button"
-            className="rounded-md border border-slate-200 px-2 py-1 text-sm text-slate-600 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800 md:hidden"
-            onClick={onClose}
-          >
-            Close
-          </button>
-          <button
-            type="button"
-            className="hidden rounded-md border border-slate-200 p-2 text-slate-600 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800 md:flex"
             onClick={onToggleCollapse}
             aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            className="flex h-10 w-10 items-center hover:cursor-pointer justify-center rounded-xl bg-blue-600 p-0 transition-transform duration-300 ease-in-out overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
           >
-            {collapsed ? (
-              <ChevronRightIcon className="h-5 w-5" />
-            ) : (
-              <ChevronLeftIcon className="h-5 w-5" />
-            )}
+            <img
+              src={icon}
+              alt="icon"
+              className={`h-10 w-10 flex-shrink-0 object-cover transition-transform duration-300 ease-in-out ${
+                collapsed ? 'scale-90' : 'scale-100'
+              }`}
+            />
           </button>
+          <div className={`transition-opacity duration-300 ${collapsed ? 'md:hidden' : ''}`}>
+            <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-slate-500">
+              Doctor
+            </p>
+            <p className="text-lg font-semibold text-slate-900 dark:text-white">
+              Ameen
+            </p>
+          </div>
         </div>
       </div>
-      <nav className="flex flex-1 flex-col gap-1 overflow-y-auto px-2 pb-6">
+      <nav className="flex flex-1 flex-col gap-1 overflow-y-auto px-2 pb-6 pt-3">
         {links.map((link) => {
           const Icon = link.icon
           return (
@@ -208,19 +184,15 @@ export default function Sidebar({ mobileOpen, onClose, collapsed, onToggleCollap
               to={link.to}
               aria-label={link.label}
               className={({ isActive }) =>
-                [
-                  'flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition',
-                  collapsed ? 'md:justify-center md:px-3' : '',
-                  isActive
-                    ? 'bg-blue-600 text-white'
-                    : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800',
-                ].join(' ')
+                [linkBaseClasses, collapsedLinkClasses, isActive ? activeLinkClasses : inactiveLinkClasses].join(' ')
               }
               onClick={onClose}
               title={collapsed ? link.label : undefined}
             >
               <Icon className="h-5 w-5 flex-shrink-0" />
-              <span className={`whitespace-nowrap transition-opacity duration-300 ${collapsed ? 'md:hidden' : ''}`}>
+              <span
+                className={`whitespace-nowrap transition-opacity duration-300 ${collapsed ? 'md:hidden' : ''}`}
+              >
                 {link.label}
               </span>
             </NavLink>

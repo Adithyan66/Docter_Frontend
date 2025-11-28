@@ -1,0 +1,17 @@
+@keyframes sidebar-link-sweep {
+  from {
+    background-size: 200% 100%;
+    background-position: 120% 0;
+  }
+  to {
+    background-size: 200% 100%;
+    background-position: 0 0;
+  }
+}
+
+.sidebar-link-active {
+  background-size: 200% 100%;
+  animation: sidebar-link-sweep 0.45s ease-out forwards;
+}
+
+
