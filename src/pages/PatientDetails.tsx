@@ -1,212 +1,50 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useParams } from 'react-router-dom'
-import toast from 'react-hot-toast'
-import { getPatientById, type Patient } from '@api/patients'
 import { useAppSelector } from '@hooks/store'
 import CreateTreatmentCourseModal from '@components/treatment/CreateTreatmentCourseModal'
-import { getTreatmentCourseById, type TreatmentCourse } from '@api/treatmentCourses'
-import { getTreatment, type Treatment } from '@api/treatments'
 import CreateVisitModal from '@components/visit/CreateVisitModal'
-import { getVisits, type VisitResponseDto } from '@api/visits'
 import Pagination from '@components/common/Pagination'
-import { useDebounce } from '@hooks/utils/useDebounce'
+import ImageViewerModal from '@components/common/ImageViewerModal'
+import { usePatientDetails } from '@hooks/data/usePatientDetails'
+import RotatingSpinner from '@components/spinner/TeethRotating'
+import PatientDetail from '@assets/patientDetail.png'
+import noprofile from '@assets/noprofile.png'
 
 export default function PatientDetails() {
   const { id } = useParams<{ id: string }>()
-  const [patient, setPatient] = useState<Patient | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null)
-  const [courseDetails, setCourseDetails] = useState<TreatmentCourse | null>(null)
-  const [isLoadingCourse, setIsLoadingCourse] = useState(false)
-  const [isTreatmentModalOpen, setIsTreatmentModalOpen] = useState(false)
-  const [treatmentDetails, setTreatmentDetails] = useState<Treatment | null>(null)
-  const [isLoadingTreatment, setIsLoadingTreatment] = useState(false)
-  const [viewMode, setViewMode] = useState<'profile' | 'course'>('profile')
-  const [isVisitModalOpen, setIsVisitModalOpen] = useState(false)
-  const [visits, setVisits] = useState<VisitResponseDto[]>([])
-  const [visitsPagination, setVisitsPagination] = useState({
-    page: 1,
-    limit: 10,
-    total: 0,
-    totalPages: 0,
-  })
-  const [isLoadingVisits, setIsLoadingVisits] = useState(false)
-  const [visitsSearch, setVisitsSearch] = useState('')
-  const debouncedSearch = useDebounce(visitsSearch, 500)
-
-  useEffect(() => {
-    setVisitsPagination((prev) => ({ ...prev, page: 1 }))
-  }, [debouncedSearch])
   const doctorId = useAppSelector((state) => state.auth.user?.id || '')
+  const [viewerImage, setViewerImage] = useState<string | null>(null)
+  const [isViewerOpen, setIsViewerOpen] = useState(false)
 
-  const fetchPatient = async () => {
-    if (!id) return
-
-    try {
-      setIsLoading(true)
-      const patientData = await getPatientById(id)
-      setPatient(patientData)
-    } catch (error: any) {
-      const errorMessage =
-        error?.response?.data?.error?.message ||
-        error?.response?.data?.message ||
-        error?.message ||
-        'Unable to fetch patient details. Please try again.'
-      toast.error(errorMessage)
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    fetchPatient()
-  }, [id])
-
-  useEffect(() => {
-    const fetchCourseDetails = async () => {
-      if (!selectedCourseId) {
-        setCourseDetails(null)
-        setVisits([])
-        setVisitsPagination({ page: 1, limit: 10, total: 0, totalPages: 0 })
-        return
-      }
-
-      try {
-        setIsLoadingCourse(true)
-        const courseData = await getTreatmentCourseById(selectedCourseId)
-        setCourseDetails(courseData)
-        setViewMode('course')
-      } catch (error: any) {
-        const errorMessage =
-          error?.response?.data?.error?.message ||
-          error?.response?.data?.message ||
-          error?.message ||
-          'Unable to fetch course details. Please try again.'
-        toast.error(errorMessage)
-        setSelectedCourseId(null)
-      } finally {
-        setIsLoadingCourse(false)
-      }
-    }
-
-    fetchCourseDetails()
-  }, [selectedCourseId])
-
-  useEffect(() => {
-    const fetchVisits = async () => {
-      if (!selectedCourseId || !patient?.id) {
-        setVisits([])
-        setVisitsPagination({ page: 1, limit: 10, total: 0, totalPages: 0 })
-        return
-      }
-
-      try {
-        setIsLoadingVisits(true)
-        const response = await getVisits({
-          page: visitsPagination.page,
-          limit: visitsPagination.limit,
-          courseId: selectedCourseId,
-          patientId: patient.id,
-          notes: debouncedSearch || undefined,
-          sortBy: 'visitDate',
-          sortOrder: 'desc',
-          include: 'prescription,media',
-        })
-        setVisits(response.visits)
-        setVisitsPagination({
-          page: response.page,
-          limit: response.limit,
-          total: response.total,
-          totalPages: response.totalPages,
-        })
-      } catch (error: any) {
-        const errorMessage =
-          error?.response?.data?.error?.message ||
-          error?.response?.data?.message ||
-          error?.message ||
-          'Unable to fetch visits. Please try again.'
-        toast.error(errorMessage)
-      } finally {
-        setIsLoadingVisits(false)
-      }
-    }
-
-    fetchVisits()
-  }, [selectedCourseId, patient?.id, visitsPagination.page, debouncedSearch])
-
-  const handleVisitsPageChange = (page: number) => {
-    setVisitsPagination((prev) => ({ ...prev, page }))
-  }
-
-  const handleVisitSuccess = () => {
-    setVisitsPagination((prev) => ({ ...prev, page: 1 }))
-    setVisitsSearch('')
-  }
-
-  const handleProfileInfoClick = () => {
-    setSelectedCourseId(null)
-    setViewMode('profile')
-    setCourseDetails(null)
-  }
-
-  const handleTreatmentDetailsClick = async () => {
-    if (!courseDetails?.treatmentId) return
-
-    try {
-      setIsLoadingTreatment(true)
-      setIsTreatmentModalOpen(true)
-      const treatmentData = await getTreatment(courseDetails.treatmentId)
-      setTreatmentDetails(treatmentData)
-    } catch (error: any) {
-      const errorMessage =
-        error?.response?.data?.error?.message ||
-        error?.response?.data?.message ||
-        error?.message ||
-        'Unable to fetch treatment details. Please try again.'
-      toast.error(errorMessage)
-      setIsTreatmentModalOpen(false)
-    } finally {
-      setIsLoadingTreatment(false)
-    }
-  }
-
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return '-'
-    try {
-      return new Date(dateString).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-      })
-    } catch {
-      return '-'
-    }
-  }
-
-  const formatDateTime = (dateString?: string) => {
-    if (!dateString) return '-'
-    try {
-      return new Date(dateString).toLocaleString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      })
-    } catch {
-      return '-'
-    }
-  }
+  const {
+    patient,
+    isLoading,
+    isModalOpen,
+    setIsModalOpen,
+    courseDetails,
+    isLoadingCourse,
+    isTreatmentModalOpen,
+    treatmentDetails,
+    isLoadingTreatment,
+    viewMode,
+    isVisitModalOpen,
+    setIsVisitModalOpen,
+    visits,
+    visitsPagination,
+    isLoadingVisits,
+    visitsSearch,
+    setVisitsSearch,
+    handleVisitsPageChange,
+    handleVisitSuccess,
+    handleTreatmentDetailsClick,
+    handleCloseTreatmentModal,
+    handleCreateTreatmentCourseSuccess,
+    formatDate,
+    formatDateTime,
+  } = usePatientDetails(id)
 
   if (isLoading) {
-    return (
-      <section className="space-y-4">
-        <div className="flex items-center justify-center rounded-2xl bg-white/60 p-12 backdrop-blur-sm dark:bg-slate-900/60">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
-        </div>
-      </section>
-    )
+    return <RotatingSpinner />
   }
 
   if (!patient) {
@@ -221,11 +59,15 @@ export default function PatientDetails() {
 
   return (
     <section className="space-y-6">
-      <div className="rounded-2xl bg-white/60 p-6 backdrop-blur-sm dark:bg-slate-900/60">
+      <div className="rounded-2xl bg-white/60 p-6 backdrop-blur-sm dark:bg-slate-900">
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">Patient Details</h1>
-            <p className="text-slate-600 dark:text-slate-300">View comprehensive patient information</p>
+
+          <img src={PatientDetail} alt="teeth" className="w-[120px] h-[120px]" />
+        <div className="flex-1">
+          <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">Patient Details</h1>
+          <p className="text-slate-600 dark:text-slate-300">
+          View comprehensive patient information.
+          </p>
           </div>
           <button
             onClick={() => setIsModalOpen(true)}
@@ -241,10 +83,7 @@ export default function PatientDetails() {
         onClose={() => setIsModalOpen(false)}
         patientId={patient.id}
         doctorId={doctorId}
-        onSuccess={() => {
-          setIsModalOpen(false)
-          fetchPatient()
-        }}
+        onSuccess={handleCreateTreatmentCourseSuccess}
       />
 
       {courseDetails && (
@@ -264,19 +103,32 @@ export default function PatientDetails() {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="lg:col-span-1 space-y-4">
-          <div className="rounded-2xl border border-slate-200 bg-white/60 p-6 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/60">
-            <div className="flex flex-col items-center space-y-4">
-              {patient.profilePicUrl ? (
-                <img
-                  src={patient.profilePicUrl}
-                  alt={patient.fullName}
-                  className="h-32 w-32 rounded-full object-cover border-4 border-slate-200 dark:border-slate-700"
-                />
-              ) : (
-                <div className="flex h-32 w-32 items-center justify-center rounded-full bg-blue-100 text-4xl font-semibold text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-4 border-slate-200 dark:border-slate-700">
-                  {patient.fullName?.charAt(0).toUpperCase() || '?'}
-                </div>
-              )}
+          <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-slate-50/50 p-8 shadow-lg dark:border-slate-800 dark:bg-slate-900">
+            <div
+              className={`absolute left-0 top-0 z-10 ${
+                patient.isActive
+                  ? 'bg-green-500 dark:bg-green-600'
+                  : 'bg-red-500 dark:bg-red-600'
+              } px-8 py-1 text-xs font-bold text-white shadow-md`}
+              style={{
+                transform: 'rotate(-45deg)',
+                transformOrigin: 'top left',
+                left: '-15px',
+                top: '58px',
+              }}
+            >
+              {patient.isActive ? 'ACTIVE' : 'INACTIVE'}
+            </div>
+            <div className="flex flex-col items-center space-y-4 mb-8">
+              <img
+                src={patient.profilePicUrl || noprofile}
+                alt={patient.fullName}
+                className="h-32 w-32 rounded-full object-cover border-4 border-slate-200 dark:border-slate-700 cursor-pointer hover:opacity-80 transition-opacity"
+                onClick={() => {
+                  setViewerImage(patient.profilePicUrl || noprofile)
+                  setIsViewerOpen(true)
+                }}
+              />
               <div className="text-center">
                 <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
                   {patient.fullName || '-'}
@@ -286,237 +138,234 @@ export default function PatientDetails() {
                     ID: {patient.patientId}
                   </p>
                 )}
-                <div className="mt-3">
-                  <span
-                    className={`rounded-full px-3 py-1 text-xs font-medium ${
-                      patient.isActive
-                        ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                        : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-                    }`}
-                  >
-                    {patient.isActive ? 'Active' : 'Inactive'}
+              </div>
+            </div>
+
+            <div className="w-full space-y-6">
+              {patient.treatmentCoursesSummary && (
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="flex flex-col items-center">
+                    <span className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-2">
+                      Total Cost
+                    </span>
+                    <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                      ₹{patient.treatmentCoursesSummary.totalCost.toLocaleString()}
+                    </p>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <span className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-2">
+                      Total Paid
+                    </span>
+                    <p className="text-sm font-semibold text-green-600 dark:text-green-400">
+                      ₹{patient.treatmentCoursesSummary.totalPaid.toLocaleString()}
+                    </p>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <span className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-2">
+                      Remaining
+                    </span>
+                    <p className="text-sm font-semibold text-orange-600 dark:text-orange-400">
+                      ₹{patient.treatmentCoursesSummary.totalRemaining.toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              <div className="grid grid-cols-3 gap-4">
+                <div className="flex flex-col items-center">
+                  <span className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-2">
+                    Age
                   </span>
+                  {patient.age !== undefined ? (
+                    <p className="text-base font-semibold text-slate-900 dark:text-white">
+                      {patient.age} years
+                    </p>
+                  ) : (
+                    <span className="inline-block rounded-full bg-slate-200 px-2 py-0.5 text-xs font-medium text-slate-600 dark:bg-slate-700 dark:text-slate-400">
+                      No data
+                    </span>
+                  )}
+                </div>
+                <div className="flex flex-col items-center">
+                  <span className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-2">
+                    Date of Birth
+                  </span>
+                  {formatDate(patient.dob) !== '-' ? (
+                    <p className="text-sm font-medium text-slate-900 dark:text-white">
+                      {formatDate(patient.dob)}
+                    </p>
+                  ) : (
+                    <span className="inline-block rounded-full bg-slate-200 px-2 py-0.5 text-xs font-medium text-slate-600 dark:bg-slate-700 dark:text-slate-400">
+                      No data
+                    </span>
+                  )}
+                </div>
+                <div className="flex flex-col items-center">
+                  <span className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-2">
+                    Gender
+                  </span>
+                  {patient.gender ? (
+                    <p className="text-base font-semibold text-slate-900 dark:text-white capitalize">
+                      {patient.gender}
+                    </p>
+                  ) : (
+                    <span className="inline-block rounded-full bg-slate-200 px-2 py-0.5 text-xs font-medium text-slate-600 dark:bg-slate-700 dark:text-slate-400">
+                      No data
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div className="flex flex-col items-center">
+                  <span className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-2">
+                    Phone
+                  </span>
+                  {patient.phone ? (
+                    <p className="text-xs font-medium text-slate-900 dark:text-white truncate max-w-full text-center">
+                      {patient.phone}
+                    </p>
+                  ) : (
+                    <span className="inline-block rounded-full bg-slate-200 px-2 py-0.5 text-xs font-medium text-slate-600 dark:bg-slate-700 dark:text-slate-400">
+                      No data
+                    </span>
+                  )}
+                </div>
+                <div className="flex flex-col items-center">
+                  <span className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-2">
+                    Email
+                  </span>
+                  {patient.email ? (
+                    <p className="text-xs font-medium text-slate-900 dark:text-white truncate max-w-full text-center">
+                      {patient.email}
+                    </p>
+                  ) : (
+                    <span className="inline-block rounded-full bg-slate-200 px-2 py-0.5 text-xs font-medium text-slate-600 dark:bg-slate-700 dark:text-slate-400">
+                      No data
+                    </span>
+                  )}
+                </div>
+                <div className="flex flex-col items-center">
+                  <span className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-2">
+                    Primary Clinic
+                  </span>
+                  {patient.primaryClinicName ? (
+                    <p className="text-xs font-medium text-slate-900 dark:text-white truncate max-w-full text-center">
+                      {patient.primaryClinicName}
+                    </p>
+                  ) : (
+                    <span className="inline-block rounded-full bg-slate-200 px-2 py-0.5 text-xs font-medium text-slate-600 dark:bg-slate-700 dark:text-slate-400">
+                      No data
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {patient.address && (
+                <div className="flex flex-col items-center">
+                  <span className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-2">
+                    Address
+                  </span>
+                  <p className="text-xs font-medium text-slate-900 dark:text-white text-center whitespace-pre-line">
+                    {patient.address}
+                  </p>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex flex-col items-center">
+                  <span className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-2">
+                    Consultation
+                  </span>
+                  {patient.consultationType ? (
+                    <p className="text-sm font-medium text-slate-900 dark:text-white capitalize">
+                      {patient.consultationType.replace('-', ' ')}
+                    </p>
+                  ) : (
+                    <span className="inline-block rounded-full bg-slate-200 px-2 py-0.5 text-xs font-medium text-slate-600 dark:bg-slate-700 dark:text-slate-400">
+                      No data
+                    </span>
+                  )}
+                </div>
+                <div className="flex flex-col items-center">
+                  <span className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-2">
+                    Visits
+                  </span>
+                  {patient.visitCount !== undefined ? (
+                    <p className="text-base font-semibold text-slate-900 dark:text-white">
+                      {patient.visitCount}
+                    </p>
+                  ) : (
+                    <span className="inline-block rounded-full bg-slate-200 px-2 py-0.5 text-xs font-medium text-slate-600 dark:bg-slate-700 dark:text-slate-400">
+                      No data
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {patient.lastVisitAt && formatDate(patient.lastVisitAt) !== '-' && (
+                <div className="flex flex-col items-center">
+                  <span className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-2">
+                    Last Visit
+                  </span>
+                  <p className="text-xs font-medium text-slate-900 dark:text-white">
+                    {formatDate(patient.lastVisitAt)}
+                  </p>
+                </div>
+              )}
+
+              {patient.tags && patient.tags.length > 0 && (
+                <div>
+                  <span className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-3 block text-center">
+                    Tags
+                  </span>
+                  <div className="flex flex-wrap gap-2 justify-center">
+                    {patient.tags.map((tag, index) => (
+                      <span
+                        key={index}
+                        className="inline-block rounded-lg bg-blue-100 px-3 py-1.5 text-xs font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex flex-col items-center">
+                  <span className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-2">
+                    Created At
+                  </span>
+                  <p className="text-xs font-medium text-slate-900 dark:text-white text-center">
+                    {formatDateTime(patient.createdAt)}
+                  </p>
+                </div>
+                <div className="flex flex-col items-center">
+                  <span className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-2">
+                    Updated At
+                  </span>
+                  <p className="text-xs font-medium text-slate-900 dark:text-white text-center">
+                    {formatDateTime(patient.updatedAt)}
+                  </p>
                 </div>
               </div>
             </div>
-          </div>
-
-          <div className="rounded-2xl border border-slate-200 bg-white/60 p-4 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/60">
-            <button
-              onClick={handleProfileInfoClick}
-              className={`w-full rounded-lg px-4 py-2.5 text-sm font-medium transition-all ${
-                viewMode === 'profile'
-                  ? 'bg-blue-600 text-white hover:bg-blue-500 dark:bg-blue-500 dark:hover:bg-blue-400'
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700'
-              }`}
-            >
-              Profile Information
-            </button>
-          </div>
-
-          <div className="rounded-2xl border border-slate-200 bg-white/60 p-4 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/60">
-            <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-3">
-              Treatment Courses
-            </h3>
-            {patient.treatmentCourses && patient.treatmentCourses.length > 0 ? (
-              <div className="space-y-2">
-                {patient.treatmentCourses.map((course) => (
-                  <button
-                    key={course.id}
-                    onClick={() => setSelectedCourseId(course.id)}
-                    className={`w-full rounded-lg px-4 py-2.5 text-left text-sm font-medium transition-all ${
-                      selectedCourseId === course.id
-                        ? 'bg-blue-600 text-white hover:bg-blue-500 dark:bg-blue-500 dark:hover:bg-blue-400'
-                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700'
-                    }`}
-                  >
-                    {course.treatmentName}
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-slate-600 dark:text-slate-400">
-                No treatment courses yet
-              </p>
-            )}
           </div>
         </div>
 
         <div className="lg:col-span-2 space-y-6">
           {viewMode === 'profile' ? (
-            <>
-              <div className="rounded-2xl border border-slate-200 bg-white/60 p-6 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/60">
-                <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
-                  Personal Information
-                </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                  First Name
-                </span>
-                <p className="text-sm text-slate-900 dark:text-white mt-1">
-                  {patient.firstName || '-'}
+            <div className="flex items-center justify-center rounded-2xl border border-slate-200 bg-white/60 p-12 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/60">
+              <div className="text-center">
+                <p className="text-lg font-semibold text-slate-600 dark:text-slate-400 mb-2">
+                  Content will be displayed here
                 </p>
-              </div>
-              <div>
-                <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                  Last Name
-                </span>
-                <p className="text-sm text-slate-900 dark:text-white mt-1">
-                  {patient.lastName || '-'}
-                </p>
-              </div>
-              <div>
-                <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                  Date of Birth
-                </span>
-                <p className="text-sm text-slate-900 dark:text-white mt-1">
-                  {formatDate(patient.dob)}
-                </p>
-              </div>
-              <div>
-                <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Age</span>
-                <p className="text-sm text-slate-900 dark:text-white mt-1">
-                  {patient.age !== undefined ? `${patient.age} years` : '-'}
-                </p>
-              </div>
-              <div>
-                <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                  Gender
-                </span>
-                <p className="text-sm text-slate-900 dark:text-white mt-1 capitalize">
-                  {patient.gender || '-'}
-                </p>
-              </div>
-              <div>
-                <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                  Phone
-                </span>
-                <p className="text-sm text-slate-900 dark:text-white mt-1">
-                  {patient.phone || '-'}
-                </p>
-              </div>
-              <div className="md:col-span-2">
-                <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                  Email
-                </span>
-                <p className="text-sm text-slate-900 dark:text-white mt-1">
-                  {patient.email || '-'}
-                </p>
-              </div>
-              <div className="md:col-span-2">
-                <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                  Address
-                </span>
-                <p className="text-sm text-slate-900 dark:text-white mt-1 whitespace-pre-line">
-                  {patient.address || '-'}
+                <p className="text-sm text-slate-500 dark:text-slate-500">
+                  This area is reserved for future features
                 </p>
               </div>
             </div>
-          </div>
-
-          <div className="rounded-2xl border border-slate-200 bg-white/60 p-6 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/60">
-            <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
-              Medical Information
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                  Consultation Type
-                </span>
-                <p className="text-sm text-slate-900 dark:text-white mt-1 capitalize">
-                  {patient.consultationType?.replace('-', ' ') || '-'}
-                </p>
-              </div>
-              <div>
-                <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                  Visit Count
-                </span>
-                <p className="text-sm text-slate-900 dark:text-white mt-1">
-                  {patient.visitCount !== undefined ? patient.visitCount : '-'}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {patient.tags && patient.tags.length > 0 && (
-            <div className="rounded-2xl border border-slate-200 bg-white/60 p-6 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/60">
-              <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Tags</h3>
-              <div className="flex flex-wrap gap-2">
-                {patient.tags.map((tag, index) => (
-                  <span
-                    key={index}
-                    className="inline-block rounded-lg bg-blue-100 px-3 py-1.5 text-xs font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
-                  >
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <div className="rounded-2xl border border-slate-200 bg-white/60 p-6 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/60">
-            <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
-              System Information
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                  Patient ID
-                </span>
-                <p className="text-sm text-slate-900 dark:text-white mt-1 font-mono">
-                  {patient.id}
-                </p>
-              </div>
-              <div>
-                <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                  Doctor ID
-                </span>
-                <p className="text-sm text-slate-900 dark:text-white mt-1 font-mono">
-                  {patient.doctorId}
-                </p>
-              </div>
-              <div>
-                <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                  Primary Clinic ID
-                </span>
-                <p className="text-sm text-slate-900 dark:text-white mt-1 font-mono">
-                  {patient.primaryClinic || '-'}
-                </p>
-              </div>
-              {patient.clinics && patient.clinics.length > 0 && (
-                <div>
-                  <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                    Clinics ({patient.clinics.length})
-                  </span>
-                  <div className="mt-1 space-y-1">
-                    {patient.clinics.map((clinicId, index) => (
-                      <p key={index} className="text-sm text-slate-900 dark:text-white font-mono">
-                        {clinicId}
-                      </p>
-                    ))}
-                  </div>
-                </div>
-              )}
-              <div>
-                <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                  Created At
-                </span>
-                <p className="text-sm text-slate-900 dark:text-white mt-1">
-                  {formatDateTime(patient.createdAt)}
-                </p>
-              </div>
-              <div>
-                <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                  Updated At
-                </span>
-                <p className="text-sm text-slate-900 dark:text-white mt-1">
-                  {formatDateTime(patient.updatedAt)}
-                </p>
-              </div>
-            </div>
-          </div>
-            </>
           ) : (
             <>
               {isLoadingCourse ? (
@@ -789,7 +638,10 @@ export default function PatientDetails() {
                                         src={media.url}
                                         alt={media.notes || `Media ${idx + 1}`}
                                         className="h-24 w-full rounded-lg object-cover border border-slate-200 dark:border-slate-700 cursor-pointer hover:opacity-80 transition-opacity"
-                                        onClick={() => window.open(media.url, '_blank')}
+                                        onClick={() => {
+                                          setViewerImage(media.url)
+                                          setIsViewerOpen(true)
+                                        }}
                                       />
                                       <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-xs p-1 rounded-b-lg opacity-0 group-hover:opacity-100 transition-opacity">
                                         <p className="truncate">{media.type}</p>
@@ -831,10 +683,7 @@ export default function PatientDetails() {
                 Treatment Details
               </h2>
               <button
-                onClick={() => {
-                  setIsTreatmentModalOpen(false)
-                  setTreatmentDetails(null)
-                }}
+                onClick={handleCloseTreatmentModal}
                 className="rounded-lg p-2 text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
               >
                 <svg
@@ -1047,7 +896,11 @@ export default function PatientDetails() {
                             key={index}
                             src={imageUrl}
                             alt={`Treatment ${index + 1}`}
-                            className="h-32 w-full rounded-lg object-cover border border-slate-200 dark:border-slate-700"
+                            className="h-32 w-full rounded-lg object-cover border border-slate-200 dark:border-slate-700 cursor-pointer hover:opacity-80 transition-opacity"
+                            onClick={() => {
+                              setViewerImage(imageUrl)
+                              setIsViewerOpen(true)
+                            }}
                           />
                         ))}
                       </div>
@@ -1059,6 +912,16 @@ export default function PatientDetails() {
           </div>
         </div>
       )}
+
+      <ImageViewerModal
+        isOpen={isViewerOpen}
+        imageUrl={viewerImage}
+        onClose={() => {
+          setIsViewerOpen(false)
+          setViewerImage(null)
+        }}
+        alt={patient.fullName || 'Patient image'}
+      />
     </section>
   )
 }

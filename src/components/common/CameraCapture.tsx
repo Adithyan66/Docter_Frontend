@@ -12,7 +12,38 @@ export default function CameraCapture({ onCapture, onClose }: CameraCaptureProps
   const [isCapturing, setIsCapturing] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
+  const stopCameraStream = () => {
+    const video = videoRef.current
+    const stream = streamRef.current
+
+    if (stream) {
+      const tracks = stream.getTracks()
+      tracks.forEach((track) => {
+        if (track.readyState !== 'ended') {
+          track.stop()
+        }
+      })
+    }
+
+    if (video) {
+      video.pause()
+      if (video.srcObject) {
+        const videoStream = video.srcObject as MediaStream
+        videoStream.getTracks().forEach((track) => {
+          if (track.readyState !== 'ended') {
+            track.stop()
+          }
+        })
+      }
+      video.srcObject = null
+      video.load()
+    }
+
+    streamRef.current = null
+    setIsCapturing(false)
+  }
+
+   useEffect(() => {
     const startCamera = async () => {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
@@ -38,11 +69,50 @@ export default function CameraCapture({ onCapture, onClose }: CameraCaptureProps
     startCamera()
 
     return () => {
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach((track) => track.stop())
+      const video = videoRef.current
+      const stream = streamRef.current
+
+      if (stream) {
+        const tracks = stream.getTracks()
+        tracks.forEach((track) => {
+          if (track.readyState !== 'ended') {
+            track.stop()
+          }
+        })
       }
+
+      if (video) {
+        video.pause()
+        if (video.srcObject) {
+          const videoStream = video.srcObject as MediaStream
+          videoStream.getTracks().forEach((track) => {
+            if (track.readyState !== 'ended') {
+              track.stop()
+            }
+          })
+        }
+        video.srcObject = null
+        video.load()
+      }
+
+      streamRef.current = null
     }
   }, [])
+
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        stopCameraStream()
+        onClose()
+      }
+    }
+
+    document.addEventListener('keydown', handleEscape)
+    return () => {
+      document.removeEventListener('keydown', handleEscape)
+    }
+  }, [onClose])
 
   const capturePhoto = () => {
     if (!videoRef.current) return
@@ -70,6 +140,7 @@ export default function CameraCapture({ onCapture, onClose }: CameraCaptureProps
           type: 'image/jpeg',
         })
 
+        stopCameraStream()
         onCapture(file)
         onClose()
       },
@@ -79,15 +150,22 @@ export default function CameraCapture({ onCapture, onClose }: CameraCaptureProps
   }
 
   const stopCamera = () => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop())
-      streamRef.current = null
-    }
+    stopCameraStream()
     onClose()
   }
 
+  const handleBackdropClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (event.target === event.currentTarget) {
+      stopCameraStream()
+      onClose()
+    }
+  }
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+      onClick={handleBackdropClick}
+    >
       <div className="relative w-full max-w-2xl rounded-lg bg-white dark:bg-slate-900">
         <div className="relative aspect-video w-full overflow-hidden rounded-t-lg bg-slate-900">
           {error ? (

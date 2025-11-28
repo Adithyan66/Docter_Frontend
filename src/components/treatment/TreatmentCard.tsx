@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import ImageViewerModal from '@components/common/ImageViewerModal'
 
 type TreatmentData = {
   name: string
@@ -58,17 +59,17 @@ export default function TreatmentCard({
   processEscapeSequences = defaultProcessEscapeSequences,
 }: TreatmentCardProps) {
   const processText = processEscapeSequences
-  const [lightboxImage, setLightboxImage] = useState<string | null>(null)
-  const [imageError, setImageError] = useState(false)
+  const [viewerImage, setViewerImage] = useState<string | null>(null)
+  const [isViewerOpen, setIsViewerOpen] = useState(false)
 
   const openLightbox = (src: string) => {
-    setImageError(false)
-    setLightboxImage(src)
+    setViewerImage(src)
+    setIsViewerOpen(true)
   }
 
   const closeLightbox = () => {
-    setLightboxImage(null)
-    setImageError(false)
+    setIsViewerOpen(false)
+    setViewerImage(null)
   }
 
   return (
@@ -317,37 +318,12 @@ export default function TreatmentCard({
           </div>
         </div>
       </div>
-      {lightboxImage && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
-          onClick={closeLightbox}
-        >
-          <div
-            className="relative max-h-full max-w-4xl"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <button
-              type="button"
-              onClick={closeLightbox}
-              className="absolute right-2 top-2 rounded-full bg-black/70 px-2 py-1 text-lg text-white hover:bg-black/80"
-            >
-              ×
-            </button>
-            {imageError ? (
-              <div className="rounded-lg bg-white px-6 py-4 text-center text-sm font-semibold text-red-600 dark:bg-slate-900 dark:text-red-400">
-                Failed to load image.
-              </div>
-            ) : (
-              <img
-                src={lightboxImage}
-                alt="Treatment reference"
-                className="max-h-[80vh] max-w-full rounded-lg object-contain"
-                onError={() => setImageError(true)}
-              />
-            )}
-          </div>
-        </div>
-      )}
+      <ImageViewerModal
+        isOpen={isViewerOpen}
+        imageUrl={viewerImage}
+        onClose={closeLightbox}
+        alt="Treatment reference"
+      />
     </div>
   )
 }

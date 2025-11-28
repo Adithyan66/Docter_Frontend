@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import type { Patient } from '@api/patients'
+import noprofile from '@assets/noprofile.png'
 
 type PatientCardProps = {
   patient: Patient
@@ -9,7 +10,7 @@ export default function PatientCard({ patient }: PatientCardProps) {
   const navigate = useNavigate()
 
   const formatDate = (dateString?: string) => {
-    if (!dateString) return '-'
+    if (!dateString) return null
     try {
       return new Date(dateString).toLocaleDateString('en-US', {
         year: 'numeric',
@@ -17,7 +18,7 @@ export default function PatientCard({ patient }: PatientCardProps) {
         day: 'numeric',
       })
     } catch {
-      return '-'
+      return null
     }
   }
 
@@ -28,116 +29,182 @@ export default function PatientCard({ patient }: PatientCardProps) {
   return (
     <div
       onClick={handleClick}
-      className="cursor-pointer rounded-2xl border border-slate-200 bg-slate-50/50 p-5 transition-all hover:border-blue-300 hover:shadow-md dark:border-slate-800 dark:bg-slate-900/50 dark:hover:border-blue-600"
+      className="relative cursor-pointer overflow-hidden rounded-2xl border border-slate-200 bg-slate-50/50 p-6 shadow-lg transition-all hover:border-blue-300 hover:shadow-xl dark:border-slate-800 dark:bg-slate-900 dark:hover:border-blue-600 dark:shadow-slate-900/50"
     >
-      <div className="space-y-4">
-        <div className="flex items-start gap-4">
+      <div
+        className={`absolute left-0 top-0 z-10 ${
+          patient.isActive
+            ? 'bg-green-500 dark:bg-green-600'
+            : 'bg-red-500 dark:bg-red-600'
+        } px-8 py-1 text-xs font-bold text-white shadow-md`}
+        style={{
+          transform: 'rotate(-45deg)',
+          transformOrigin: 'top left',
+          left: '-15px',
+          top: '58px',
+        }}
+      >
+        {patient.isActive ? 'ACTIVE' : 'INACTIVE'}
+      </div>
+      <div className="flex flex-col items-center text-center space-y-4">
+        <div className="flex-shrink-0">
           {patient.profilePicUrl ? (
             <img
               src={patient.profilePicUrl}
               alt={patient.fullName}
-              className="h-16 w-16 rounded-full object-cover border-2 border-slate-200 dark:border-slate-700"
+              className="h-32 w-32 rounded-full object-cover border-4 border-slate-200 dark:border-slate-700 shadow-md"
             />
           ) : (
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-blue-100 text-lg font-semibold text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-2 border-slate-200 dark:border-slate-700">
-              {patient.fullName?.charAt(0).toUpperCase() || '?'}
-            </div>
+            <img
+              src={noprofile}
+              alt="No profile"
+              className="h-32 w-32 rounded-full object-cover border-4 border-slate-200 dark:border-slate-700 shadow-md"
+            />
           )}
-          <div className="flex-1">
-            <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
-              {patient.fullName || '-'}
-            </h3>
-            {patient.patientId && (
-              <p className="text-xs text-slate-600 dark:text-slate-400">ID: {patient.patientId}</p>
-            )}
-            <div className="mt-2">
-              <span
-                className={`rounded-full px-2.5 py-1 text-xs font-medium ${
-                  patient.isActive
-                    ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                    : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-                }`}
-              >
-                {patient.isActive ? 'Active' : 'Inactive'}
+        </div>
+
+        <div className="w-full space-y-1">
+          <h3 className="text-xl font-bold text-slate-900 dark:text-white">
+            {patient.fullName || 'Unknown Patient'}
+          </h3>
+          {patient.patientId ? (
+            <p className="text-sm text-slate-600 dark:text-slate-400">ID: {patient.patientId}</p>
+          ) : (
+            <span className="inline-block rounded-full bg-slate-200 px-3 py-1 text-xs font-medium text-slate-600 dark:bg-slate-700 dark:text-slate-400">
+              No data
+            </span>
+          )}
+        </div>
+
+        <div className="w-full pt-2 border-t border-slate-200 dark:border-slate-700">
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div className="flex flex-col items-center">
+              <span className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+                Age
               </span>
+              {patient.age !== undefined ? (
+                <p className="text-base font-semibold text-slate-900 dark:text-white">
+                  {patient.age} years
+                </p>
+              ) : (
+                <span className="inline-block rounded-full bg-slate-200 px-2 py-0.5 text-xs font-medium text-slate-600 dark:bg-slate-700 dark:text-slate-400">
+                  No data
+                </span>
+              )}
+            </div>
+            <div className="flex flex-col items-center">
+              <span className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+                Gender
+              </span>
+              {patient.gender ? (
+                <p className="text-base font-semibold text-slate-900 dark:text-white capitalize">
+                  {patient.gender}
+                </p>
+              ) : (
+                <span className="inline-block rounded-full bg-slate-200 px-2 py-0.5 text-xs font-medium text-slate-600 dark:bg-slate-700 dark:text-slate-400">
+                  No data
+                </span>
+              )}
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 text-sm">
-          {patient.age !== undefined && (
-            <div>
-              <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Age</span>
-              <p className="text-slate-900 dark:text-white">{patient.age} years</p>
+        <div className="w-full space-y-3">
+          <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-200 dark:border-slate-700">
+            <div className="flex flex-col items-center">
+              <span className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+                Phone
+              </span>
+              {patient.phone ? (
+                <p className="text-xs font-medium text-slate-900 dark:text-white truncate max-w-full">
+                  {patient.phone}
+                </p>
+              ) : (
+                <span className="inline-block rounded-full bg-slate-200 px-2 py-0.5 text-xs font-medium text-slate-600 dark:bg-slate-700 dark:text-slate-400">
+                  No data
+                </span>
+              )}
             </div>
-          )}
-          {patient.gender && (
-            <div>
-              <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Gender</span>
-              <p className="text-slate-900 dark:text-white capitalize">{patient.gender}</p>
+            <div className="flex flex-col items-center">
+              <span className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+                Email
+              </span>
+              {patient.email ? (
+                <p className="text-xs font-medium text-slate-900 dark:text-white truncate max-w-full">
+                  {patient.email}
+                </p>
+              ) : (
+                <span className="inline-block rounded-full bg-slate-200 px-2 py-0.5 text-xs font-medium text-slate-600 dark:bg-slate-700 dark:text-slate-400">
+                  No data
+                </span>
+              )}
             </div>
-          )}
-        </div>
-
-        {patient.phone && (
-          <div>
-            <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Phone</span>
-            <p className="text-sm text-slate-900 dark:text-white">{patient.phone}</p>
           </div>
-        )}
 
-        {patient.email && (
-          <div>
-            <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Email</span>
-            <p className="text-sm text-slate-900 dark:text-white truncate">{patient.email}</p>
-          </div>
-        )}
-
-        {patient.consultationType && (
-          <div>
-            <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
+          <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-200 dark:border-slate-700">
+            <div className="flex flex-col items-center">
+            <span className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
               Consultation
             </span>
-            <p className="text-sm text-slate-900 dark:text-white capitalize">
-              {patient.consultationType.replace('-', ' ')}
-            </p>
-          </div>
-        )}
-
-        <div className="grid grid-cols-2 gap-3 text-sm">
-          {patient.visitCount !== undefined && (
-            <div>
-              <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Visits</span>
-              <p className="text-slate-900 dark:text-white">{patient.visitCount}</p>
+            {patient.consultationType ? (
+              <p className="text-sm font-medium text-slate-900 dark:text-white capitalize">
+                {patient.consultationType.replace('-', ' ')}
+              </p>
+            ) : (
+              <span className="inline-block rounded-full bg-slate-200 px-2 py-0.5 text-xs font-medium text-slate-600 dark:bg-slate-700 dark:text-slate-400">
+                No data
+              </span>
+            )}
             </div>
-          )}
-          {patient.lastVisitAt && (
-            <div>
-              <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
+            <div className="flex flex-col items-center">
+              <span className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+                Clinic
+              </span>
+              {patient.primaryClinicName ? (
+                <p className="text-xs font-medium text-slate-900 dark:text-white truncate max-w-full">
+                  {patient.primaryClinicName}
+                </p>
+              ) : (
+                <span className="inline-block rounded-full bg-slate-200 px-2 py-0.5 text-xs font-medium text-slate-600 dark:bg-slate-700 dark:text-slate-400">
+                  No data
+                </span>
+              )}
+            </div>
+          </div>
+
+
+
+          <div className="grid grid-cols-2 gap-4 pt-2 border-t border-slate-200 dark:border-slate-700">
+            <div className="flex flex-col items-center">
+              <span className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+                Visits
+              </span>
+              {patient.visitCount !== undefined ? (
+                <p className="text-base font-semibold text-slate-900 dark:text-white">
+                  {patient.visitCount}
+                </p>
+              ) : (
+                <span className="inline-block rounded-full bg-slate-200 px-2 py-0.5 text-xs font-medium text-slate-600 dark:bg-slate-700 dark:text-slate-400">
+                  No data
+                </span>
+              )}
+            </div>
+            <div className="flex flex-col items-center">
+              <span className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
                 Last Visit
               </span>
-              <p className="text-slate-900 dark:text-white text-xs">
-                {formatDate(patient.lastVisitAt)}
-              </p>
-            </div>
-          )}
-        </div>
-
-        {patient.tags && patient.tags.length > 0 && (
-          <div>
-            <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Tags</span>
-            <div className="mt-1 flex flex-wrap gap-2">
-              {patient.tags.map((tag, index) => (
-                <span
-                  key={index}
-                  className="inline-block rounded-lg bg-blue-100 px-2.5 py-1 text-xs font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
-                >
-                  {tag}
+              {formatDate(patient.lastVisitAt) ? (
+                <p className="text-xs font-medium text-slate-900 dark:text-white">
+                  {formatDate(patient.lastVisitAt)}
+                </p>
+              ) : (
+                <span className="inline-block rounded-full bg-slate-200 px-2 py-0.5 text-xs font-medium text-slate-600 dark:bg-slate-700 dark:text-slate-400">
+                  No data
                 </span>
-              ))}
+              )}
             </div>
           </div>
-        )}
+        </div>
       </div>
     </div>
   )

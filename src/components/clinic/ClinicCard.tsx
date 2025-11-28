@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import ImageViewerModal from '@components/common/ImageViewerModal'
 
 type ClinicData = {
   name: string
@@ -37,14 +38,17 @@ export default function ClinicCard({
   onEdit,
   onDelete,
 }: ClinicCardProps) {
-  const [lightboxImage, setLightboxImage] = useState<string | null>(null)
+  const [viewerImage, setViewerImage] = useState<string | null>(null)
+  const [isViewerOpen, setIsViewerOpen] = useState(false)
 
   const openLightbox = (src: string) => {
-    setLightboxImage(src)
+    setViewerImage(src)
+    setIsViewerOpen(true)
   }
 
   const closeLightbox = () => {
-    setLightboxImage(null)
+    setIsViewerOpen(false)
+    setViewerImage(null)
   }
 
   const formatTime = (time?: string) => {
@@ -293,30 +297,12 @@ export default function ClinicCard({
         </div>
       </div>
 
-      {lightboxImage && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
-          onClick={closeLightbox}
-        >
-          <div
-            className="relative max-h-full max-w-4xl"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <button
-              type="button"
-              onClick={closeLightbox}
-              className="absolute right-2 top-2 rounded-full bg-black/70 px-2 py-1 text-lg text-white hover:bg-black/80"
-            >
-              ×
-            </button>
-            <img
-              src={lightboxImage}
-              alt="Clinic"
-              className="max-h-[80vh] max-w-full rounded-lg object-contain"
-            />
-          </div>
-        </div>
-      )}
+      <ImageViewerModal
+        isOpen={isViewerOpen}
+        imageUrl={viewerImage}
+        onClose={closeLightbox}
+        alt="Clinic"
+      />
     </div>
   )
 }

@@ -37,11 +37,18 @@ export type TreatmentCourseSummary = {
   treatmentName: string
 }
 
+export type TreatmentCoursesSummary = {
+  totalCost: number
+  totalPaid: number
+  totalRemaining: number
+}
+
 export type Patient = {
   id: string
   patientId: string
-  doctorId: string
-  firstName: string
+  doctorId?: string
+  primaryClinicName?: string
+  firstName?: string
   lastName?: string
   fullName: string
   address?: string
@@ -104,8 +111,12 @@ export const getPatients = async (
   return data.data
 }
 
-export const getPatientById = async (id: string): Promise<Patient> => {
-  const { data } = await httpClient.get<ApiResponse<Patient>>(`patient/${id}`)
+export type PatientDetails = Patient & {
+  treatmentCoursesSummary: TreatmentCoursesSummary
+}
+
+export const getPatientById = async (id: string): Promise<PatientDetails> => {
+  const { data } = await httpClient.get<ApiResponse<PatientDetails>>(`patient/${id}`)
   return data.data
 }
 
