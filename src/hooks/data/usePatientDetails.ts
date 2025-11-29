@@ -59,6 +59,12 @@ export function usePatientDetails(patientId: string | undefined) {
   }, [patientId])
 
   useEffect(() => {
+    if (patient?.treatmentCourses && patient.treatmentCourses.length > 0 && !selectedCourseId) {
+      setSelectedCourseId(patient.treatmentCourses[0].id)
+    }
+  }, [patient?.treatmentCourses])
+
+  useEffect(() => {
     const fetchCourseDetails = async () => {
       if (!selectedCourseId) {
         setCourseDetails(null)
@@ -208,6 +214,25 @@ export function usePatientDetails(patientId: string | undefined) {
     }
   }
 
+  const formatDateWithTime = (dateString?: string) => {
+    if (!dateString) return '-'
+    try {
+      const date = new Date(dateString)
+      const dateStr = date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      })
+      const timeStr = date.toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+      return `${dateStr} ${timeStr}`
+    } catch {
+      return '-'
+    }
+  }
+
   return {
     patient,
     isLoading,
@@ -236,6 +261,7 @@ export function usePatientDetails(patientId: string | undefined) {
     handleCreateTreatmentCourseSuccess,
     formatDate,
     formatDateTime,
+    formatDateWithTime,
   }
 }
 

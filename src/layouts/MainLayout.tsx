@@ -37,7 +37,7 @@ export default function MainLayout() {
           onLogout={handleLogout}
           userEmail={userEmail}
         />
-        <main className="flex-1 overflow-y-auto bg-slate-50 p-4 dark:bg-[#22304c] md:p-6">
+        <main className="flex-1 overflow-y-auto bg-slate-100 p-4 dark:bg-[#22304c] md:p-6">
           <Outlet />
         </main>
       </div>
