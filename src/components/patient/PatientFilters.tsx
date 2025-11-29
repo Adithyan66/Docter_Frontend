@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import type { GetPatientsParams } from '@api/patients'
+import { useClickOutside } from '@hooks/utils/useClickOutside'
 
 type PatientFiltersProps = {
   isOpen: boolean
@@ -58,26 +59,11 @@ export default function PatientFilters({
     }
   }, [isOpen, filters, buttonRef])
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        modalRef.current &&
-        !modalRef.current.contains(event.target as Node) &&
-        buttonRef?.current &&
-        !buttonRef.current.contains(event.target as Node)
-      ) {
-        onClose()
-      }
-    }
-
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside)
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [isOpen, onClose, buttonRef])
+  useClickOutside({
+    isEnabled: isOpen,
+    refs: buttonRef ? [modalRef, buttonRef] : [modalRef],
+    handler: onClose,
+  })
 
   useEffect(() => {
     if (isOpen) {

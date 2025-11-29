@@ -44,8 +44,18 @@ export type Treatment = {
   updatedAt: string
 }
 
+export type TreatmentList = {
+  id: string
+  name: string
+  avgFees?: number
+  avgDuration?: number
+  numberOfPatients: number
+  ongoing: number
+  completed: number
+}
+
 export type PaginatedTreatmentsResponse = {
-  treatments: Treatment[]
+  treatments: TreatmentList[]
   total: number
   page: number
   limit: number
@@ -55,7 +65,7 @@ export type PaginatedTreatmentsResponse = {
 export type GetTreatmentsParams = {
   page?: number
   limit?: number
-  sortBy?: 'fees' | 'duration' | 'createdAt'
+  sortBy?: 'averageAmount' | 'averageDuration' | 'numberOfPatients' | 'ongoing' | 'completed' | ''
   sortOrder?: 'asc' | 'desc'
   search?: string
 }

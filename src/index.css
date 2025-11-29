@@ -21,3 +21,38 @@ body {
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+
+.scrollbar-tiny {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(203 213 225) transparent;
+}
+
+.scrollbar-tiny::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.scrollbar-tiny::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-tiny::-webkit-scrollbar-thumb {
+  background-color: rgb(203 213 225);
+  border-radius: 3px;
+}
+
+.scrollbar-tiny::-webkit-scrollbar-thumb:hover {
+  background-color: rgb(148 163 184);
+}
+
+.dark .scrollbar-tiny {
+  scrollbar-color: rgb(51 65 85) transparent;
+}
+
+.dark .scrollbar-tiny::-webkit-scrollbar-thumb {
+  background-color: rgb(51 65 85);
+}
+
+.dark .scrollbar-tiny::-webkit-scrollbar-thumb:hover {
+  background-color: rgb(71 85 105);
+}

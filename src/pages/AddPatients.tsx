@@ -7,6 +7,7 @@ import { useAddPatient } from '@hooks/data/useAddPatient'
 import { PlusIcon } from '@assets/Icons'
 import addPatient from '@assets/addPatient.png'
 import noprofile from '@assets/noprofile.png'
+import { useClickOutside } from '@hooks/utils/useClickOutside'
 const SectionCard = ({ title, children }: { title: string; children: ReactNode }) => (
   <div className="flex flex-col gap-5 rounded-md bg-white/60 p-6 backdrop-blur-sm transition-shadow hover:shadow-md dark:bg-slate-900">
     <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
@@ -46,20 +47,14 @@ function FormDropdown({
   const dropdownRef = useRef<HTMLDivElement>(null)
   const [position, setPosition] = useState({ top: 0, left: 0, width: 0 })
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node) &&
-        buttonRef.current &&
-        !buttonRef.current.contains(event.target as Node)
-      ) {
-        onClose()
-      }
-    }
+  useClickOutside({
+    isEnabled: isOpen,
+    refs: [dropdownRef, buttonRef],
+    handler: onClose,
+  })
 
+  useEffect(() => {
     if (isOpen && buttonRef.current) {
-      document.addEventListener('mousedown', handleClickOutside)
       const rect = buttonRef.current.getBoundingClientRect()
       setPosition({
         top: rect.bottom + window.scrollY + 4,
@@ -67,11 +62,7 @@ function FormDropdown({
         width: rect.width,
       })
     }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [isOpen, onClose, buttonRef])
+  }, [isOpen, buttonRef])
 
   const selectedOption = options.find((opt) => opt.value === value)
   const displayText = selectedOption ? selectedOption.label : options[0]?.label || label

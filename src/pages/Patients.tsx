@@ -11,6 +11,7 @@ import patientsteeth from '@assets/patientsList.png'
 import type { GetPatientsParams } from '@api/patients'
 import { useAppDispatch } from '@hooks/store'
 import { clearAllFilters } from '@redux/slices/patientsSlice'
+import { useClickOutside } from '@hooks/utils/useClickOutside'
 
 
 type DropdownFilterProps = {
@@ -37,20 +38,14 @@ function DropdownFilter({
   const dropdownRef = useRef<HTMLDivElement>(null)
   const [position, setPosition] = useState({ top: 0, left: 0, width: 0 })
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node) &&
-        buttonRef.current &&
-        !buttonRef.current.contains(event.target as Node)
-      ) {
-        onClose()
-      }
-    }
+  useClickOutside({
+    isEnabled: isOpen,
+    refs: [dropdownRef, buttonRef],
+    handler: onClose,
+  })
 
+  useEffect(() => {
     if (isOpen && buttonRef.current) {
-      document.addEventListener('mousedown', handleClickOutside)
       const rect = buttonRef.current.getBoundingClientRect()
       setPosition({
         top: rect.bottom + window.scrollY + 4,
@@ -58,11 +53,7 @@ function DropdownFilter({
         width: rect.width,
       })
     }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [isOpen, onClose, buttonRef])
+  }, [isOpen, buttonRef])
 
   const selectedOption = options.find((opt) => opt.value === value)
   const displayText = selectedOption ? selectedOption.label : options[0]?.label || label

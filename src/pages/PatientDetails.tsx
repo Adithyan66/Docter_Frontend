@@ -96,6 +96,7 @@ export default function PatientDetails() {
           courseId={courseDetails.id}
           doctorId={doctorId}
           clinicId={courseDetails.clinicId}
+          primaryClinicId={patient.primaryClinic}
           onSuccess={() => {
             setIsVisitModalOpen(false)
             handleVisitSuccess()
@@ -105,7 +106,7 @@ export default function PatientDetails() {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="lg:col-span-1 space-y-4">
-          <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-slate-50/50 p-8 shadow-lg dark:border-slate-800 dark:bg-slate-900">
+          <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-slate-50/50 p-8 shadow-lg dark:border-slate-800 dark:bg-slate-900 lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto">
             <div
               className={`absolute left-0 top-0 z-10 ${
                 patient.isActive
