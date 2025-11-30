@@ -4,9 +4,14 @@ import ImageViewerModal from '@components/common/ImageViewerModal'
 type TreatmentData = {
   name: string
   description?: string
+  isOneTime?: boolean
   minDuration?: string | number
   maxDuration?: string | number
   avgDuration?: string | number
+  regularVisitInterval?: {
+    interval: string | number
+    unit: string
+  }
   minFees?: string | number
   maxFees?: string | number
   avgFees?: string | number
@@ -107,11 +112,24 @@ export default function TreatmentCard({
             </p>
           )}
         </div>
-        <div className="text-sm text-slate-700 dark:text-slate-200">
-          {treatment.minDuration || treatment.maxDuration || treatment.avgDuration
-            ? `Min: ${treatment.minDuration || '-'} months / Max: ${treatment.maxDuration || '-'} months / Avg: ${treatment.avgDuration || '-'} months`
-            : 'No duration set'}
-        </div>
+        {treatment.isOneTime ? (
+          <div className="text-sm text-slate-700 dark:text-slate-200">
+            One-time treatment
+          </div>
+        ) : (
+          <>
+            <div className="text-sm text-slate-700 dark:text-slate-200">
+              {treatment.minDuration || treatment.maxDuration || treatment.avgDuration
+                ? `Min: ${treatment.minDuration || '-'} months / Max: ${treatment.maxDuration || '-'} months / Avg: ${treatment.avgDuration || '-'} months`
+                : 'No duration set'}
+            </div>
+            {treatment.regularVisitInterval?.interval && treatment.regularVisitInterval?.unit && (
+              <div className="text-sm text-slate-700 dark:text-slate-200">
+                Regular visit interval: {treatment.regularVisitInterval.interval} {treatment.regularVisitInterval.unit}
+              </div>
+            )}
+          </>
+        )}
         <div className="text-sm text-slate-700 dark:text-slate-200">
           {treatment.minFees || treatment.maxFees || treatment.avgFees
             ? `Min: ${treatment.minFees || '-'} / Max: ${treatment.maxFees || '-'} / Avg: ${treatment.avgFees || '-'}`

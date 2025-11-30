@@ -1,21 +1,21 @@
 import { useState, useEffect } from 'react'
 import toast from 'react-hot-toast'
-import { getClinics, deleteClinic, type Clinic, type GetClinicsParams } from '@api/clinics'
+import { getClinics, deleteClinic, type ClinicList, type GetClinicsParams } from '@api/clinics'
 import { useDebounce } from '@hooks/utils/useDebounce'
 
 const DEFAULT_LIMIT = 10
 
 export function useClinics() {
-  const [clinics, setClinics] = useState<Clinic[]>([])
+  const [clinics, setClinics] = useState<ClinicList[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [total, setTotal] = useState(0)
   const [search, setSearch] = useState('')
-  const [sortBy, setSortBy] = useState<'name' | 'city' | 'createdAt' | ''>('')
+  const [sortBy, setSortBy] = useState<GetClinicsParams['sortBy'] | ''>('')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
-  const [clinicToDelete, setClinicToDelete] = useState<Clinic | null>(null)
+  const [clinicToDelete, setClinicToDelete] = useState<ClinicList | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
 
   const debouncedSearch = useDebounce(search, 500)
@@ -61,7 +61,7 @@ export function useClinics() {
     fetchClinics()
   }, [currentPage, debouncedSearch, sortBy, sortOrder])
 
-  const handleDelete = (clinic: Clinic) => {
+  const handleDelete = (clinic: ClinicList) => {
     setClinicToDelete(clinic)
     setDeleteModalOpen(true)
   }

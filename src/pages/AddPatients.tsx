@@ -32,6 +32,7 @@ type FormDropdownProps = {
   onToggle: () => void
   onClose: () => void
   buttonRef: React.RefObject<HTMLButtonElement | null>
+  showLabel?: boolean
 }
 
 function FormDropdown({
@@ -43,6 +44,7 @@ function FormDropdown({
   onToggle,
   onClose,
   buttonRef,
+  showLabel = true,
 }: FormDropdownProps) {
   const dropdownRef = useRef<HTMLDivElement>(null)
   const [position, setPosition] = useState({ top: 0, left: 0, width: 0 })
@@ -97,7 +99,7 @@ function FormDropdown({
 
   return (
     <div>
-      <label className={labelStyles}>{label}</label>
+      {showLabel && <label className={labelStyles}>{label}</label>}
       <div className="relative">
         <button
           ref={buttonRef}
@@ -346,7 +348,9 @@ export default function AddPatients() {
               <div className="space-y-5 border-t border-slate-200 pt-5 dark:border-slate-700">
                 <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
                   <div>
-                    <label className={labelStyles}>First Name*</label>
+                    <label className={labelStyles}>
+                      First Name <span className="text-red-500">*</span>
+                    </label>
                     <input
                       type="text"
                       className={inputStyles}
@@ -481,16 +485,22 @@ export default function AddPatients() {
                     ))}
                   </div>
                 </div>
-                <FormDropdown
-                  label="Primary Clinic"
-                  value={form.primaryClinic}
-                  options={primaryClinicOptions}
-                  onChange={(value) => handleFieldChange('primaryClinic', value)}
-                  isOpen={primaryClinicDropdownOpen}
-                  onToggle={() => setPrimaryClinicDropdownOpen(!primaryClinicDropdownOpen)}
-                  onClose={() => setPrimaryClinicDropdownOpen(false)}
-                  buttonRef={primaryClinicButtonRef}
-                />
+                <div>
+                  <label className={labelStyles}>
+                    Primary Clinic <span className="text-red-500">*</span>
+                  </label>
+                  <FormDropdown
+                    label="Select primary clinic"
+                    value={form.primaryClinic}
+                    options={primaryClinicOptions}
+                    onChange={(value) => handleFieldChange('primaryClinic', value)}
+                    isOpen={primaryClinicDropdownOpen}
+                    onToggle={() => setPrimaryClinicDropdownOpen(!primaryClinicDropdownOpen)}
+                    onClose={() => setPrimaryClinicDropdownOpen(false)}
+                    buttonRef={primaryClinicButtonRef}
+                    showLabel={false}
+                  />
+                </div>
               </div>
               <div className="space-y-5 border-t border-slate-200 pt-5 dark:border-slate-700">
                 <div>

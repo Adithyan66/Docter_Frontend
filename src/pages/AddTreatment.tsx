@@ -13,9 +13,14 @@ import TreatmentCard from '@components/treatment/TreatmentCard'
 type TreatmentFormState = {
   name: string
   description: string
+  isOneTime: boolean
   minDuration: string
   maxDuration: string
   avgDuration: string
+  regularVisitInterval: {
+    interval: string
+    unit: string
+  }
   minFees: string
   maxFees: string
   avgFees: string
@@ -33,9 +38,14 @@ type TreatmentFormState = {
 const createBlankForm = (): TreatmentFormState => ({
   name: '',
   description: '',
+  isOneTime: false,
   minDuration: '',
   maxDuration: '',
   avgDuration: '',
+  regularVisitInterval: {
+    interval: '',
+    unit: '',
+  },
   minFees: '',
   maxFees: '',
   avgFees: '',
@@ -104,9 +114,14 @@ export default function AddTreatment() {
           setForm({
             name: treatment.name || '',
             description: treatment.description || '',
+            isOneTime: treatment.isOneTime || false,
             minDuration: treatment.minDuration?.toString() || '',
             maxDuration: treatment.maxDuration?.toString() || '',
             avgDuration: treatment.avgDuration?.toString() || '',
+            regularVisitInterval: {
+              interval: treatment.regularVisitInterval?.interval?.toString() || '',
+              unit: treatment.regularVisitInterval?.unit || '',
+            },
             minFees: treatment.minFees?.toString() || '',
             maxFees: treatment.maxFees?.toString() || '',
             avgFees: treatment.avgFees?.toString() || '',
@@ -140,6 +155,16 @@ export default function AddTreatment() {
     setForm((prev) => ({
       ...prev,
       [field]: value,
+    }))
+  }
+
+  const handleRegularVisitIntervalChange = (field: 'interval' | 'unit', value: string) => {
+    setForm((prev) => ({
+      ...prev,
+      regularVisitInterval: {
+        ...prev.regularVisitInterval,
+        [field]: value,
+      },
     }))
   }
 
@@ -250,6 +275,11 @@ export default function AddTreatment() {
       return
     }
 
+    if (!form.isOneTime && form.regularVisitInterval.interval && Number.isNaN(Number(form.regularVisitInterval.interval))) {
+      toast.error('Regular visit interval must be a valid number.')
+      return
+    }
+
     setIsSubmitting(true)
     setIsUploadingImages(true)
 
@@ -273,9 +303,16 @@ export default function AddTreatment() {
       const payload: TreatmentPayload = {
         name: form.name.trim(),
         description: form.description.trim() || undefined,
-        minDuration: form.minDuration ? Number(form.minDuration) : 0,
-        maxDuration: form.maxDuration ? Number(form.maxDuration) : 0,
-        avgDuration: form.avgDuration ? Number(form.avgDuration) : undefined,
+        isOneTime: form.isOneTime,
+        minDuration: form.isOneTime ? undefined : (form.minDuration ? Number(form.minDuration) : 0),
+        maxDuration: form.isOneTime ? undefined : (form.maxDuration ? Number(form.maxDuration) : 0),
+        avgDuration: form.isOneTime ? undefined : (form.avgDuration ? Number(form.avgDuration) : undefined),
+        regularVisitInterval: form.isOneTime ? undefined : (form.regularVisitInterval.interval && form.regularVisitInterval.unit
+          ? {
+              interval: Number(form.regularVisitInterval.interval),
+              unit: form.regularVisitInterval.unit,
+            }
+          : undefined),
         minFees: form.minFees ? Number(form.minFees) : 0,
         maxFees: form.maxFees ? Number(form.maxFees) : 0,
         avgFees: form.avgFees ? Number(form.avgFees) : undefined,
@@ -317,9 +354,11 @@ export default function AddTreatment() {
     () => ({
       name: form.name || 'No name set',
       description: form.description || '',
+      isOneTime: form.isOneTime,
       minDuration: form.minDuration,
       maxDuration: form.maxDuration,
       avgDuration: form.avgDuration,
+      regularVisitInterval: form.regularVisitInterval,
       minFees: form.minFees,
       maxFees: form.maxFees,
       avgFees: form.avgFees,
@@ -397,48 +436,94 @@ export default function AddTreatment() {
                       placeholder="Describe the treatment..."
                     />
                   </div>
-                </div>
-              </SectionCard>
-              <SectionCard title="Duration (months)">
-                <div className="space-y-5">
-                  <div>
-                    <label className={labelStyles}>Minimum</label>
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.1"
-                      className={inputStyles}
-                      value={form.minDuration}
-                      onChange={(event) => handleFieldChange('minDuration', event.target.value)}
-                      placeholder="0"
-                    />
-                  </div>
-                  <div>
-                    <label className={labelStyles}>Maximum</label>
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.1"
-                      className={inputStyles}
-                      value={form.maxDuration}
-                      onChange={(event) => handleFieldChange('maxDuration', event.target.value)}
-                      placeholder="0"
-                    />
-                  </div>
-                  <div>
-                    <label className={labelStyles}>Average</label>
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.1"
-                      className={inputStyles}
-                      value={form.avgDuration}
-                      onChange={(event) => handleFieldChange('avgDuration', event.target.value)}
-                      placeholder="Optional"
-                    />
+                  <div className="space-y-3 pt-2">
+                    <label className="flex items-center gap-3 cursor-pointer group">
+                      <input
+                        type="checkbox"
+                        checked={form.isOneTime}
+                        onChange={(event) => handleFieldChange('isOneTime', event.target.checked)}
+                        className="h-4 w-4 rounded border-2 border-slate-300 text-blue-600 transition-colors focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 group-hover:border-blue-400 dark:border-slate-600"
+                      />
+                      <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                        One-time treatment
+                      </span>
+                    </label>
                   </div>
                 </div>
               </SectionCard>
+              {!form.isOneTime && (
+                <SectionCard title="Duration (months)">
+                  <div className="space-y-5">
+                    <div>
+                      <label className={labelStyles}>Minimum</label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.1"
+                        className={inputStyles}
+                        value={form.minDuration}
+                        onChange={(event) => handleFieldChange('minDuration', event.target.value)}
+                        placeholder="0"
+                      />
+                    </div>
+                    <div>
+                      <label className={labelStyles}>Maximum</label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.1"
+                        className={inputStyles}
+                        value={form.maxDuration}
+                        onChange={(event) => handleFieldChange('maxDuration', event.target.value)}
+                        placeholder="0"
+                      />
+                    </div>
+                    <div>
+                      <label className={labelStyles}>Average</label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.1"
+                        className={inputStyles}
+                        value={form.avgDuration}
+                        onChange={(event) => handleFieldChange('avgDuration', event.target.value)}
+                        placeholder="Optional"
+                      />
+                    </div>
+                  </div>
+                </SectionCard>
+              )}
+              {!form.isOneTime && (
+                <SectionCard title="Regular Visit Interval">
+                  <div className="space-y-5">
+                    <div>
+                      <label className={labelStyles}>Interval</label>
+                      <input
+                        type="number"
+                        min="0"
+                        className={inputStyles}
+                        value={form.regularVisitInterval.interval}
+                        onChange={(event) => handleRegularVisitIntervalChange('interval', event.target.value)}
+                        placeholder="Enter interval"
+                      />
+                    </div>
+                    <div>
+                      <label className={labelStyles}>Unit</label>
+                      <select
+                        className={inputStyles}
+                        value={form.regularVisitInterval.unit}
+                        onChange={(event) => handleRegularVisitIntervalChange('unit', event.target.value)}
+                      >
+                        <option value="">Select unit</option>
+                        <option value="days">Days</option>
+                        <option value="weeks">Weeks</option>
+                        <option value="months">Months</option>
+                        <option value="years">Years</option>
+                      </select>
+                    </div>
+                  </div>
+                </SectionCard>
+              )}
               <SectionCard title="Fees">
                 <div className="space-y-5">
                   <div>
@@ -680,9 +765,11 @@ export default function AddTreatment() {
               treatment={{
                 name: summaryData.name,
                 description: summaryData.description,
+                isOneTime: summaryData.isOneTime,
                 minDuration: summaryData.minDuration,
                 maxDuration: summaryData.maxDuration,
                 avgDuration: summaryData.avgDuration,
+                regularVisitInterval: summaryData.regularVisitInterval,
                 minFees: summaryData.minFees,
                 maxFees: summaryData.maxFees,
                 avgFees: summaryData.avgFees,

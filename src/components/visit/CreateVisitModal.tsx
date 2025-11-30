@@ -32,6 +32,8 @@ type MediaFileForm = {
   notes: string
 }
 
+type PaymentMethod = 'cash' | 'card' | 'upi' | 'bank' | 'insurance' | 'online'
+
 export default function CreateVisitModal({
   isOpen,
   onClose,
@@ -51,6 +53,8 @@ export default function CreateVisitModal({
     visitDate: new Date().toISOString().split('T')[0],
     notes: '',
     billedAmount: '',
+    paymentMethod: 'cash' as PaymentMethod,
+    paymentReference: '',
   })
 
   const [diagnosisItems, setDiagnosisItems] = useState<string[]>([])
@@ -83,12 +87,20 @@ export default function CreateVisitModal({
     setFormData((prev) => ({ ...prev, clinicId: defaultClinicId }))
   }, [initialClinicId, primaryClinicId])
 
+  useEffect(() => {
+    if (formData.billedAmount && !formData.paymentMethod) {
+      setFormData((prev) => ({ ...prev, paymentMethod: 'cash' }))
+    }
+  }, [formData.billedAmount])
+
   const resetForm = () => {
     setFormData({
       clinicId: initialClinicId || primaryClinicId || '',
       visitDate: new Date().toISOString().split('T')[0],
       notes: '',
       billedAmount: '',
+      paymentMethod: 'cash',
+      paymentReference: '',
     })
     setDiagnosisItems([])
     setCurrentDiagnosis('')
@@ -279,7 +291,7 @@ export default function CreateVisitModal({
             }
           : undefined
 
-      const payload: CreateVisitRequestDto = {
+      const payload: CreateVisitRequestDto & { paymentMethod?: PaymentMethod; paymentReference?: string } = {
         patientId,
         courseId,
         clinicId: formData.clinicId || undefined,
@@ -288,6 +300,8 @@ export default function CreateVisitModal({
         billedAmount: formData.billedAmount ? Number(formData.billedAmount) : undefined,
         prescription: prescriptionPayload,
         media: mediaUploads.length > 0 ? mediaUploads : undefined,
+        paymentMethod: formData.billedAmount ? formData.paymentMethod : undefined,
+        paymentReference: formData.billedAmount && formData.paymentMethod !== 'cash' && formData.paymentReference.trim() ? formData.paymentReference.trim() : undefined,
       }
 
       await createVisit(payload)
@@ -435,7 +449,7 @@ export default function CreateVisitModal({
                     <div className="flex gap-2 mb-2">
                       <button
                         type="button"
-                        onClick={() => setFormData((prev) => ({ ...prev, billedAmount: '500' }))}
+                        onClick={() => setFormData((prev) => ({ ...prev, billedAmount: '500', paymentMethod: 'cash', paymentReference: '' }))}
                         className={`flex-1 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
                           formData.billedAmount === '500'
                             ? 'border-blue-500 bg-blue-50 text-blue-700 dark:border-blue-400 dark:bg-blue-900/30 dark:text-blue-400'
@@ -446,7 +460,7 @@ export default function CreateVisitModal({
                       </button>
                       <button
                         type="button"
-                        onClick={() => setFormData((prev) => ({ ...prev, billedAmount: '1000' }))}
+                        onClick={() => setFormData((prev) => ({ ...prev, billedAmount: '1000', paymentMethod: 'cash', paymentReference: '' }))}
                         className={`flex-1 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
                           formData.billedAmount === '1000'
                             ? 'border-blue-500 bg-blue-50 text-blue-700 dark:border-blue-400 dark:bg-blue-900/30 dark:text-blue-400'
@@ -456,16 +470,59 @@ export default function CreateVisitModal({
                         ₹1000
                       </button>
                     </div>
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={formData.billedAmount}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, billedAmount: e.target.value }))}
-                      className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
-                      placeholder="0.00"
-                    />
+                    <div className="flex gap-2 items-start">
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={formData.billedAmount}
+                        onChange={(e) => {
+                          const value = e.target.value
+                          setFormData((prev) => ({ 
+                            ...prev, 
+                            billedAmount: value,
+                            paymentMethod: value ? (prev.paymentMethod || 'cash') : prev.paymentMethod,
+                            paymentReference: value ? prev.paymentReference : ''
+                          }))
+                        }}
+                        className="flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+                        placeholder="0.00"
+                      />
+                      {formData.billedAmount && (
+                        <div className="flex flex-wrap gap-1.5">
+                          {(['cash', 'card', 'upi', 'bank', 'insurance', 'online'] as PaymentMethod[]).map((method) => (
+                            <button
+                              key={method}
+                              type="button"
+                              onClick={() => setFormData((prev) => ({ ...prev, paymentMethod: method, paymentReference: method === 'cash' ? '' : prev.paymentReference }))}
+                              className={`rounded-lg border px-2 py-1 text-xs font-medium transition-colors capitalize whitespace-nowrap ${
+                                formData.paymentMethod === method
+                                  ? 'border-blue-500 bg-blue-50 text-blue-700 dark:border-blue-400 dark:bg-blue-900/30 dark:text-blue-400'
+                                  : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700'
+                              }`}
+                            >
+                              {method === 'upi' ? 'UPI' : method}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
+
+                  {formData.billedAmount && formData.paymentMethod !== 'cash' && (
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                        Payment Reference <span className="text-slate-400">(Optional)</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.paymentReference}
+                        onChange={(e) => setFormData((prev) => ({ ...prev, paymentReference: e.target.value }))}
+                        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+                        placeholder="Transaction ID, Check No., etc."
+                      />
+                    </div>
+                  )}
                 </div>
 
                 <div>

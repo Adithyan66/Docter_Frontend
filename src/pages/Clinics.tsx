@@ -1,110 +1,11 @@
-import { useState, useRef, useEffect } from 'react'
-import { createPortal } from 'react-dom'
+import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import ConfirmationModal from '@components/common/ConfirmationModal'
 import Pagination from '@components/common/Pagination'
-import ClinicCard from '@components/clinic/ClinicCard'
+import DropdownFilter from '@components/common/DropdownFilter'
+import Table from '@components/common/Table'
 import { useClinics } from '@hooks/data/useClinics'
 import { PlusIcon } from '@assets/Icons'
 import clinicIcon from '@assets/clinic.png'
-import { useClickOutside } from '@hooks/utils/useClickOutside'
-
-type DropdownFilterProps = {
-  label: string
-  value: string
-  options: Array<{ value: string; label: string }>
-  onChange: (value: string) => void
-  isOpen: boolean
-  onToggle: () => void
-  onClose: () => void
-  buttonRef: React.RefObject<HTMLButtonElement | null>
-}
-
-function DropdownFilter({
-  label,
-  value,
-  options,
-  onChange,
-  isOpen,
-  onToggle,
-  onClose,
-  buttonRef,
-}: DropdownFilterProps) {
-  const dropdownRef = useRef<HTMLDivElement>(null)
-  const [position, setPosition] = useState({ top: 0, left: 0, width: 0 })
-
-  useClickOutside({
-    isEnabled: isOpen,
-    refs: [dropdownRef, buttonRef],
-    handler: onClose,
-  })
-
-  useEffect(() => {
-    if (isOpen && buttonRef.current) {
-      const rect = buttonRef.current.getBoundingClientRect()
-      setPosition({
-        top: rect.bottom + window.scrollY + 4,
-        left: rect.left + window.scrollX,
-        width: rect.width,
-      })
-    }
-  }, [isOpen, buttonRef])
-
-  const selectedOption = options.find((opt) => opt.value === value)
-  const displayText = selectedOption ? selectedOption.label : options[0]?.label || label
-
-  const dropdownContent = isOpen ? (
-    <div
-      ref={dropdownRef}
-      className="fixed z-[100] w-48 rounded-lg border border-slate-300 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-800"
-      style={{ top: position.top, left: position.left }}
-    >
-      <div className="max-h-60 overflow-y-auto p-1">
-        {options.map((option) => (
-          <button
-            key={option.value}
-            type="button"
-            onClick={() => {
-              onChange(option.value)
-              onClose()
-            }}
-            className={`w-full rounded-md px-3 py-2 text-left text-sm transition-colors ${
-              value === option.value
-                ? 'bg-blue-100 text-blue-900 dark:bg-blue-900/30 dark:text-blue-200'
-                : 'text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700'
-            }`}
-          >
-            {option.label}
-          </button>
-        ))}
-      </div>
-    </div>
-  ) : null
-
-  return (
-    <div className="relative flex-shrink-0">
-      <button
-        ref={buttonRef}
-        type="button"
-        onClick={onToggle}
-        className={`flex items-center gap-2 rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 ${
-          value ? 'border-blue-500 bg-blue-50 dark:border-blue-400 dark:bg-blue-900/20' : ''
-        }`}
-      >
-        <span className="truncate min-w-0">{displayText}</span>
-        <svg
-          className={`h-4 w-4 flex-shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`}
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
-      </button>
-      {typeof document !== 'undefined' && createPortal(dropdownContent, document.body)}
-    </div>
-  )
-}
 
 export default function Clinics() {
   const navigate = useNavigate()
@@ -118,16 +19,10 @@ export default function Clinics() {
     search,
     sortBy,
     sortOrder,
-    deleteModalOpen,
-    clinicToDelete,
-    isDeleting,
     setCurrentPage,
     setSearch,
     setSortBy,
     setSortOrder,
-    handleDelete,
-    confirmDelete,
-    closeDeleteModal,
   } = useClinics()
 
   const [openDropdown, setOpenDropdown] = useState<string | null>(null)
@@ -136,9 +31,10 @@ export default function Clinics() {
 
   const sortByOptions: Array<{ value: string; label: string }> = [
     { value: '', label: 'Sort by' },
-    { value: 'name', label: 'Name' },
-    { value: 'city', label: 'City' },
     { value: 'createdAt', label: 'Date Created' },
+    { value: 'numOfPatients', label: 'Num of Patients' },
+    { value: 'onGoingTreatments', label: 'Ongoing' },
+    { value: 'completedTreatments', label: 'Completed' },
   ]
 
   const sortOrderOptions: Array<{ value: string; label: string }> = [
@@ -179,9 +75,7 @@ export default function Clinics() {
               label="Sort by"
               value={sortBy || ''}
               options={sortByOptions}
-              onChange={(value) =>
-                setSortBy((value || '') as 'name' | 'city' | 'createdAt' | '')
-              }
+              onChange={(value) => setSortBy((value || '') as any)}
               isOpen={openDropdown === 'sortBy'}
               onToggle={() => setOpenDropdown(openDropdown === 'sortBy' ? null : 'sortBy')}
               onClose={() => setOpenDropdown(null)}
@@ -215,39 +109,59 @@ export default function Clinics() {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-3">
-            {clinics.map((clinic) => (
-              <ClinicCard
-                key={clinic.id}
-                clinic={{
-                  name: clinic.name,
-                  clinicId: clinic.clinicId,
-                  address: clinic.address,
-                  city: clinic.city,
-                  state: clinic.state,
-                  pincode: clinic.pincode,
-                  phone: clinic.phone,
-                  email: clinic.email,
-                  website: clinic.website,
-                  locationUrl: clinic.locationUrl,
-                  workingDays: clinic.workingDays,
-                  treatments: clinic.treatments
-                    ? clinic.treatments.map((t) =>
-                        typeof t === 'string'
-                          ? { id: t, name: 'Unknown' }
-                          : { id: t.id, name: t.name || 'Unknown' }
-                      )
-                    : undefined,
-                  images: clinic.images,
-                  notes: clinic.notes,
-                  isActive: clinic.isActive,
-                }}
-                showEditActions={true}
-                onEdit={() => navigate(`/clinics/edit/${clinic.id}`)}
-                onDelete={() => handleDelete(clinic)}
-              />
-            ))}
-          </div>
+          <Table
+            columns={[
+              {
+                key: 'slNo',
+                header: 'SL No',
+                render: (_, index) => ((currentPage - 1) * limit) + index + 1,
+                className: 'text-center',
+              },
+              {
+                key: 'name',
+                header: 'Name',
+                render: (clinic) => clinic.name,
+                className: 'text-left',
+              },
+              {
+                key: 'clinicId',
+                header: 'Clinic ID',
+                render: (clinic) => clinic.clinicId || '-',
+                className: 'text-center',
+              },
+              {
+                key: 'city',
+                header: 'City',
+                render: (clinic) => clinic.city || '-',
+                className: 'text-center',
+              },
+              {
+                key: 'numOfPatients',
+                header: 'Num of Patients',
+                render: (clinic) => clinic.numOfPatients,
+                className: 'text-center',
+              },
+              {
+                key: 'onGoingTreatments',
+                header: 'Ongoing',
+                render: (clinic) => clinic.onGoingTreatments,
+                className: 'text-center',
+              },
+              {
+                key: 'completedTreatments',
+                header: 'Completed',
+                render: (clinic) => clinic.completedTreatments,
+                className: 'text-center',
+              },
+            ]}
+            data={clinics}
+            onRowClick={(clinic) => navigate(`/clinics/${clinic.id}`)}
+            emptyMessage={
+              search.trim()
+                ? 'No clinics found matching your search.'
+                : 'No clinics available. Use the button above to add new clinic locations.'
+            }
+          />
 
           {totalPages > 1 && (
             <div className="flex items-center justify-between rounded-2xl bg-white/60 p-4 backdrop-blur-sm dark:bg-slate-900/60">
@@ -266,20 +180,6 @@ export default function Clinics() {
         </>
       )}
 
-      <ConfirmationModal
-        isOpen={deleteModalOpen}
-        onClose={closeDeleteModal}
-        onConfirm={confirmDelete}
-        title="Delete Clinic"
-        message={
-          clinicToDelete
-            ? `Are you sure you want to delete "${clinicToDelete.name}"? This action cannot be undone.`
-            : 'Are you sure you want to delete this clinic? This action cannot be undone.'
-        }
-        confirmText={isDeleting ? 'Deleting...' : 'Delete'}
-        cancelText="Cancel"
-        confirmButtonClassName="bg-red-600 hover:bg-red-500 dark:bg-red-500 dark:hover:bg-red-400 disabled:opacity-50"
-      />
     </section>
   )
 }

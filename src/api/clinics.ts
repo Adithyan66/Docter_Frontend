@@ -52,8 +52,18 @@ export type Clinic = {
   updatedAt: string
 }
 
+export type ClinicList = {
+  id: string
+  name: string
+  clinicId: string
+  city: string
+  numOfPatients: number
+  onGoingTreatments: number
+  completedTreatments: number
+}
+
 export type PaginatedClinicsResponse = {
-  clinics: Clinic[]
+  clinics: ClinicList[]
   total: number
   page: number
   limit: number
@@ -63,7 +73,7 @@ export type PaginatedClinicsResponse = {
 export type GetClinicsParams = {
   page?: number
   limit?: number
-  sortBy?: 'name' | 'city' | 'createdAt'
+  sortBy?:  'createdAt' | 'numOfPatients' | 'onGoingTreatments' | 'completedTreatments'
   sortOrder?: 'asc' | 'desc'
   search?: string
 }

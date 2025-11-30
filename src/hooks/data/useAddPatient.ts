@@ -212,6 +212,11 @@ export function useAddPatient() {
       return
     }
 
+    if (!form.primaryClinic.trim()) {
+      toast.error('Primary clinic is required.')
+      return
+    }
+
     if (!form.consultationType) {
       toast.error('Consultation type is required.')
       return
@@ -254,7 +259,7 @@ export function useAddPatient() {
         address: form.address.trim() || undefined,
         profilePicUrl: profilePicUrl || undefined,
         consultationType: form.consultationType as 'one-time' | 'treatment-plan',
-        primaryClinic: form.primaryClinic.trim() || undefined,
+        primaryClinic: form.primaryClinic.trim(),
         clinics: form.clinics.length > 0 ? form.clinics : undefined,
         dob: form.dob ? new Date(form.dob).toISOString() : undefined,
         lastVisitAt: form.lastVisitAt ? new Date(form.lastVisitAt).toISOString() : undefined,

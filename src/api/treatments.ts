@@ -10,9 +10,14 @@ type ApiResponse<T> = {
 export type TreatmentPayload = {
   name: string
   description?: string
-  minDuration: number
-  maxDuration: number
+  isOneTime?: boolean
+  minDuration?: number
+  maxDuration?: number
   avgDuration?: number
+  regularVisitInterval?: {
+    interval: number
+    unit: string
+  }
   minFees: number
   maxFees: number
   avgFees?: number
@@ -28,9 +33,14 @@ export type Treatment = {
   id: string
   name: string
   description?: string
+  isOneTime?: boolean
   minDuration?: number
   maxDuration?: number
   avgDuration?: number
+  regularVisitInterval?: {
+    interval: number
+    unit: string
+  }
   minFees?: number
   maxFees?: number
   avgFees?: number

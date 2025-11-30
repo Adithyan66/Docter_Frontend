@@ -85,6 +85,7 @@ export default function PatientDetails() {
         onClose={() => setIsModalOpen(false)}
         patientId={patient.id}
         doctorId={doctorId}
+        primaryClinicId={patient.primaryClinic}
         onSuccess={handleCreateTreatmentCourseSuccess}
       />
 
