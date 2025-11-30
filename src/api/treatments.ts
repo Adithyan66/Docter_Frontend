@@ -124,3 +124,88 @@ export const getTreatmentNames = async (params?: { search?: string }): Promise<T
   return data.data
 }
 
+export type TreatmentStatistics = {
+  patients: {
+    totalCount: number
+    uniqueCount: number
+  }
+  treatmentCourses: {
+    totalCount: number
+    statusBreakdown: {
+      active: number
+      paused: number
+      completed: number
+      cancelled: number
+    }
+    medicallyCompleted: number
+    paymentCompleted: number
+  }
+  revenue: {
+    totalPaid: number
+    totalCost: number
+    outstanding: number
+    averagePerCourse: {
+      paid: number
+      cost: number
+    }
+    byPaymentMethod: {
+      cash: number
+      card: number
+      upi: number
+      bank: number
+      insurance: number
+      online: number
+    }
+    refunds: {
+      totalAmount: number
+      count: number
+    }
+  }
+  clinics: Array<{
+    clinicId: string
+    clinicName: string
+    courseCount: number
+    totalPaid: number
+    totalCost: number
+    outstanding: number
+  }>
+  visits: {
+    totalCount: number
+    averagePerCourse: number
+    totalBilledAmount: number
+    averageBilledAmount: number
+  }
+  timeMetrics: {
+    earliestStartDate: string
+    latestStartDate: string
+    averageDuration?: number
+  }
+  completionRates: {
+    treatment: number
+    payment: number
+    medical: number
+    cancellation: number
+  }
+}
+
+export type TreatmentWithStatistics = Treatment & {
+  doctorId: string
+  statistics?: TreatmentStatistics
+}
+
+export type GetTreatmentWithStatisticsParams = {
+  includeStatistics?: boolean
+  startDateFrom?: string
+  startDateTo?: string
+}
+
+export const getTreatmentWithStatistics = async (
+  id: string,
+  params?: GetTreatmentWithStatisticsParams
+): Promise<TreatmentWithStatistics> => {
+  const { data } = await httpClient.get<ApiResponse<TreatmentWithStatistics>>(`treatment/${id}`, {
+    params,
+  })
+  return data.data
+}
+

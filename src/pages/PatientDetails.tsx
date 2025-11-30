@@ -7,6 +7,7 @@ import Pagination from '@components/common/Pagination'
 import ImageViewerModal from '@components/common/ImageViewerModal'
 import { usePatientDetails } from '@hooks/data/usePatientDetails'
 import RotatingSpinner from '@components/spinner/TeethRotating'
+import { PlusIcon } from '@assets/Icons'
 import PatientDetail from '@assets/patientDetail.png'
 import noprofile from '@assets/noprofile.png'
 
@@ -63,20 +64,22 @@ export default function PatientDetails() {
     <section className="space-y-6">
       <div className="rounded-2xl bg-white/60 p-6 backdrop-blur-sm dark:bg-slate-900">
         <div className="flex items-center justify-between">
-
           <img src={PatientDetail} alt="teeth" className="w-[120px] h-[120px]" />
-        <div className="flex-1">
-          <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">Patient Details</h1>
-          <p className="text-slate-600 dark:text-slate-300">
-          View comprehensive patient information.
-          </p>
+          <div className="flex-1">
+            <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">Patient Details</h1>
+            <p className="text-slate-600 dark:text-slate-300">
+              View comprehensive patient information.
+            </p>
+            <div className="mt-3 flex flex-wrap gap-3">
+              <button
+                onClick={() => setIsModalOpen(true)}
+                className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-purple-100 to-purple-200 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-purple-200 hover:to-purple-300 dark:from-purple-800/30 dark:to-purple-700/30 dark:text-slate-200 dark:hover:from-purple-700/40 dark:hover:to-purple-600/40"
+              >
+                <PlusIcon />
+                New Treatment Course
+              </button>
+            </div>
           </div>
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-all hover:bg-blue-500 dark:bg-blue-500 dark:hover:bg-blue-400"
-          >
-            Create Treatment Course
-          </button>
         </div>
       </div>
 
@@ -419,14 +422,14 @@ export default function PatientDetails() {
                       {courseDetails.treatmentId && (
                         <button
                           onClick={handleTreatmentDetailsClick}
-                          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-all hover:bg-blue-500 dark:bg-blue-500 dark:hover:bg-blue-400"
+                          className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-purple-100 to-purple-200 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-purple-200 hover:to-purple-300 dark:from-purple-800/30 dark:to-purple-700/30 dark:text-slate-200 dark:hover:from-purple-700/40 dark:hover:to-purple-600/40"
                         >
                           View Treatment Details
                         </button>
                       )}
                       <button
                         onClick={() => setIsVisitModalOpen(true)}
-                        className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white transition-all hover:bg-green-500 dark:bg-green-500 dark:hover:bg-green-400"
+                        className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-green-100 to-green-200 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-green-200 hover:to-green-300 dark:from-green-800/30 dark:to-green-700/30 dark:text-slate-200 dark:hover:from-green-700/40 dark:hover:to-green-600/40"
                       >
                         Add Visit
                       </button>
@@ -776,243 +779,7 @@ export default function PatientDetails() {
         </div>
       </div>
 
-      {isTreatmentModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
-            <div className="sticky top-0 flex items-center justify-between border-b border-slate-200 bg-white px-6 py-4 dark:border-slate-800 dark:bg-slate-900">
-              <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
-                Treatment Details
-              </h2>
-              <button
-                onClick={handleCloseTreatmentModal}
-                className="rounded-lg p-2 text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
-              >
-                <svg
-                  className="h-5 w-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
-            </div>
-            <div className="p-6">
-              {isLoadingTreatment ? (
-                <div className="flex items-center justify-center p-12">
-                  <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
-                </div>
-              ) : treatmentDetails ? (
-                <div className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                        Treatment ID
-                      </span>
-                      <p className="text-sm text-slate-900 dark:text-white mt-1 font-mono">
-                        {treatmentDetails.id}
-                      </p>
-                    </div>
-                    <div>
-                      <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                        Name
-                      </span>
-                      <p className="text-sm text-slate-900 dark:text-white mt-1">
-                        {treatmentDetails.name}
-                      </p>
-                    </div>
-                    {treatmentDetails.description && (
-                      <div className="md:col-span-2">
-                        <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                          Description
-                        </span>
-                        <p className="text-sm text-slate-900 dark:text-white mt-1 whitespace-pre-line">
-                          {treatmentDetails.description}
-                        </p>
-                      </div>
-                    )}
-                    {treatmentDetails.minDuration !== undefined && (
-                      <div>
-                        <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                          Min Duration (days)
-                        </span>
-                        <p className="text-sm text-slate-900 dark:text-white mt-1">
-                          {treatmentDetails.minDuration}
-                        </p>
-                      </div>
-                    )}
-                    {treatmentDetails.maxDuration !== undefined && (
-                      <div>
-                        <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                          Max Duration (days)
-                        </span>
-                        <p className="text-sm text-slate-900 dark:text-white mt-1">
-                          {treatmentDetails.maxDuration}
-                        </p>
-                      </div>
-                    )}
-                    {treatmentDetails.avgDuration !== undefined && (
-                      <div>
-                        <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                          Avg Duration (days)
-                        </span>
-                        <p className="text-sm text-slate-900 dark:text-white mt-1">
-                          {treatmentDetails.avgDuration}
-                        </p>
-                      </div>
-                    )}
-                    {treatmentDetails.minFees !== undefined && (
-                      <div>
-                        <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                          Min Fees
-                        </span>
-                        <p className="text-sm text-slate-900 dark:text-white mt-1">
-                          ₹{treatmentDetails.minFees.toLocaleString()}
-                        </p>
-                      </div>
-                    )}
-                    {treatmentDetails.maxFees !== undefined && (
-                      <div>
-                        <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                          Max Fees
-                        </span>
-                        <p className="text-sm text-slate-900 dark:text-white mt-1">
-                          ₹{treatmentDetails.maxFees.toLocaleString()}
-                        </p>
-                      </div>
-                    )}
-                    {treatmentDetails.avgFees !== undefined && (
-                      <div>
-                        <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                          Avg Fees
-                        </span>
-                        <p className="text-sm text-slate-900 dark:text-white mt-1">
-                          ₹{treatmentDetails.avgFees.toLocaleString()}
-                        </p>
-                      </div>
-                    )}
-                    <div>
-                      <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                        Follow Up Required
-                      </span>
-                      <p className="text-sm text-slate-900 dark:text-white mt-1">
-                        {treatmentDetails.followUpRequired ? 'Yes' : 'No'}
-                      </p>
-                    </div>
-                    {treatmentDetails.followUpAfterDays !== undefined && (
-                      <div>
-                        <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                          Follow Up After (days)
-                        </span>
-                        <p className="text-sm text-slate-900 dark:text-white mt-1">
-                          {treatmentDetails.followUpAfterDays}
-                        </p>
-                      </div>
-                    )}
-                    <div>
-                      <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                        Created At
-                      </span>
-                      <p className="text-sm text-slate-900 dark:text-white mt-1">
-                        {formatDateTime(treatmentDetails.createdAt)}
-                      </p>
-                    </div>
-                    <div>
-                      <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                        Updated At
-                      </span>
-                      <p className="text-sm text-slate-900 dark:text-white mt-1">
-                        {formatDateTime(treatmentDetails.updatedAt)}
-                      </p>
-                    </div>
-                  </div>
-
-                  {treatmentDetails.steps && treatmentDetails.steps.length > 0 && (
-                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-800/50">
-                      <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-3">
-                        Steps
-                      </h3>
-                      <ol className="list-decimal list-inside space-y-2">
-                        {treatmentDetails.steps.map((step, index) => (
-                          <li
-                            key={index}
-                            className="text-sm text-slate-700 dark:text-slate-300"
-                          >
-                            {step}
-                          </li>
-                        ))}
-                      </ol>
-                    </div>
-                  )}
-
-                  {treatmentDetails.aftercare && treatmentDetails.aftercare.length > 0 && (
-                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-800/50">
-                      <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-3">
-                        Aftercare
-                      </h3>
-                      <ul className="list-disc list-inside space-y-2">
-                        {treatmentDetails.aftercare.map((item, index) => (
-                          <li
-                            key={index}
-                            className="text-sm text-slate-700 dark:text-slate-300"
-                          >
-                            {item}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                  {treatmentDetails.risks && treatmentDetails.risks.length > 0 && (
-                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-800/50">
-                      <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-3">
-                        Risks
-                      </h3>
-                      <ul className="list-disc list-inside space-y-2">
-                        {treatmentDetails.risks.map((risk, index) => (
-                          <li
-                            key={index}
-                            className="text-sm text-slate-700 dark:text-slate-300"
-                          >
-                            {risk}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                  {treatmentDetails.images && treatmentDetails.images.length > 0 && (
-                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-800/50">
-                      <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-3">
-                        Images
-                      </h3>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                        {treatmentDetails.images.map((imageUrl, index) => (
-                          <img
-                            key={index}
-                            src={imageUrl}
-                            alt={`Treatment ${index + 1}`}
-                            className="h-32 w-full rounded-lg object-cover border border-slate-200 dark:border-slate-700 cursor-pointer hover:opacity-80 transition-opacity"
-                            onClick={() => {
-                              setViewerImage(imageUrl)
-                              setIsViewerOpen(true)
-                            }}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ) : null}
-            </div>
-          </div>
-        </div>
-      )}
+     
 
       <ImageViewerModal
         isOpen={isViewerOpen}

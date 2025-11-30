@@ -78,7 +78,7 @@ export default function TreatmentCard({
   }
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-5 dark:border-slate-800 dark:bg-slate-900/50">
+    <div className="rounded-2xl border border-slate-200 bg-transparent p-5 dark:border-slate-800">
       {showEditActions && (onEdit || onDelete) && (
         <div className="mb-4 flex justify-end gap-2 border-b border-slate-200 pb-4 dark:border-slate-700">
           {onEdit && (

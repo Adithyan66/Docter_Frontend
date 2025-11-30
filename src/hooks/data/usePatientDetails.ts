@@ -5,6 +5,7 @@ import { getTreatmentCourseById, type TreatmentCourse } from '@api/treatmentCour
 import { getTreatment, type Treatment } from '@api/treatments'
 import { getVisits, type VisitResponseDto } from '@api/visits'
 import { useDebounce } from '@hooks/utils/useDebounce'
+import { useNavigate } from 'react-router-dom'
 
 const DEFAULT_VISITS_LIMIT = 10
 
@@ -30,7 +31,7 @@ export function usePatientDetails(patientId: string | undefined) {
   const [isLoadingVisits, setIsLoadingVisits] = useState(false)
   const [visitsSearch, setVisitsSearch] = useState('')
   const debouncedSearch = useDebounce(visitsSearch, 500)
-
+  const navigate = useNavigate()
   useEffect(() => {
     setVisitsPagination((prev) => ({ ...prev, page: 1 }))
   }, [debouncedSearch])
@@ -158,22 +159,7 @@ export function usePatientDetails(patientId: string | undefined) {
   const handleTreatmentDetailsClick = async () => {
     if (!courseDetails?.treatmentId) return
 
-    try {
-      setIsLoadingTreatment(true)
-      setIsTreatmentModalOpen(true)
-      const treatmentData = await getTreatment(courseDetails.treatmentId)
-      setTreatmentDetails(treatmentData)
-    } catch (error: any) {
-      const errorMessage =
-        error?.response?.data?.error?.message ||
-        error?.response?.data?.message ||
-        error?.message ||
-        'Unable to fetch treatment details. Please try again.'
-      toast.error(errorMessage)
-      setIsTreatmentModalOpen(false)
-    } finally {
-      setIsLoadingTreatment(false)
-    }
+   navigate(`/treatment/${courseDetails.treatmentId}`)
   }
 
   const handleCloseTreatmentModal = () => {

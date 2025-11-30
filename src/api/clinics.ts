@@ -95,8 +95,93 @@ export const getClinics = async (
   return data.data
 }
 
+export type ClinicStatistics = {
+  patients: {
+    totalCount: number
+    uniqueCount: number
+  }
+  treatmentCourses: {
+    totalCount: number
+    statusBreakdown: {
+      active: number
+      paused: number
+      completed: number
+      cancelled: number
+    }
+    medicallyCompleted: number
+    paymentCompleted: number
+  }
+  revenue: {
+    totalPaid: number
+    totalCost: number
+    outstanding: number
+    averagePerCourse: {
+      paid: number
+      cost: number
+    }
+    byPaymentMethod: {
+      cash: number
+      card: number
+      upi: number
+      bank: number
+      insurance: number
+      online: number
+    }
+    refunds: {
+      totalAmount: number
+      count: number
+    }
+  }
+  treatments: Array<{
+    treatmentId: string
+    treatmentName: string
+    courseCount: number
+    totalPaid: number
+    totalCost: number
+    outstanding: number
+  }>
+  visits: {
+    totalCount: number
+    averagePerCourse: number
+    totalBilledAmount: number
+    averageBilledAmount: number
+  }
+  timeMetrics: {
+    earliestStartDate?: string
+    latestStartDate?: string
+    averageDuration?: number
+  }
+  completionRates: {
+    treatment: number
+    payment: number
+    medical: number
+    cancellation: number
+  }
+}
+
+export type ClinicWithStatistics = Clinic & {
+  doctorId: string
+  statistics?: ClinicStatistics
+}
+
+export type GetClinicWithStatisticsParams = {
+  includeStatistics?: boolean
+  startDateFrom?: string
+  startDateTo?: string
+}
+
 export const getClinic = async (id: string): Promise<Clinic> => {
-  const { data } = await httpClient.get<ApiResponse<Clinic>>(`clinic/${id}`)
+  const { data } = await httpClient.get<ApiResponse<Clinic>>(`clinic/${id}?includeStatistics=true`)
+  return data.data
+}
+
+export const getClinicWithStatistics = async (
+  id: string,
+  params?: GetClinicWithStatisticsParams
+): Promise<ClinicWithStatistics> => {
+  const { data } = await httpClient.get<ApiResponse<ClinicWithStatistics>>(`clinic/${id}`, {
+    params,
+  })
   return data.data
 }
 
