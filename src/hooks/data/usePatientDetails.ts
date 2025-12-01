@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import toast from 'react-hot-toast'
 import { getPatientById, updatePatientDefaultCourse, type PatientDetails } from '@api/patients'
 import { getTreatmentCourseById, type TreatmentCourse } from '@api/treatmentCourses'
@@ -7,7 +7,7 @@ import { getVisits, type VisitResponseDto } from '@api/visits'
 import { useDebounce } from '@hooks/utils/useDebounce'
 import { useNavigate } from 'react-router-dom'
 
-const DEFAULT_VISITS_LIMIT = 10
+const DEFAULT_VISITS_LIMIT = 5
 
 export function usePatientDetails(patientId: string | undefined) {
   const [patient, setPatient] = useState<PatientDetails | null>(null)
@@ -96,47 +96,47 @@ export function usePatientDetails(patientId: string | undefined) {
     fetchCourseDetails()
   }, [selectedCourseId])
 
-  useEffect(() => {
-    const fetchVisits = async () => {
-      if (!selectedCourseId || !patient?.id) {
-        setVisits([])
-        setVisitsPagination({ page: 1, limit: DEFAULT_VISITS_LIMIT, total: 0, totalPages: 0 })
-        return
-      }
-
-      try {
-        setIsLoadingVisits(true)
-        const response = await getVisits({
-          page: visitsPagination.page,
-          limit: visitsPagination.limit,
-          courseId: selectedCourseId,
-          patientId: patient.id,
-          notes: debouncedSearch || undefined,
-          sortBy: 'visitDate',
-          sortOrder: 'desc',
-          include: 'prescription,media',
-        })
-        setVisits(response.visits)
-        setVisitsPagination({
-          page: response.page,
-          limit: response.limit,
-          total: response.total,
-          totalPages: response.totalPages,
-        })
-      } catch (error: any) {
-        const errorMessage =
-          error?.response?.data?.error?.message ||
-          error?.response?.data?.message ||
-          error?.message ||
-          'Unable to fetch visits. Please try again.'
-        toast.error(errorMessage)
-      } finally {
-        setIsLoadingVisits(false)
-      }
+  const fetchVisits = useCallback(async () => {
+    if (!selectedCourseId || !patient?.id) {
+      setVisits([])
+      setVisitsPagination({ page: 1, limit: DEFAULT_VISITS_LIMIT, total: 0, totalPages: 0 })
+      return
     }
 
+    try {
+      setIsLoadingVisits(true)
+      const response = await getVisits({
+        page: visitsPagination.page,
+        limit: visitsPagination.limit,
+        courseId: selectedCourseId,
+        patientId: patient.id,
+        notes: debouncedSearch || undefined,
+        sortBy: 'visitDate',
+        sortOrder: 'desc',
+        include: 'prescription,media',
+      })
+      setVisits(response.visits)
+      setVisitsPagination({
+        page: response.page,
+        limit: response.limit,
+        total: response.total,
+        totalPages: response.totalPages,
+      })
+    } catch (error: any) {
+      const errorMessage =
+        error?.response?.data?.error?.message ||
+        error?.response?.data?.message ||
+        error?.message ||
+        'Unable to fetch visits. Please try again.'
+      toast.error(errorMessage)
+    } finally {
+      setIsLoadingVisits(false)
+    }
+  }, [selectedCourseId, patient?.id, visitsPagination.page, visitsPagination.limit, debouncedSearch])
+
+  useEffect(() => {
     fetchVisits()
-  }, [selectedCourseId, patient?.id, visitsPagination.page, debouncedSearch])
+  }, [fetchVisits])
 
   const handleVisitsPageChange = (page: number) => {
     setVisitsPagination((prev) => ({ ...prev, page }))
@@ -270,6 +270,7 @@ export function usePatientDetails(patientId: string | undefined) {
     isSettingDefault,
     fetchPatient,
     fetchCourseDetails,
+    fetchVisits,
     formatDate,
     formatDateTime,
     formatDateWithTime,

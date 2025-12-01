@@ -8,6 +8,7 @@ type DeleteConfirmationModalProps = {
   message?: string
   confirmText?: string
   confirmationWord?: string
+  isDeleting?: boolean
 }
 
 export default function DeleteConfirmationModal({
@@ -18,6 +19,7 @@ export default function DeleteConfirmationModal({
   message = 'This action cannot be undone. This will permanently delete the patient and all associated data.',
   confirmText = 'Delete',
   confirmationWord = 'delete',
+  isDeleting = false,
 }: DeleteConfirmationModalProps) {
   const [confirmationInput, setConfirmationInput] = useState('')
   const isConfirmed = confirmationInput.toLowerCase() === confirmationWord.toLowerCase()
@@ -29,10 +31,8 @@ export default function DeleteConfirmationModal({
   }, [isOpen])
 
   const handleConfirm = () => {
-    if (isConfirmed) {
+    if (isConfirmed && !isDeleting) {
       onConfirm()
-      onClose()
-      setConfirmationInput('')
     }
   }
 
@@ -53,11 +53,12 @@ export default function DeleteConfirmationModal({
               value={confirmationInput}
               onChange={(e) => setConfirmationInput(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' && isConfirmed) {
+                if (e.key === 'Enter' && isConfirmed && !isDeleting) {
                   handleConfirm()
                 }
               }}
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:focus:border-red-500 dark:focus:ring-red-500"
+              disabled={isDeleting}
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:focus:border-red-500 dark:focus:ring-red-500"
               placeholder={`Type ${confirmationWord} to confirm`}
               autoFocus
             />
@@ -67,17 +68,25 @@ export default function DeleteConfirmationModal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-all hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+            disabled={isDeleting}
+            className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-all hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
           >
             Cancel
           </button>
           <button
             type="button"
             onClick={handleConfirm}
-            disabled={!isConfirmed}
-            className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition-all hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-red-500 dark:hover:bg-red-400"
+            disabled={!isConfirmed || isDeleting}
+            className="inline-flex items-center justify-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition-all hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-red-500 dark:hover:bg-red-400"
           >
-            {confirmText}
+            {isDeleting ? (
+              <>
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
+                Deleting...
+              </>
+            ) : (
+              confirmText
+            )}
           </button>
         </div>
       </div>

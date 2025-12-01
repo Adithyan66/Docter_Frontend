@@ -87,11 +87,18 @@ export default function CreateVisitModal({
       fetchClinics()
       if (isEditMode && initialVisitData) {
         loadVisitData(initialVisitData)
+        setActiveTab('details')
       } else {
         resetForm()
       }
     }
   }, [isOpen, initialClinicId, primaryClinicId, isEditMode, initialVisitData])
+
+  useEffect(() => {
+    if (isEditMode) {
+      setActiveTab('details')
+    }
+  }, [isEditMode])
 
   useEffect(() => {
     if (!isEditMode) {
@@ -306,45 +313,49 @@ export default function CreateVisitModal({
     }
 
     setIsSubmitting(true)
-    setIsUploading(true)
+    if (!isEditMode) {
+      setIsUploading(true)
+    }
 
     try {
       const mediaUploads: CreateVisitMediaDto[] = []
 
-      for (const mediaFile of mediaFiles) {
-        if (mediaFile.isExisting && mediaFile.existingUrl) {
-          mediaUploads.push({
-            url: mediaFile.existingUrl,
-            filename: 'image',
-            type: mediaFile.type,
-            notes: mediaFile.notes.trim() || undefined,
-          })
-        } else if (mediaFile.file) {
-          try {
-            const { publicUrl } = await S3Service.uploadImage(
-              'Patient-Media',
-              mediaFile.file,
-              undefined
-            )
+      if (!isEditMode) {
+        for (const mediaFile of mediaFiles) {
+          if (mediaFile.isExisting && mediaFile.existingUrl) {
             mediaUploads.push({
-              url: publicUrl,
-              filename: mediaFile.file.name,
-              mimeType: mediaFile.file.type,
-              size: mediaFile.file.size,
+              url: mediaFile.existingUrl,
+              filename: 'image',
               type: mediaFile.type,
               notes: mediaFile.notes.trim() || undefined,
             })
-          } catch (error: any) {
-            toast.error(`Failed to upload ${mediaFile.file.name}. Please try again.`)
-            setIsUploading(false)
-            setIsSubmitting(false)
-            return
+          } else if (mediaFile.file) {
+            try {
+              const { publicUrl } = await S3Service.uploadImage(
+                'Patient-Media',
+                mediaFile.file,
+                undefined
+              )
+              mediaUploads.push({
+                url: publicUrl,
+                filename: mediaFile.file.name,
+                mimeType: mediaFile.file.type,
+                size: mediaFile.file.size,
+                type: mediaFile.type,
+                notes: mediaFile.notes.trim() || undefined,
+              })
+            } catch (error: any) {
+              toast.error(`Failed to upload ${mediaFile.file.name}. Please try again.`)
+              setIsUploading(false)
+              setIsSubmitting(false)
+              return
+            }
           }
         }
       }
 
       const prescriptionPayload =
-        prescriptionItems.length > 0 || diagnosisItems.length > 0
+        !isEditMode && (prescriptionItems.length > 0 || diagnosisItems.length > 0)
           ? {
               clinicId: formData.clinicId || undefined,
               diagnosis: diagnosisItems.length > 0 ? diagnosisItems : undefined,
@@ -369,7 +380,7 @@ export default function CreateVisitModal({
         notes: formData.notes.trim() || undefined,
         billedAmount: formData.billedAmount ? Number(formData.billedAmount) : undefined,
         prescription: prescriptionPayload,
-        media: mediaUploads.length > 0 ? mediaUploads : undefined,
+        media: !isEditMode && mediaUploads.length > 0 ? mediaUploads : undefined,
         paymentMethod: formData.billedAmount ? formData.paymentMethod : undefined,
         paymentReference: formData.billedAmount && formData.paymentMethod !== 'cash' && formData.paymentReference.trim() ? formData.paymentReference.trim() : undefined,
       }
@@ -433,57 +444,59 @@ export default function CreateVisitModal({
             </button>
           </div>
 
-          <div className="bg-slate-50 dark:bg-slate-800/50">
-            <div className="flex gap-0 overflow-x-auto">
-              <button
-                type="button"
-                onClick={() => setActiveTab('details')}
-                className={`relative whitespace-nowrap px-4 py-2.5 text-sm font-medium transition-all ${
-                  activeTab === 'details'
-                    ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
-                } ${
-                  activeTab === 'details'
-                    ? 'rounded-tl-lg rounded-tr-lg'
-                    : ''
-                }`}
-              >
-                Visit Details
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('prescription')}
-                className={`relative whitespace-nowrap px-4 py-2.5 text-sm font-medium transition-all ${
-                  activeTab === 'prescription'
-                    ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
-                } ${
-                  activeTab === 'prescription'
-                    ? 'rounded-tl-lg rounded-tr-lg'
-                    : ''
-                }`}
-              >
-                <div className="absolute left-0 top-1/2 -translate-y-1/2 h-1/2 w-px bg-slate-200 dark:bg-slate-700"></div>
-                Diagnosis & Prescription
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('media')}
-                className={`relative whitespace-nowrap px-4 py-2.5 text-sm font-medium transition-all ${
-                  activeTab === 'media'
-                    ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
-                } ${
-                  activeTab === 'media'
-                    ? 'rounded-tl-lg rounded-tr-lg'
-                    : ''
-                }`}
-              >
-                <div className="absolute left-0 top-1/2 -translate-y-1/2 h-1/2 w-px bg-slate-200 dark:bg-slate-700"></div>
-                Media
-              </button>
+          {!isEditMode && (
+            <div className="bg-slate-50 dark:bg-slate-800/50">
+              <div className="flex gap-0 overflow-x-auto">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('details')}
+                  className={`relative whitespace-nowrap px-4 py-2.5 text-sm font-medium transition-all ${
+                    activeTab === 'details'
+                      ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
+                  } ${
+                    activeTab === 'details'
+                      ? 'rounded-tl-lg rounded-tr-lg'
+                      : ''
+                  }`}
+                >
+                  Visit Details
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('prescription')}
+                  className={`relative whitespace-nowrap px-4 py-2.5 text-sm font-medium transition-all ${
+                    activeTab === 'prescription'
+                      ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
+                  } ${
+                    activeTab === 'prescription'
+                      ? 'rounded-tl-lg rounded-tr-lg'
+                      : ''
+                  }`}
+                >
+                  <div className="absolute left-0 top-1/2 -translate-y-1/2 h-1/2 w-px bg-slate-200 dark:bg-slate-700"></div>
+                  Diagnosis & Prescription
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('media')}
+                  className={`relative whitespace-nowrap px-4 py-2.5 text-sm font-medium transition-all ${
+                    activeTab === 'media'
+                      ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
+                  } ${
+                    activeTab === 'media'
+                      ? 'rounded-tl-lg rounded-tr-lg'
+                      : ''
+                  }`}
+                >
+                  <div className="absolute left-0 top-1/2 -translate-y-1/2 h-1/2 w-px bg-slate-200 dark:bg-slate-700"></div>
+                  Media
+                </button>
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
@@ -622,7 +635,7 @@ export default function CreateVisitModal({
               </div>
             )}
 
-            {activeTab === 'prescription' && (
+            {!isEditMode && activeTab === 'prescription' && (
               <div className="space-y-6">
                 <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/50">
                   <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-3">
@@ -835,7 +848,7 @@ export default function CreateVisitModal({
               </div>
             )}
 
-            {activeTab === 'media' && (
+            {!isEditMode && activeTab === 'media' && (
               <div className="space-y-6">
                 <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/50">
                   <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-3">

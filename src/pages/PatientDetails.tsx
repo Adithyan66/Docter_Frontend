@@ -142,29 +142,9 @@ export default function PatientDetails() {
   }
 
   const handleDeleteVisitClick = (visit: VisitResponseDto) => {
+    setIsDeletingVisit(false)
     setDeletingVisit(visit)
     setIsDeleteVisitModalOpen(true)
-  }
-
-  const handleDeleteVisit = async () => {
-    if (!deletingVisit || isDeletingVisit) return
-
-    try {
-      setIsDeletingVisit(true)
-      await deleteVisit(deletingVisit.id)
-      toast.success('Visit deleted successfully.')
-      setIsDeleteVisitModalOpen(false)
-      setDeletingVisit(null)
-      handleVisitSuccess()
-    } catch (error: any) {
-      setIsDeletingVisit(false)
-      const errorMessage =
-        error?.response?.data?.error?.message ||
-        error?.response?.data?.message ||
-        error?.message ||
-        'Unable to delete visit. Please try again.'
-      toast.error(errorMessage)
-    }
   }
 
   const {
@@ -193,12 +173,44 @@ export default function PatientDetails() {
     isSettingDefault,
     fetchPatient,
     fetchCourseDetails,
+    fetchVisits,
     selectedCourseId,
     handleCourseSelect,
     formatDate,
     formatDateTime,
     formatDateWithTime,
   } = usePatientDetails(id)
+
+  const refetchAllData = async () => {
+    await Promise.all([
+      fetchPatient(),
+      selectedCourseId ? fetchCourseDetails() : Promise.resolve(),
+      selectedCourseId ? fetchVisits() : Promise.resolve(),
+    ])
+  }
+
+  const handleDeleteVisit = async () => {
+    const visitToDelete = deletingVisit
+    if (!visitToDelete || isDeletingVisit) return
+
+    try {
+      setIsDeletingVisit(true)
+      await deleteVisit(visitToDelete.id)
+      toast.success('Visit deleted successfully.')
+      setIsDeletingVisit(false)
+      setIsDeleteVisitModalOpen(false)
+      setDeletingVisit(null)
+      await refetchAllData()
+    } catch (error: any) {
+      setIsDeletingVisit(false)
+      const errorMessage =
+        error?.response?.data?.error?.message ||
+        error?.response?.data?.message ||
+        error?.message ||
+        'Unable to delete visit. Please try again.'
+      toast.error(errorMessage)
+    }
+  }
 
   if (isLoading) {
     return <RotatingSpinner />
@@ -303,9 +315,9 @@ export default function PatientDetails() {
           doctorId={doctorId}
           clinicId={courseDetails.clinicId}
           primaryClinicId={patient.primaryClinic}
-          onSuccess={() => {
+          onSuccess={async () => {
             setIsVisitModalOpen(false)
-            handleVisitSuccess()
+            await refetchAllData()
           }}
         />
       )}
@@ -324,26 +336,31 @@ export default function PatientDetails() {
           primaryClinicId={patient.primaryClinic}
           visitId={editingVisit.id}
           visitData={editingVisit}
-          onSuccess={() => {
+          onSuccess={async () => {
             setIsEditVisitModalOpen(false)
             setEditingVisit(null)
-            handleVisitSuccess()
+            await refetchAllData()
           }}
         />
       )}
 
       {deletingVisit && (
         <DeleteConfirmationModal
+          key={deletingVisit.id}
           isOpen={isDeleteVisitModalOpen}
           onClose={() => {
-            setIsDeleteVisitModalOpen(false)
-            setDeletingVisit(null)
+            if (!isDeletingVisit) {
+              setIsDeleteVisitModalOpen(false)
+              setIsDeletingVisit(false)
+              setDeletingVisit(null)
+            }
           }}
           onConfirm={handleDeleteVisit}
           title="Delete Visit"
           message="This action cannot be undone. This will permanently delete the visit and all associated data."
           confirmText="Delete Visit"
           confirmationWord="delete"
+          isDeleting={isDeletingVisit}
         />
       )}
 
