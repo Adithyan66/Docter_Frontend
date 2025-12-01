@@ -4,9 +4,14 @@ import { getClinicNames, type ClinicName } from '@api/clinics'
 import { getTreatmentNames, getTreatment, type Treatment } from '@api/treatments'
 import {
   createTreatmentCourse,
+  updateTreatmentCourse,
+  getTreatmentCourseById,
   type TreatmentCoursePayload,
+  type TreatmentCourse,
+  type UpdateTreatmentCoursePayload,
 } from '@api/treatmentCourses'
 import DropdownFilter from '@components/common/DropdownFilter'
+import ConfirmationModal from '@components/common/ConfirmationModal'
 
 type CreateTreatmentCourseModalProps = {
   isOpen: boolean
@@ -15,6 +20,8 @@ type CreateTreatmentCourseModalProps = {
   doctorId: string
   primaryClinicId?: string
   onSuccess?: () => void
+  courseId?: string
+  courseData?: TreatmentCourse
 }
 
 export default function CreateTreatmentCourseModal({
@@ -24,7 +31,10 @@ export default function CreateTreatmentCourseModal({
   doctorId,
   primaryClinicId,
   onSuccess,
+  courseId,
+  courseData: initialCourseData,
 }: CreateTreatmentCourseModalProps) {
+  const isEditMode = !!courseId
   const [clinics, setClinics] = useState<ClinicName[]>([])
   const [treatments, setTreatments] = useState<Array<{ id: string; name: string }>>([])
   const [selectedTreatmentId, setSelectedTreatmentId] = useState<string>('')
@@ -32,12 +42,15 @@ export default function CreateTreatmentCourseModal({
   const [isLoadingClinics, setIsLoadingClinics] = useState(false)
   const [isLoadingTreatments, setIsLoadingTreatments] = useState(false)
   const [isLoadingTreatmentDetails, setIsLoadingTreatmentDetails] = useState(false)
+  const [isLoadingCourse, setIsLoadingCourse] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [selectedFeeType, setSelectedFeeType] = useState<'min' | 'max' | 'avg' | 'custom'>('avg')
   const [selectedDurationType, setSelectedDurationType] = useState<'min' | 'max' | 'avg' | 'custom'>('avg')
   const [showAllImages, setShowAllImages] = useState(false)
+  const [showConfirmModal, setShowConfirmModal] = useState(false)
   const [clinicDropdownOpen, setClinicDropdownOpen] = useState(false)
   const [treatmentDropdownOpen, setTreatmentDropdownOpen] = useState(false)
+  const [courseData, setCourseData] = useState<TreatmentCourse | null>(initialCourseData || null)
   const clinicButtonRef = useRef<HTMLButtonElement>(null)
   const treatmentButtonRef = useRef<HTMLButtonElement>(null)
   const notesTextareaRef = useRef<HTMLTextAreaElement>(null)
@@ -53,25 +66,84 @@ export default function CreateTreatmentCourseModal({
 
   useEffect(() => {
     if (isOpen) {
-      fetchClinics()
-      fetchTreatments()
-      setFormData({
-        clinicId: primaryClinicId || '',
-        treatmentId: '',
-        startDate: new Date().toISOString().split('T')[0],
-        expectedEndDate: '',
-        totalCost: '',
-        notes: '',
-      })
-      setSelectedTreatmentId('')
-      setTreatmentDetails(null)
-      setSelectedFeeType('avg')
-      setSelectedDurationType('avg')
-      setShowAllImages(false)
-      setClinicDropdownOpen(false)
-      setTreatmentDropdownOpen(false)
+      if (isEditMode && courseId) {
+        fetchCourseData()
+      } else {
+        fetchClinics()
+        fetchTreatments()
+        setFormData({
+          clinicId: primaryClinicId || '',
+          treatmentId: '',
+          startDate: new Date().toISOString().split('T')[0],
+          expectedEndDate: '',
+          totalCost: '',
+          notes: '',
+        })
+        setSelectedTreatmentId('')
+        setTreatmentDetails(null)
+        setSelectedFeeType('avg')
+        setSelectedDurationType('avg')
+        setShowAllImages(false)
+        setClinicDropdownOpen(false)
+        setTreatmentDropdownOpen(false)
+      }
+    } else {
+      setCourseData(null)
+      setShowConfirmModal(false)
     }
-  }, [isOpen, primaryClinicId])
+  }, [isOpen, primaryClinicId, courseId, isEditMode])
+
+  useEffect(() => {
+    if (isEditMode && courseData) {
+      const formatDate = (dateString?: string) => {
+        if (!dateString) return ''
+        try {
+          const date = new Date(dateString)
+          const year = date.getFullYear()
+          const month = String(date.getMonth() + 1).padStart(2, '0')
+          const day = String(date.getDate()).padStart(2, '0')
+          return `${year}-${month}-${day}`
+        } catch {
+          return ''
+        }
+      }
+
+      setFormData({
+        clinicId: courseData.clinicId || '',
+        treatmentId: courseData.treatmentId,
+        startDate: formatDate(courseData.startDate),
+        expectedEndDate: formatDate(courseData.expectedEndDate),
+        totalCost: courseData.totalCost?.toString() || '',
+        notes: courseData.notes || '',
+      })
+      setSelectedTreatmentId(courseData.treatmentId)
+    }
+  }, [courseData, isEditMode])
+
+  const fetchCourseData = async () => {
+    if (!courseId) return
+
+    try {
+      setIsLoadingCourse(true)
+      const course = initialCourseData || await getTreatmentCourseById(courseId)
+      setCourseData(course)
+      if (course.treatmentId) {
+        await fetchTreatmentDetails(course.treatmentId)
+      }
+      await fetchClinics()
+      await fetchTreatments()
+    } catch (error: any) {
+      const errorMessage =
+        error?.response?.data?.error?.message ||
+        error?.response?.data?.message ||
+        error?.message ||
+        'Unable to fetch course details. Please try again.'
+      toast.error(errorMessage)
+      onClose()
+    } finally {
+      setIsLoadingCourse(false)
+    }
+  }
 
   useEffect(() => {
     if (selectedTreatmentId && selectedTreatmentId !== treatmentDetails?.id) {
@@ -80,7 +152,7 @@ export default function CreateTreatmentCourseModal({
   }, [selectedTreatmentId, treatmentDetails?.id])
 
   useEffect(() => {
-    if (treatmentDetails && selectedTreatmentId) {
+    if (treatmentDetails && selectedTreatmentId && !isEditMode) {
       setFormData((prev) => {
         const updates: any = {
           treatmentId: selectedTreatmentId,
@@ -111,7 +183,7 @@ export default function CreateTreatmentCourseModal({
         return { ...prev, ...updates }
       })
     }
-  }, [treatmentDetails, selectedTreatmentId])
+  }, [treatmentDetails, selectedTreatmentId, isEditMode])
 
   useEffect(() => {
     if (notesTextareaRef.current) {
@@ -275,6 +347,11 @@ export default function CreateTreatmentCourseModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
+    if (isEditMode) {
+      setShowConfirmModal(true)
+      return
+    }
+
     if (!formData.clinicId) {
       toast.error('Please select a clinic')
       return
@@ -327,7 +404,57 @@ export default function CreateTreatmentCourseModal({
     }
   }
 
+  const performUpdate = async () => {
+    if (!courseId) return
+
+    if (formData.totalCost && (isNaN(Number(formData.totalCost)) || Number(formData.totalCost) < 0)) {
+      toast.error('Please enter a valid total cost')
+      return
+    }
+
+    setIsSubmitting(true)
+
+    try {
+      const payload: UpdateTreatmentCoursePayload = {
+        totalCost: formData.totalCost ? Number(formData.totalCost) : undefined,
+        expectedEndDate: formData.expectedEndDate
+          ? new Date(formData.expectedEndDate).toISOString()
+          : undefined,
+        notes: formData.notes.trim() || undefined,
+      }
+
+      await updateTreatmentCourse(courseId, payload)
+      toast.success('Treatment course updated successfully')
+      onSuccess?.()
+      onClose()
+    } catch (error: any) {
+      const errorMessage =
+        error?.response?.data?.error?.message ||
+        error?.response?.data?.message ||
+        error?.message ||
+        'Unable to update treatment course. Please try again.'
+      toast.error(errorMessage)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleConfirmUpdate = () => {
+    setShowConfirmModal(false)
+    performUpdate()
+  }
+
   if (!isOpen) return null
+
+  if (isLoadingCourse) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div className="rounded-2xl bg-white p-6 dark:bg-slate-900">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
@@ -335,7 +462,7 @@ export default function CreateTreatmentCourseModal({
         <div className="sticky top-0 border-b border-slate-200 bg-white px-6 py-4 dark:border-slate-700 dark:bg-slate-900">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
-              Create New Treatment Course
+              {isEditMode ? 'Edit Treatment Course' : 'Create New Treatment Course'}
             </h2>
             <button
               type="button"
@@ -375,6 +502,7 @@ export default function CreateTreatmentCourseModal({
                   onToggle={() => setClinicDropdownOpen(!clinicDropdownOpen)}
                   onClose={() => setClinicDropdownOpen(false)}
                   buttonRef={clinicButtonRef}
+                  disabled={isEditMode}
                 />
               </div>
 
@@ -391,6 +519,7 @@ export default function CreateTreatmentCourseModal({
                   onToggle={() => setTreatmentDropdownOpen(!treatmentDropdownOpen)}
                   onClose={() => setTreatmentDropdownOpen(false)}
                   buttonRef={treatmentButtonRef}
+                  disabled={isEditMode}
                 />
               </div>
             </div>
@@ -563,7 +692,10 @@ export default function CreateTreatmentCourseModal({
                   type="date"
                   value={formData.startDate}
                   onChange={(e) => handleStartDateChange(e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+                  disabled={isEditMode}
+                  className={`w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 ${
+                    isEditMode ? 'cursor-not-allowed opacity-60' : ''
+                  }`}
                   required
                 />
               </div>
@@ -573,7 +705,7 @@ export default function CreateTreatmentCourseModal({
                   <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
                     Expected End Date <span className="text-slate-400">(Optional)</span>
                   </label>
-                  {treatmentDetails && (
+                  {treatmentDetails && !isEditMode && (
                     <div className="flex flex-wrap gap-2 mb-3">
                       {treatmentDetails.minDuration && (
                         <button
@@ -643,12 +775,12 @@ export default function CreateTreatmentCourseModal({
               )}
             </div>
 
-            {!treatmentDetails?.isOneTime && (
+            {(isEditMode || !treatmentDetails?.isOneTime) && (
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
                   Total Cost (₹) <span className="text-slate-400">(Optional)</span>
                 </label>
-                {treatmentDetails && (
+                {treatmentDetails && !isEditMode && (
                   <div className="flex flex-wrap gap-2 mb-3">
                     {treatmentDetails.minFees && (
                       <button
@@ -743,28 +875,41 @@ export default function CreateTreatmentCourseModal({
             <button
               type="button"
               onClick={onClose}
-              className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-all hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
-              disabled={isSubmitting}
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-slate-100 to-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-slate-200 hover:to-slate-300 disabled:cursor-not-allowed disabled:opacity-60 dark:from-slate-800/30 dark:to-slate-700/30 dark:text-slate-200 dark:hover:from-slate-700/40 dark:hover:to-slate-600/40"
+              disabled={isSubmitting || isLoadingTreatmentDetails || isLoadingCourse}
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-all hover:bg-blue-500 dark:bg-blue-500 dark:hover:bg-blue-400"
-              disabled={isSubmitting || isLoadingTreatmentDetails}
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-blue-100 to-blue-200 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-blue-200 hover:to-blue-300 disabled:cursor-not-allowed disabled:opacity-60 dark:from-blue-800/30 dark:to-blue-700/30 dark:text-slate-200 dark:hover:from-blue-700/40 dark:hover:to-blue-600/40"
+              disabled={isSubmitting || isLoadingTreatmentDetails || isLoadingCourse}
             >
               {isSubmitting ? (
-                <span className="flex items-center gap-2">
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
-                  Creating...
-                </span>
+                <>
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-700 border-t-transparent dark:border-slate-200"></span>
+                  {isEditMode ? 'Updating...' : 'Creating...'}
+                </>
               ) : (
-                'Create Treatment Course'
+                isEditMode ? 'Update Treatment Course' : 'Create Treatment Course'
               )}
             </button>
           </div>
         </form>
       </div>
+
+      {isEditMode && (
+        <ConfirmationModal
+          isOpen={showConfirmModal}
+          onClose={() => setShowConfirmModal(false)}
+          onConfirm={handleConfirmUpdate}
+          title="Update Treatment Course"
+          message="Are you sure you want to update this treatment course? Please review all changes before confirming."
+          confirmText="Update Course"
+          cancelText="Cancel"
+          confirmButtonClassName="bg-blue-600 hover:bg-blue-500 dark:bg-blue-500 dark:hover:bg-blue-400"
+        />
+      )}
     </div>
   )
 }

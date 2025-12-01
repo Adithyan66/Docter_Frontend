@@ -120,3 +120,25 @@ export const getPatientById = async (id: string): Promise<PatientDetails> => {
   return data.data
 }
 
+export const updatePatientDefaultCourse = async (
+  patientId: string,
+  courseId: string
+): Promise<Patient> => {
+  const { data } = await httpClient.patch<ApiResponse<Patient>>(`patient/${patientId}`, {
+    defaultTreatmentCourse: courseId,
+  })
+  return data.data
+}
+
+export const updatePatient = async (
+  patientId: string,
+  payload: PatientPayload
+): Promise<Patient> => {
+  const { data } = await httpClient.patch<ApiResponse<Patient>>(`patient/${patientId}`, payload)
+  return data.data
+}
+
+export const deletePatient = async (patientId: string): Promise<void> => {
+  await httpClient.delete(`patient/${patientId}`)
+}
+

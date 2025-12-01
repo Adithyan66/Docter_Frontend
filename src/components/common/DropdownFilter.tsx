@@ -12,6 +12,7 @@ type DropdownFilterProps = {
   onClose: () => void
   buttonRef: React.RefObject<HTMLButtonElement | null>
   buttonClassName?: string
+  disabled?: boolean
 }
 
 export default function DropdownFilter({
@@ -24,6 +25,7 @@ export default function DropdownFilter({
   onClose,
   buttonRef,
   buttonClassName = '',
+  disabled = false,
 }: DropdownFilterProps) {
   const dropdownRef = useRef<HTMLDivElement>(null)
   const [position, setPosition] = useState({ top: 0, left: 0, width: 0 })
@@ -81,10 +83,11 @@ export default function DropdownFilter({
       <button
         ref={buttonRef}
         type="button"
-        onClick={onToggle}
+        onClick={disabled ? undefined : onToggle}
+        disabled={disabled}
         className={`flex items-center gap-2 rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 ${buttonClassName} ${
           value ? 'border-blue-500 bg-blue-50 dark:border-blue-400 dark:bg-blue-900/20' : ''
-        }`}
+        } ${disabled ? 'cursor-not-allowed opacity-60' : ''}`}
       >
         <span className="truncate min-w-0">{displayText}</span>
         <svg

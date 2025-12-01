@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import toast from 'react-hot-toast'
-import { getPatientById, type PatientDetails } from '@api/patients'
+import { getPatientById, updatePatientDefaultCourse, type PatientDetails } from '@api/patients'
 import { getTreatmentCourseById, type TreatmentCourse } from '@api/treatmentCourses'
 import { getTreatment, type Treatment } from '@api/treatments'
 import { getVisits, type VisitResponseDto } from '@api/visits'
@@ -30,6 +30,7 @@ export function usePatientDetails(patientId: string | undefined) {
   })
   const [isLoadingVisits, setIsLoadingVisits] = useState(false)
   const [visitsSearch, setVisitsSearch] = useState('')
+  const [isSettingDefault, setIsSettingDefault] = useState(false)
   const debouncedSearch = useDebounce(visitsSearch, 500)
   const navigate = useNavigate()
   useEffect(() => {
@@ -65,33 +66,33 @@ export function usePatientDetails(patientId: string | undefined) {
     }
   }, [patient?.treatmentCourses])
 
-  useEffect(() => {
-    const fetchCourseDetails = async () => {
-      if (!selectedCourseId) {
-        setCourseDetails(null)
-        setVisits([])
-        setVisitsPagination({ page: 1, limit: DEFAULT_VISITS_LIMIT, total: 0, totalPages: 0 })
-        return
-      }
-
-      try {
-        setIsLoadingCourse(true)
-        const courseData = await getTreatmentCourseById(selectedCourseId)
-        setCourseDetails(courseData)
-        setViewMode('course')
-      } catch (error: any) {
-        const errorMessage =
-          error?.response?.data?.error?.message ||
-          error?.response?.data?.message ||
-          error?.message ||
-          'Unable to fetch course details. Please try again.'
-        toast.error(errorMessage)
-        setSelectedCourseId(null)
-      } finally {
-        setIsLoadingCourse(false)
-      }
+  const fetchCourseDetails = async () => {
+    if (!selectedCourseId) {
+      setCourseDetails(null)
+      setVisits([])
+      setVisitsPagination({ page: 1, limit: DEFAULT_VISITS_LIMIT, total: 0, totalPages: 0 })
+      return
     }
 
+    try {
+      setIsLoadingCourse(true)
+      const courseData = await getTreatmentCourseById(selectedCourseId)
+      setCourseDetails(courseData)
+      setViewMode('course')
+    } catch (error: any) {
+      const errorMessage =
+        error?.response?.data?.error?.message ||
+        error?.response?.data?.message ||
+        error?.message ||
+        'Unable to fetch course details. Please try again.'
+      toast.error(errorMessage)
+      setSelectedCourseId(null)
+    } finally {
+      setIsLoadingCourse(false)
+    }
+  }
+
+  useEffect(() => {
     fetchCourseDetails()
   }, [selectedCourseId])
 
@@ -172,6 +173,26 @@ export function usePatientDetails(patientId: string | undefined) {
     fetchPatient()
   }
 
+  const handleSetDefaultCourse = async (courseId: string) => {
+    if (!patient?.id || isSettingDefault) return
+
+    try {
+      setIsSettingDefault(true)
+      await updatePatientDefaultCourse(patient.id, courseId)
+      toast.success('Default treatment course updated successfully')
+      await fetchPatient()
+    } catch (error: any) {
+      const errorMessage =
+        error?.response?.data?.error?.message ||
+        error?.response?.data?.message ||
+        error?.message ||
+        'Unable to set default treatment course. Please try again.'
+      toast.error(errorMessage)
+    } finally {
+      setIsSettingDefault(false)
+    }
+  }
+
   const formatDate = (dateString?: string) => {
     if (!dateString) return '-'
     try {
@@ -245,6 +266,10 @@ export function usePatientDetails(patientId: string | undefined) {
     handleTreatmentDetailsClick,
     handleCloseTreatmentModal,
     handleCreateTreatmentCourseSuccess,
+    handleSetDefaultCourse,
+    isSettingDefault,
+    fetchPatient,
+    fetchCourseDetails,
     formatDate,
     formatDateTime,
     formatDateWithTime,

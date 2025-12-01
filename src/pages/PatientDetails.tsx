@@ -1,11 +1,16 @@
 import { useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import { useAppSelector } from '@hooks/store'
+import toast from 'react-hot-toast'
 import CreateTreatmentCourseModal from '@components/treatment/CreateTreatmentCourseModal'
 import CreateVisitModal from '@components/visit/CreateVisitModal'
+import StatusChangeModal from '@components/treatment/StatusChangeModal'
+import { updateTreatmentCourse, type TreatmentCourseStatus } from '@api/treatmentCourses'
 import Pagination from '@components/common/Pagination'
 import ImageViewerModal from '@components/common/ImageViewerModal'
+import DeleteConfirmationModal from '@components/common/DeleteConfirmationModal'
 import { usePatientDetails } from '@hooks/data/usePatientDetails'
+import { deletePatient, updatePatient, type PatientPayload } from '@api/patients'
 import RotatingSpinner from '@components/spinner/TeethRotating'
 import { PlusIcon } from '@assets/Icons'
 import PatientDetail from '@assets/patientDetail.png'
@@ -13,9 +18,95 @@ import noprofile from '@assets/noprofile.png'
 
 export default function PatientDetails() {
   const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
   const doctorId = useAppSelector((state) => state.auth.user?.id || '')
   const [viewerImage, setViewerImage] = useState<string | null>(null)
   const [isViewerOpen, setIsViewerOpen] = useState(false)
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [isTogglingStatus, setIsTogglingStatus] = useState(false)
+  const [isEditCourseModalOpen, setIsEditCourseModalOpen] = useState(false)
+  const [isStatusModalOpen, setIsStatusModalOpen] = useState(false)
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false)
+
+  const handleDeletePatient = async () => {
+    if (!id || isDeleting) return
+
+    try {
+      setIsDeleting(true)
+      await deletePatient(id)
+      toast.success('Patient deleted successfully.')
+      setTimeout(() => navigate('/patients'), 800)
+    } catch (error: any) {
+      setIsDeleting(false)
+      const errorMessage =
+        error?.response?.data?.error?.message ||
+        error?.response?.data?.message ||
+        error?.message ||
+        'Unable to delete patient. Please try again.'
+      toast.error(errorMessage)
+    }
+  }
+
+  const handleToggleStatus = async () => {
+    if (!patient || !id || isTogglingStatus) return
+
+    try {
+      setIsTogglingStatus(true)
+      const payload: PatientPayload = {
+        firstName: patient.firstName || '',
+        lastName: patient.lastName,
+        fullName: patient.fullName,
+        address: patient.address,
+        profilePicUrl: patient.profilePicUrl,
+        consultationType: patient.consultationType,
+        primaryClinic: patient.primaryClinic,
+        clinics: patient.clinics,
+        dob: patient.dob,
+        lastVisitAt: patient.lastVisitAt,
+        age: patient.age,
+        visitCount: patient.visitCount,
+        gender: patient.gender,
+        phone: patient.phone,
+        email: patient.email,
+        tags: patient.tags,
+        isActive: !patient.isActive,
+      }
+      await updatePatient(id, payload)
+      toast.success(`Patient marked as ${!patient.isActive ? 'active' : 'inactive'} successfully.`)
+      await fetchPatient()
+    } catch (error: any) {
+      const errorMessage =
+        error?.response?.data?.error?.message ||
+        error?.response?.data?.message ||
+        error?.message ||
+        'Unable to update patient status. Please try again.'
+      toast.error(errorMessage)
+    } finally {
+      setIsTogglingStatus(false)
+    }
+  }
+
+  const handleStatusChange = async (status: TreatmentCourseStatus) => {
+    if (!courseDetails) return
+
+    try {
+      setIsUpdatingStatus(true)
+      await updateTreatmentCourse(courseDetails.id, { status })
+      toast.success(`Status updated to ${status.charAt(0).toUpperCase() + status.slice(1)} successfully.`)
+      setIsStatusModalOpen(false)
+      await fetchCourseDetails()
+    } catch (error: any) {
+      const errorMessage =
+        error?.response?.data?.error?.message ||
+        error?.response?.data?.message ||
+        error?.message ||
+        'Unable to update status. Please try again.'
+      toast.error(errorMessage)
+    } finally {
+      setIsUpdatingStatus(false)
+    }
+  }
 
   const {
     patient,
@@ -39,6 +130,10 @@ export default function PatientDetails() {
     handleTreatmentDetailsClick,
     handleCloseTreatmentModal,
     handleCreateTreatmentCourseSuccess,
+    handleSetDefaultCourse,
+    isSettingDefault,
+    fetchPatient,
+    fetchCourseDetails,
     selectedCourseId,
     handleCourseSelect,
     formatDate,
@@ -65,19 +160,51 @@ export default function PatientDetails() {
       <div className="rounded-2xl bg-white/60 p-6 backdrop-blur-sm dark:bg-slate-900">
         <div className="flex items-center justify-between">
           <img src={PatientDetail} alt="teeth" className="w-[120px] h-[120px]" />
-          <div className="flex-1">
-            <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">Patient Details</h1>
-            <p className="text-slate-600 dark:text-slate-300">
-              View comprehensive patient information.
-            </p>
+        <div className="flex-1">
+          <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">Patient Details</h1>
+          <p className="text-slate-600 dark:text-slate-300">
+          View comprehensive patient information.
+          </p>
             <div className="mt-3 flex flex-wrap gap-3">
-              <button
-                onClick={() => setIsModalOpen(true)}
+          <button
+            onClick={() => setIsModalOpen(true)}
                 className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-purple-100 to-purple-200 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-purple-200 hover:to-purple-300 dark:from-purple-800/30 dark:to-purple-700/30 dark:text-slate-200 dark:hover:from-purple-700/40 dark:hover:to-purple-600/40"
               >
                 <PlusIcon />
-                New Treatment Course
+                Add Treatment
               </button>
+              <button
+                onClick={() => navigate(`/patients/${id}/edit`)}
+                className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-blue-100 to-blue-200 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-blue-200 hover:to-blue-300 dark:from-blue-800/30 dark:to-blue-700/30 dark:text-slate-200 dark:hover:from-blue-700/40 dark:hover:to-blue-600/40"
+              >
+                Edit Profile
+              </button>
+              <button
+                onClick={() => setIsDeleteModalOpen(true)}
+                className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-red-100 to-red-200 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-red-200 hover:to-red-300 dark:from-red-800/30 dark:to-red-700/30 dark:text-slate-200 dark:hover:from-red-700/40 dark:hover:to-red-600/40"
+              >
+                Delete Profile
+              </button>
+              <button
+                onClick={handleToggleStatus}
+                disabled={isTogglingStatus}
+                className={`inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 ${
+                  patient.isActive
+                    ? 'bg-gradient-to-r from-orange-100 to-orange-200 hover:from-orange-200 hover:to-orange-300 dark:from-orange-800/30 dark:to-orange-700/30 dark:text-slate-200 dark:hover:from-orange-700/40 dark:hover:to-orange-600/40'
+                    : 'bg-gradient-to-r from-green-100 to-green-200 hover:from-green-200 hover:to-green-300 dark:from-green-800/30 dark:to-green-700/30 dark:text-slate-200 dark:hover:from-green-700/40 dark:hover:to-green-600/40'
+                }`}
+              >
+                {isTogglingStatus ? (
+                  <>
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-700 border-t-transparent dark:border-slate-200"></span>
+                    {patient.isActive ? 'Deactivating...' : 'Activating...'}
+                  </>
+                ) : (
+                  <>
+                    {patient.isActive ? 'Set Inactive' : 'Set Active'}
+                  </>
+                )}
+          </button>
             </div>
           </div>
         </div>
@@ -93,6 +220,22 @@ export default function PatientDetails() {
       />
 
       {courseDetails && (
+        <CreateTreatmentCourseModal
+          isOpen={isEditCourseModalOpen}
+          onClose={() => setIsEditCourseModalOpen(false)}
+          patientId={patient.id}
+          doctorId={doctorId}
+          primaryClinicId={patient.primaryClinic}
+          courseId={courseDetails.id}
+          courseData={courseDetails}
+          onSuccess={() => {
+            setIsEditCourseModalOpen(false)
+            fetchCourseDetails()
+          }}
+        />
+      )}
+
+      {courseDetails && (
         <CreateVisitModal
           isOpen={isVisitModalOpen}
           onClose={() => setIsVisitModalOpen(false)}
@@ -105,6 +248,16 @@ export default function PatientDetails() {
             setIsVisitModalOpen(false)
             handleVisitSuccess()
           }}
+        />
+      )}
+
+      {courseDetails && (
+        <StatusChangeModal
+          isOpen={isStatusModalOpen}
+          onClose={() => setIsStatusModalOpen(false)}
+          currentStatus={courseDetails.status}
+          onStatusChange={handleStatusChange}
+          isUpdating={isUpdatingStatus}
         />
       )}
 
@@ -427,11 +580,30 @@ export default function PatientDetails() {
                           View Treatment Details
                         </button>
                       )}
+                         {selectedCourseId && patient.treatmentCourses && (() => {
+                        const currentCourseIndex = patient.treatmentCourses.findIndex(c => c.id === selectedCourseId)
+                        return currentCourseIndex > 0 ? (
+                          <button
+                            onClick={() => handleSetDefaultCourse(selectedCourseId)}
+                            disabled={isSettingDefault}
+                            className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-orange-100 to-orange-200 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-orange-200 hover:to-orange-300 disabled:cursor-not-allowed disabled:opacity-60 dark:from-orange-800/30 dark:to-orange-700/30 dark:text-slate-200 dark:hover:from-orange-700/40 dark:hover:to-orange-600/40"
+                          >
+                            {isSettingDefault ? (
+                              <>
+                                <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-700 border-t-transparent dark:border-slate-200"></span>
+                                Setting...
+                              </>
+                            ) : (
+                              'Set as Default'
+                            )}
+                          </button>
+                        ) : null
+                      })()}
                       <button
-                        onClick={() => setIsVisitModalOpen(true)}
-                        className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-green-100 to-green-200 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-green-200 hover:to-green-300 dark:from-green-800/30 dark:to-green-700/30 dark:text-slate-200 dark:hover:from-green-700/40 dark:hover:to-green-600/40"
+                        onClick={() => setIsStatusModalOpen(true)}
+                        className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-indigo-100 to-indigo-200 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-indigo-200 hover:to-indigo-300 dark:from-indigo-800/30 dark:to-indigo-700/30 dark:text-slate-200 dark:hover:from-indigo-700/40 dark:hover:to-indigo-600/40"
                       >
-                        Add Visit
+                        Change Status
                       </button>
                     </div>
                   </div>
@@ -607,6 +779,21 @@ export default function PatientDetails() {
                       </div>
                   </div>
 
+                  <div className="flex gap-2 mt-4">
+                    <button
+                      onClick={() => setIsEditCourseModalOpen(true)}
+                      className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-yellow-100 to-yellow-200 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-yellow-200 hover:to-yellow-300 dark:from-yellow-800/30 dark:to-yellow-700/30 dark:text-slate-200 dark:hover:from-yellow-700/40 dark:hover:to-yellow-600/40"
+                    >
+                      Edit Course
+                    </button>
+                    <button
+                      onClick={() => setIsVisitModalOpen(true)}
+                      className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-green-100 to-green-200 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-green-200 hover:to-green-300 dark:from-green-800/30 dark:to-green-700/30 dark:text-slate-200 dark:hover:from-green-700/40 dark:hover:to-green-600/40"
+                    >
+                      Add Visit Data
+                    </button>
+                  </div>
+
                   <div>
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
@@ -636,11 +823,11 @@ export default function PatientDetails() {
                               className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800"
                             >
                               <div className="flex items-center justify-between mb-4">
-                                <h4 className="text-sm font-semibold text-slate-900 dark:text-white">
+                                <h4 className="text-lg font-semibold text-slate-900 dark:text-white">
                                   Visit on {formatDateWithTime(visit.visitDate)}
                                 </h4>
                                 {visit.billedAmount ? (
-                                  <span className="rounded-lg bg-green-100 px-3 py-1 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                                  <span className="rounded-lg bg-green-100 px-3 py-1 text-lg font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">
                                     ₹{visit.billedAmount.toLocaleString()}
                                   </span>
                                 ) : (
@@ -789,6 +976,16 @@ export default function PatientDetails() {
           setViewerImage(null)
         }}
         alt={patient.fullName || 'Patient image'}
+      />
+
+      <DeleteConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={handleDeletePatient}
+        title="Delete Patient"
+        message="This action cannot be undone. This will permanently delete the patient and all associated data."
+        confirmText="Delete Patient"
+        confirmationWord="delete"
       />
     </section>
   )

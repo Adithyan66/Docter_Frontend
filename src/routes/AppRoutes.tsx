@@ -25,6 +25,7 @@ export default function AppRoutes() {
           <Route path="/patients" element={<Patients />} />
           <Route path="/patients/:id" element={<PatientDetails />} />
           <Route path="/patient/add" element={<AddPatients />} />
+          <Route path="/patients/:id/edit" element={<AddPatients />} />
           <Route path="/treatments" element={<Treatments />} />
           <Route path="/treatments/add" element={<AddTreatment />} />
           <Route path="/treatments/edit/:id" element={<AddTreatment />} />

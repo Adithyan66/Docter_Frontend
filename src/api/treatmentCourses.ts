@@ -60,3 +60,21 @@ export const getTreatmentCourseById = async (id: string): Promise<TreatmentCours
   return data.data
 }
 
+export type UpdateTreatmentCoursePayload = {
+  totalCost?: number
+  expectedEndDate?: string
+  notes?: string
+  status?: TreatmentCourseStatus
+}
+
+export const updateTreatmentCourse = async (
+  courseId: string,
+  payload: UpdateTreatmentCoursePayload
+): Promise<TreatmentCourse> => {
+  const { data } = await httpClient.patch<ApiResponse<TreatmentCourse>>(
+    `treatment-course/${courseId}`,
+    payload
+  )
+  return data.data
+}
+

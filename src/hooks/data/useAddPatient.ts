@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import { createPatient, getClinicNames, type PatientPayload, type ClinicName } from '@api/patients'
+import { createPatient, updatePatient, getPatientById, getClinicNames, type PatientPayload, type ClinicName } from '@api/patients'
 import { S3Service } from '@services/s3Service'
 
 type PatientFormState = {
@@ -58,8 +58,11 @@ const createBlankForm = (): PatientFormState => {
 
 export function useAddPatient() {
   const navigate = useNavigate()
+  const { id } = useParams<{ id: string }>()
+  const isEditMode = !!id
   const [form, setForm] = useState<PatientFormState>(() => createBlankForm())
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isLoading, setIsLoading] = useState(isEditMode)
   const [isUploadingImage, setIsUploadingImage] = useState(false)
   const [pendingImage, setPendingImage] = useState<File | null>(null)
   const [pendingImagePreview, setPendingImagePreview] = useState<string | null>(null)
@@ -78,6 +81,77 @@ export function useAddPatient() {
     }
     fetchClinics()
   }, [])
+
+  useEffect(() => {
+    if (isEditMode && id) {
+      const fetchPatient = async () => {
+        try {
+          setIsLoading(true)
+          const patient = await getPatientById(id)
+          
+          const formatDate = (dateString?: string) => {
+            if (!dateString) return ''
+            try {
+              const date = new Date(dateString)
+              const year = date.getFullYear()
+              const month = String(date.getMonth() + 1).padStart(2, '0')
+              const day = String(date.getDate()).padStart(2, '0')
+              return `${year}-${month}-${day}`
+            } catch {
+              return ''
+            }
+          }
+
+          const formatDateTime = (dateString?: string) => {
+            if (!dateString) return ''
+            try {
+              const date = new Date(dateString)
+              const year = date.getFullYear()
+              const month = String(date.getMonth() + 1).padStart(2, '0')
+              const day = String(date.getDate()).padStart(2, '0')
+              const hours = String(date.getHours()).padStart(2, '0')
+              const minutes = String(date.getMinutes()).padStart(2, '0')
+              return `${year}-${month}-${day}T${hours}:${minutes}`
+            } catch {
+              return ''
+            }
+          }
+
+          setForm({
+            firstName: patient.firstName || '',
+            lastName: patient.lastName || '',
+            fullName: patient.fullName || '',
+            address: patient.address || '',
+            profilePicUrl: patient.profilePicUrl || '',
+            consultationType: patient.consultationType || 'one-time',
+            primaryClinic: patient.primaryClinic || '',
+            clinics: patient.clinics || [],
+            dob: formatDate(patient.dob),
+            lastVisitAt: formatDateTime(patient.lastVisitAt) || formatDateTime(),
+            age: patient.age?.toString() || '',
+            visitCount: patient.visitCount?.toString() || '0',
+            gender: patient.gender || 'unknown',
+            phone: patient.phone || '',
+            email: patient.email || '',
+            tags: patient.tags || [],
+            currentTag: '',
+            isActive: patient.isActive ?? true,
+          })
+        } catch (error: any) {
+          const errorMessage =
+            error?.response?.data?.error?.message ||
+            error?.response?.data?.message ||
+            error?.message ||
+            'Unable to fetch patient details. Please try again.'
+          toast.error(errorMessage)
+          navigate('/patients')
+        } finally {
+          setIsLoading(false)
+        }
+      }
+      fetchPatient()
+    }
+  }, [isEditMode, id, navigate])
 
   useEffect(() => {
     if (pendingImage) {
@@ -206,7 +280,9 @@ export function useAddPatient() {
 
   const submitForm = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+  }
 
+  const performSubmit = async () => {
     if (!form.firstName.trim()) {
       toast.error('First name is required.')
       return
@@ -272,16 +348,22 @@ export function useAddPatient() {
         isActive: form.isActive,
       }
 
-      const patient = await createPatient(payload)
-      toast.success('Patient created successfully.')
-      setTimeout(() => navigate(`/patients/${patient.id}`), 800)
+      if (isEditMode && id) {
+        await updatePatient(id, payload)
+        toast.success('Patient updated successfully.')
+        setTimeout(() => navigate(`/patients/${id}`), 800)
+      } else {
+        const patient = await createPatient(payload)
+        toast.success('Patient created successfully.')
+        setTimeout(() => navigate(`/patients/${patient.id}`), 800)
+      }
     } catch (error: any) {
       setIsUploadingImage(false)
       const errorMessage =
         error?.response?.data?.error?.message ||
         error?.response?.data?.message ||
         error?.message ||
-        'Unable to create patient. Please try again.'
+        (isEditMode ? 'Unable to update patient. Please try again.' : 'Unable to create patient. Please try again.')
 
       if (error?.response?.status === 409) {
         toast.error('Patient ID already exists.')
@@ -296,6 +378,8 @@ export function useAddPatient() {
   return {
     form,
     isSubmitting,
+    isLoading,
+    isEditMode,
     isUploadingImage,
     pendingImagePreview,
     showCamera,
@@ -311,6 +395,7 @@ export function useAddPatient() {
     removeTag,
     toggleClinic,
     submitForm,
+    performSubmit,
     setShowCamera,
   }
 }

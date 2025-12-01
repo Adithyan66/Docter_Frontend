@@ -33,6 +33,7 @@ type FormDropdownProps = {
   onClose: () => void
   buttonRef: React.RefObject<HTMLButtonElement | null>
   showLabel?: boolean
+  disabled?: boolean
 }
 
 function FormDropdown({
@@ -45,6 +46,7 @@ function FormDropdown({
   onClose,
   buttonRef,
   showLabel = true,
+  disabled = false,
 }: FormDropdownProps) {
   const dropdownRef = useRef<HTMLDivElement>(null)
   const [position, setPosition] = useState({ top: 0, left: 0, width: 0 })
@@ -105,9 +107,10 @@ function FormDropdown({
           ref={buttonRef}
           type="button"
           onClick={onToggle}
+          disabled={disabled}
           className={`w-full flex items-center justify-between gap-2 bg-transparent border-0 border-b-2 border-slate-200 px-0 py-2.5 text-sm text-slate-900 outline-none transition-colors focus:border-blue-500 dark:border-slate-700 dark:text-slate-100 dark:focus:border-blue-400 ${
             value ? 'border-blue-500 dark:border-blue-400' : ''
-          }`}
+          } ${disabled ? 'cursor-not-allowed opacity-60' : ''}`}
         >
           <span className="text-left truncate">{displayText}</span>
           <svg
@@ -130,6 +133,8 @@ export default function AddPatients() {
   const {
     form,
     isSubmitting,
+    isLoading,
+    isEditMode,
     pendingImagePreview,
     showCamera,
     availableClinics,
@@ -141,7 +146,7 @@ export default function AddPatients() {
     removePendingImage,
     addTag,
     removeTag,
-    submitForm,
+    performSubmit,
     setShowCamera,
   } = useAddPatient()
 
@@ -180,15 +185,16 @@ export default function AddPatients() {
   }
 
   const handleConfirmSubmit = () => {
-    const formElement = document.getElementById('add-patient-form') as HTMLFormElement
-    if (formElement) {
-      const syntheticEvent = {
-        preventDefault: () => {},
-        currentTarget: formElement,
-        target: formElement,
-      } as unknown as React.FormEvent<HTMLFormElement>
-      submitForm(syntheticEvent)
-    }
+    setShowConfirmModal(false)
+    performSubmit()
+  }
+
+  if (isLoading) {
+    return (
+      <section className="flex items-center justify-center space-y-6">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
+      </section>
+    )
   }
 
   return (
@@ -202,9 +208,13 @@ export default function AddPatients() {
       <div className="flex flex-col gap-4 rounded-md bg-white/60 p-6 backdrop-blur-sm dark:bg-slate-900 lg:flex-row lg:items-center lg:gap-6">
         <img src={addPatient} alt="teeth" className="w-[120px] h-[120px]" />
         <div className="flex-1">
-          <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">Add Patient</h1>
+          <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">
+            {isEditMode ? 'Edit Patient' : 'Add Patient'}
+          </h1>
           <p className="text-slate-600 dark:text-slate-300">
-            Add a new patient with their personal information and consultation details.
+            {isEditMode
+              ? 'Update patient information and consultation details.'
+              : 'Add a new patient with their personal information and consultation details.'}
           </p>
           <div className="mt-3 flex flex-wrap gap-3">
             <button
@@ -234,12 +244,12 @@ export default function AddPatients() {
           {isSubmitting ? (
             <>
               <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-700 border-t-transparent dark:border-slate-200"></span>
-              Saving...
+              {isEditMode ? 'Updating...' : 'Saving...'}
             </>
           ) : (
             <>
               <PlusIcon />
-              Save Patient
+              {isEditMode ? 'Update Patient' : 'Save Patient'}
             </>
           )}
         </button>
@@ -499,6 +509,7 @@ export default function AddPatients() {
                     onClose={() => setPrimaryClinicDropdownOpen(false)}
                     buttonRef={primaryClinicButtonRef}
                     showLabel={false}
+                    disabled={isEditMode}
                   />
                 </div>
               </div>
@@ -577,9 +588,11 @@ export default function AddPatients() {
         isOpen={showConfirmModal}
         onClose={() => setShowConfirmModal(false)}
         onConfirm={handleConfirmSubmit}
-        title="Confirm Patient Creation"
-        message="Are you sure you want to save this patient? Please review all information before confirming."
-        confirmText="Save Patient"
+        title={isEditMode ? 'Confirm Patient Update' : 'Confirm Patient Creation'}
+        message={isEditMode 
+          ? 'Are you sure you want to update this patient? Please review all changes before confirming.'
+          : 'Are you sure you want to save this patient? Please review all information before confirming.'}
+        confirmText={isEditMode ? 'Update Patient' : 'Save Patient'}
         cancelText="Cancel"
         confirmButtonClassName="bg-green-600 hover:bg-green-500 dark:bg-green-500 dark:hover:bg-green-400"
       />
