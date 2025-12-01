@@ -78,6 +78,7 @@ export function useClinicDetails(clinicId: string | undefined) {
     handleDateFilterChange,
     formatDate,
     formatDateTime,
+    fetchClinic,
   }
 }
 

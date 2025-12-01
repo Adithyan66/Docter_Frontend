@@ -1,19 +1,28 @@
 import { useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import treatmentLogo from '@assets/treatment.png'
 import RotatingSpinner from '@components/spinner/TeethRotating'
 import ImageViewerModal from '@components/common/ImageViewerModal'
+import DeleteConfirmationModal from '@components/common/DeleteConfirmationModal'
+import ConfirmationModal from '@components/common/ConfirmationModal'
 import { useTreatmentDetails } from '@hooks/data/useTreatmentDetails'
+import { updateTreatment, deleteTreatment } from '@api/treatments'
+import toast from 'react-hot-toast'
 
 const INITIAL_IMAGES_TO_SHOW = 6
 
 export default function TreatmentDetails() {
   const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
   const [viewerImage, setViewerImage] = useState<string | null>(null)
   const [isViewerOpen, setIsViewerOpen] = useState(false)
   const [showAllImages, setShowAllImages] = useState(false)
   const [startDateFrom, setStartDateFrom] = useState('')
   const [startDateTo, setStartDateTo] = useState('')
+  const [statusModalOpen, setStatusModalOpen] = useState(false)
+  const [isTogglingStatus, setIsTogglingStatus] = useState(false)
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const {
     treatment,
@@ -22,6 +31,7 @@ export default function TreatmentDetails() {
     handleDateFilterChange,
     formatDate,
     formatDateTime,
+    fetchTreatment,
   } = useTreatmentDetails(id)
 
   const handleApplyDateFilter = () => {
@@ -32,6 +42,64 @@ export default function TreatmentDetails() {
     setStartDateFrom('')
     setStartDateTo('')
     handleDateFilterChange(undefined, undefined)
+  }
+
+  const handleToggleStatus = () => {
+    setStatusModalOpen(true)
+  }
+
+  const confirmToggleStatus = async () => {
+    if (!id || !treatment || isTogglingStatus) return
+
+    try {
+      setIsTogglingStatus(true)
+      await updateTreatment(id, {
+        isActive: !treatment.isActive,
+      })
+      toast.success(`Treatment marked as ${!treatment.isActive ? 'active' : 'inactive'} successfully.`)
+      setStatusModalOpen(false)
+      await fetchTreatment(dateFilters)
+    } catch (error: any) {
+      const errorMessage =
+        error?.response?.data?.error?.message ||
+        error?.response?.data?.message ||
+        error?.message ||
+        'Unable to update treatment status. Please try again.'
+      toast.error(errorMessage)
+    } finally {
+      setIsTogglingStatus(false)
+    }
+  }
+
+  const closeStatusModal = () => {
+    setStatusModalOpen(false)
+  }
+
+  const handleDelete = () => {
+    setDeleteModalOpen(true)
+  }
+
+  const confirmDelete = async () => {
+    if (!id || isDeleting) return
+
+    try {
+      setIsDeleting(true)
+      await deleteTreatment(id)
+      toast.success('Treatment deleted successfully.')
+      setTimeout(() => navigate('/treatments'), 800)
+    } catch (error: any) {
+      setIsDeleting(false)
+      const errorMessage =
+        error?.response?.data?.error?.message ||
+        error?.response?.data?.message ||
+        error?.message ||
+        'Unable to delete treatment. Please try again.'
+      toast.error(errorMessage)
+    }
+  }
+
+  const closeDeleteModal = () => {
+    setDeleteModalOpen(false)
   }
 
   const displayedImages = treatment?.images
@@ -97,6 +165,43 @@ export default function TreatmentDetails() {
           <p className="text-slate-600 dark:text-slate-300">
             View comprehensive treatment information and statistics.
           </p>
+          <div className="mt-3 flex gap-2">
+            <button
+              type="button"
+              onClick={() => navigate(`/treatments/edit/${id}`)}
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-blue-100 to-blue-200 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-blue-200 hover:to-blue-300 dark:from-blue-800/30 dark:to-blue-700/30 dark:text-slate-200 dark:hover:from-blue-700/40 dark:hover:to-blue-600/40"
+            >
+              Edit
+            </button>
+            <button
+              type="button"
+              onClick={handleToggleStatus}
+              disabled={isTogglingStatus}
+              className={`inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 ${
+                treatment.isActive
+                  ? 'bg-gradient-to-r from-orange-100 to-orange-200 hover:from-orange-200 hover:to-orange-300 dark:from-orange-800/30 dark:to-orange-700/30 dark:text-slate-200 dark:hover:from-orange-700/40 dark:hover:to-orange-600/40'
+                  : 'bg-gradient-to-r from-green-100 to-green-200 hover:from-green-200 hover:to-green-300 dark:from-green-800/30 dark:to-green-700/30 dark:text-slate-200 dark:hover:from-green-700/40 dark:hover:to-green-600/40'
+              }`}
+            >
+              {isTogglingStatus ? (
+                <>
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-700 border-t-transparent dark:border-slate-200"></span>
+                  {treatment.isActive ? 'Deactivating...' : 'Activating...'}
+                </>
+              ) : (
+                <>
+                  {treatment.isActive ? 'Set Inactive' : 'Set Active'}
+                </>
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={handleDelete}
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-red-100 to-red-200 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-red-200 hover:to-red-300 dark:from-red-800/30 dark:to-red-700/30 dark:text-slate-200 dark:hover:from-red-700/40 dark:hover:to-red-600/40"
+            >
+              Delete
+            </button>
+          </div>
         </div>
         <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
           <input
@@ -135,6 +240,21 @@ export default function TreatmentDetails() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="lg:col-span-1 space-y-4">
           <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-slate-50/50 p-8 shadow-lg dark:border-slate-800 dark:bg-slate-900 lg:sticky lg:top-1">
+            <div
+              className={`absolute left-0 top-0 z-10 ${
+                treatment.isActive
+                  ? 'bg-green-500 dark:bg-green-600'
+                  : 'bg-red-500 dark:bg-red-600'
+              } px-8 py-1 text-xs font-bold text-white shadow-md`}
+              style={{
+                transform: 'rotate(-45deg)',
+                transformOrigin: 'top left',
+                left: '-15px',
+                top: '58px',
+              }}
+            >
+              {treatment.isActive ? 'ACTIVE' : 'INACTIVE'}
+            </div>
             <div className="flex flex-col items-center space-y-4 mb-8">
               {treatment.images && treatment.images.length > 0 ? (
                 <img
@@ -178,7 +298,7 @@ export default function TreatmentDetails() {
                   </span>
                   {treatment.minDuration !== undefined ? (
                     <p className="text-sm font-semibold text-slate-900 dark:text-white">
-                      {treatment.minDuration} days
+                      {treatment.minDuration} Months
                     </p>
                   ) : (
                     <span className="inline-block rounded-full bg-slate-200 px-2 py-0.5 text-xs font-medium text-slate-600 dark:bg-slate-700 dark:text-slate-400">
@@ -192,7 +312,7 @@ export default function TreatmentDetails() {
                   </span>
                   {treatment.maxDuration !== undefined ? (
                     <p className="text-sm font-semibold text-slate-900 dark:text-white">
-                      {treatment.maxDuration} days
+                      {treatment.maxDuration} Months
                     </p>
                   ) : (
                     <span className="inline-block rounded-full bg-slate-200 px-2 py-0.5 text-xs font-medium text-slate-600 dark:bg-slate-700 dark:text-slate-400">
@@ -206,7 +326,7 @@ export default function TreatmentDetails() {
                   </span>
                   {treatment.avgDuration !== undefined ? (
                     <p className="text-sm font-semibold text-slate-900 dark:text-white">
-                      {treatment.avgDuration} days
+                      {treatment.avgDuration} Months
                     </p>
                   ) : (
                     <span className="inline-block rounded-full bg-slate-200 px-2 py-0.5 text-xs font-medium text-slate-600 dark:bg-slate-700 dark:text-slate-400">
@@ -824,6 +944,33 @@ export default function TreatmentDetails() {
         }}
         alt={treatment.name || 'Treatment image'}
       />
+
+      <ConfirmationModal
+        isOpen={statusModalOpen}
+        onClose={closeStatusModal}
+        onConfirm={confirmToggleStatus}
+        title="Change Treatment Status"
+        message={
+          treatment
+            ? `Are you sure you want to mark "${treatment.name}" as ${!treatment.isActive ? 'active' : 'inactive'}?`
+            : `Are you sure you want to change the treatment status?`
+        }
+        confirmText={isTogglingStatus ? (treatment?.isActive ? 'Deactivating...' : 'Activating...') : 'Confirm'}
+        cancelText="Cancel"
+        confirmButtonClassName="bg-blue-600 hover:bg-blue-500 dark:bg-blue-500 dark:hover:bg-blue-400 disabled:opacity-50"
+      />
+
+      {treatment && (
+        <DeleteConfirmationModal
+          isOpen={deleteModalOpen}
+          onClose={closeDeleteModal}
+          onConfirm={confirmDelete}
+          title="Delete Treatment"
+          message="This action cannot be undone. This will permanently delete the treatment and all associated data."
+          confirmText="Delete Treatment"
+          confirmationWord={treatment.name}
+        />
+      )}
     </section>
   )
 }

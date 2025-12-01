@@ -130,6 +130,22 @@ export default function Clinics() {
                 className: 'text-center',
               },
               {
+                key: 'isActive',
+                header: 'Status',
+                render: (clinic) => (
+                  <span
+                    className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                      clinic.isActive
+                        ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                        : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+                    }`}
+                  >
+                    {clinic.isActive ? 'Active' : 'Inactive'}
+                  </span>
+                ),
+                className: 'text-center',
+              },
+              {
                 key: 'city',
                 header: 'City',
                 render: (clinic) => clinic.city || '-',

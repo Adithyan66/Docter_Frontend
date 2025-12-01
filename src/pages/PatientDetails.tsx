@@ -5,12 +5,13 @@ import toast from 'react-hot-toast'
 import CreateTreatmentCourseModal from '@components/treatment/CreateTreatmentCourseModal'
 import CreateVisitModal from '@components/visit/CreateVisitModal'
 import StatusChangeModal from '@components/treatment/StatusChangeModal'
-import { updateTreatmentCourse, type TreatmentCourseStatus } from '@api/treatmentCourses'
+import { updateTreatmentCourse, deleteTreatmentCourse, type TreatmentCourseStatus } from '@api/treatmentCourses'
 import Pagination from '@components/common/Pagination'
 import ImageViewerModal from '@components/common/ImageViewerModal'
 import DeleteConfirmationModal from '@components/common/DeleteConfirmationModal'
 import { usePatientDetails } from '@hooks/data/usePatientDetails'
 import { deletePatient, updatePatient, type PatientPayload } from '@api/patients'
+import { deleteVisit, type VisitResponseDto } from '@api/visits'
 import RotatingSpinner from '@components/spinner/TeethRotating'
 import { PlusIcon } from '@assets/Icons'
 import PatientDetail from '@assets/patientDetail.png'
@@ -28,6 +29,13 @@ export default function PatientDetails() {
   const [isEditCourseModalOpen, setIsEditCourseModalOpen] = useState(false)
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false)
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false)
+  const [isDeleteCourseModalOpen, setIsDeleteCourseModalOpen] = useState(false)
+  const [isDeletingCourse, setIsDeletingCourse] = useState(false)
+  const [editingVisit, setEditingVisit] = useState<VisitResponseDto | null>(null)
+  const [isEditVisitModalOpen, setIsEditVisitModalOpen] = useState(false)
+  const [deletingVisit, setDeletingVisit] = useState<VisitResponseDto | null>(null)
+  const [isDeleteVisitModalOpen, setIsDeleteVisitModalOpen] = useState(false)
+  const [isDeletingVisit, setIsDeletingVisit] = useState(false)
 
   const handleDeletePatient = async () => {
     if (!id || isDeleting) return
@@ -105,6 +113,57 @@ export default function PatientDetails() {
       toast.error(errorMessage)
     } finally {
       setIsUpdatingStatus(false)
+    }
+  }
+
+  const handleDeleteCourse = async () => {
+    if (!courseDetails || !selectedCourseId || isDeletingCourse) return
+
+    try {
+      setIsDeletingCourse(true)
+      await deleteTreatmentCourse(courseDetails.id)
+      toast.success('Treatment course deleted successfully.')
+      setIsDeleteCourseModalOpen(false)
+      await fetchPatient()
+    } catch (error: any) {
+      setIsDeletingCourse(false)
+      const errorMessage =
+        error?.response?.data?.error?.message ||
+        error?.response?.data?.message ||
+        error?.message ||
+        'Unable to delete treatment course. Please try again.'
+      toast.error(errorMessage)
+    }
+  }
+
+  const handleEditVisit = (visit: VisitResponseDto) => {
+    setEditingVisit(visit)
+    setIsEditVisitModalOpen(true)
+  }
+
+  const handleDeleteVisitClick = (visit: VisitResponseDto) => {
+    setDeletingVisit(visit)
+    setIsDeleteVisitModalOpen(true)
+  }
+
+  const handleDeleteVisit = async () => {
+    if (!deletingVisit || isDeletingVisit) return
+
+    try {
+      setIsDeletingVisit(true)
+      await deleteVisit(deletingVisit.id)
+      toast.success('Visit deleted successfully.')
+      setIsDeleteVisitModalOpen(false)
+      setDeletingVisit(null)
+      handleVisitSuccess()
+    } catch (error: any) {
+      setIsDeletingVisit(false)
+      const errorMessage =
+        error?.response?.data?.error?.message ||
+        error?.response?.data?.message ||
+        error?.message ||
+        'Unable to delete visit. Please try again.'
+      toast.error(errorMessage)
     }
   }
 
@@ -251,6 +310,43 @@ export default function PatientDetails() {
         />
       )}
 
+      {editingVisit && courseDetails && (
+        <CreateVisitModal
+          isOpen={isEditVisitModalOpen}
+          onClose={() => {
+            setIsEditVisitModalOpen(false)
+            setEditingVisit(null)
+          }}
+          patientId={patient.id}
+          courseId={courseDetails.id}
+          doctorId={doctorId}
+          clinicId={courseDetails.clinicId}
+          primaryClinicId={patient.primaryClinic}
+          visitId={editingVisit.id}
+          visitData={editingVisit}
+          onSuccess={() => {
+            setIsEditVisitModalOpen(false)
+            setEditingVisit(null)
+            handleVisitSuccess()
+          }}
+        />
+      )}
+
+      {deletingVisit && (
+        <DeleteConfirmationModal
+          isOpen={isDeleteVisitModalOpen}
+          onClose={() => {
+            setIsDeleteVisitModalOpen(false)
+            setDeletingVisit(null)
+          }}
+          onConfirm={handleDeleteVisit}
+          title="Delete Visit"
+          message="This action cannot be undone. This will permanently delete the visit and all associated data."
+          confirmText="Delete Visit"
+          confirmationWord="delete"
+        />
+      )}
+
       {courseDetails && (
         <StatusChangeModal
           isOpen={isStatusModalOpen}
@@ -260,6 +356,21 @@ export default function PatientDetails() {
           isUpdating={isUpdatingStatus}
         />
       )}
+
+      {courseDetails && selectedCourseId && patient?.treatmentCourses && (() => {
+        const treatmentName = patient.treatmentCourses.find(c => c.id === selectedCourseId)?.treatmentName
+        return treatmentName ? (
+          <DeleteConfirmationModal
+            isOpen={isDeleteCourseModalOpen}
+            onClose={() => setIsDeleteCourseModalOpen(false)}
+            onConfirm={handleDeleteCourse}
+            title="Delete Treatment Course"
+            message="This action cannot be undone. This will permanently delete the treatment course and all associated data."
+            confirmText="Delete Course"
+            confirmationWord={treatmentName}
+          />
+        ) : null
+      })()}
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="lg:col-span-1 space-y-4">
@@ -605,6 +716,12 @@ export default function PatientDetails() {
                       >
                         Change Status
                       </button>
+                      <button
+                        onClick={() => setIsDeleteCourseModalOpen(true)}
+                        className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-red-100 to-red-200 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-red-200 hover:to-red-300 dark:from-red-800/30 dark:to-red-700/30 dark:text-slate-200 dark:hover:from-red-700/40 dark:hover:to-red-600/40"
+                      >
+                        Delete Course
+                      </button>
                     </div>
                   </div>
 
@@ -826,13 +943,27 @@ export default function PatientDetails() {
                                 <h4 className="text-lg font-semibold text-slate-900 dark:text-white">
                                   Visit on {formatDateWithTime(visit.visitDate)}
                                 </h4>
-                                {visit.billedAmount ? (
-                                  <span className="rounded-lg bg-green-100 px-3 py-1 text-lg font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">
-                                    ₹{visit.billedAmount.toLocaleString()}
-                                  </span>
-                                ) : (
-                                  <span className="text-xs text-slate-500 dark:text-slate-400">No payment</span>
-                                )}
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    onClick={() => handleEditVisit(visit)}
+                                    className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-yellow-100 to-yellow-200 px-3 py-1.5 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-yellow-200 hover:to-yellow-300 dark:from-yellow-800/30 dark:to-yellow-700/30 dark:text-slate-200 dark:hover:from-yellow-700/40 dark:hover:to-yellow-600/40"
+                                  >
+                                    Update
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteVisitClick(visit)}
+                                    className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-red-100 to-red-200 px-3 py-1.5 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-red-200 hover:to-red-300 dark:from-red-800/30 dark:to-red-700/30 dark:text-slate-200 dark:hover:from-red-700/40 dark:hover:to-red-600/40"
+                                  >
+                                    Delete
+                                  </button>
+                                  {visit.billedAmount ? (
+                                    <span className="rounded-lg bg-green-100 px-3 py-1 text-lg font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                                      ₹{visit.billedAmount.toLocaleString()}
+                                    </span>
+                                  ) : (
+                                    <span className="text-xs text-slate-500 dark:text-slate-400">No payment</span>
+                                  )}
+                                </div>
                               </div>
 
                               <div className="flex gap-4 items-stretch">

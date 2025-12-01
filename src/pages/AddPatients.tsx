@@ -8,6 +8,7 @@ import { PlusIcon } from '@assets/Icons'
 import addPatient from '@assets/addPatient.png'
 import noprofile from '@assets/noprofile.png'
 import { useClickOutside } from '@hooks/utils/useClickOutside'
+import RotatingSpinner from '@components/spinner/TeethRotating'
 const SectionCard = ({ title, children }: { title: string; children: ReactNode }) => (
   <div className="flex flex-col gap-5 rounded-md bg-white/60 p-6 backdrop-blur-sm transition-shadow hover:shadow-md dark:bg-slate-900">
     <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
@@ -190,11 +191,7 @@ export default function AddPatients() {
   }
 
   if (isLoading) {
-    return (
-      <section className="flex items-center justify-center space-y-6">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
-      </section>
-    )
+    return <RotatingSpinner/>
   }
 
   return (
@@ -235,24 +232,6 @@ export default function AddPatients() {
             </button>
           </div>
         </div>
-        <button
-          type="button"
-          onClick={handleSaveClick}
-          className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-green-100 to-green-200 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-green-200 hover:to-green-300 disabled:cursor-not-allowed disabled:opacity-60 dark:from-green-800/30 dark:to-green-700/30 dark:text-slate-200 dark:hover:from-green-700/40 dark:hover:to-green-600/40"
-          disabled={isSubmitting}
-        >
-          {isSubmitting ? (
-            <>
-              <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-700 border-t-transparent dark:border-slate-200"></span>
-              {isEditMode ? 'Updating...' : 'Saving...'}
-            </>
-          ) : (
-            <>
-              <PlusIcon />
-              {isEditMode ? 'Update Patient' : 'Save Patient'}
-            </>
-          )}
-        </button>
       </div>
       <form
         id="add-patient-form"
@@ -495,44 +474,33 @@ export default function AddPatients() {
                     ))}
                   </div>
                 </div>
-                <div>
-                  <label className={labelStyles}>
-                    Primary Clinic <span className="text-red-500">*</span>
-                  </label>
-                  <FormDropdown
-                    label="Select primary clinic"
-                    value={form.primaryClinic}
-                    options={primaryClinicOptions}
-                    onChange={(value) => handleFieldChange('primaryClinic', value)}
-                    isOpen={primaryClinicDropdownOpen}
-                    onToggle={() => setPrimaryClinicDropdownOpen(!primaryClinicDropdownOpen)}
-                    onClose={() => setPrimaryClinicDropdownOpen(false)}
-                    buttonRef={primaryClinicButtonRef}
-                    showLabel={false}
-                    disabled={isEditMode}
-                  />
-                </div>
-              </div>
-              <div className="space-y-5 border-t border-slate-200 pt-5 dark:border-slate-700">
-                <div>
-                  <label className={labelStyles}>Last Visit Date</label>
-                  <input
-                    type="datetime-local"
-                    className={inputStyles}
-                    value={form.lastVisitAt}
-                    onChange={(event) => handleFieldChange('lastVisitAt', event.target.value)}
-                  />
-                </div>
-                <div>
-                  <label className={labelStyles}>Visit Count</label>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    className={inputStyles}
-                    value={form.visitCount}
-                    onChange={(event) => handleFieldChange('visitCount', event.target.value)}
-                    placeholder="0"
-                  />
+                <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                  <div>
+                    <label className={labelStyles}>
+                      Primary Clinic <span className="text-red-500">*</span>
+                    </label>
+                    <FormDropdown
+                      label="Select primary clinic"
+                      value={form.primaryClinic}
+                      options={primaryClinicOptions}
+                      onChange={(value) => handleFieldChange('primaryClinic', value)}
+                      isOpen={primaryClinicDropdownOpen}
+                      onToggle={() => setPrimaryClinicDropdownOpen(!primaryClinicDropdownOpen)}
+                      onClose={() => setPrimaryClinicDropdownOpen(false)}
+                      buttonRef={primaryClinicButtonRef}
+                      showLabel={false}
+                      disabled={isEditMode}
+                    />
+                  </div>
+                  <div>
+                    <label className={labelStyles}>Last Visit Date</label>
+                    <input
+                      type="datetime-local"
+                      className={inputStyles}
+                      value={form.lastVisitAt}
+                      onChange={(event) => handleFieldChange('lastVisitAt', event.target.value)}
+                    />
+                  </div>
                 </div>
               </div>
               <div className="space-y-4 border-t border-slate-200 pt-5 dark:border-slate-700">
@@ -578,6 +546,26 @@ export default function AddPatients() {
                     ))}
                   </div>
                 )}
+              </div>
+              <div className="flex justify-end border-t border-slate-200 pt-5 dark:border-slate-700">
+                <button
+                  type="button"
+                  onClick={handleSaveClick}
+                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-green-100 to-green-200 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-green-200 hover:to-green-300 disabled:cursor-not-allowed disabled:opacity-60 dark:from-green-800/30 dark:to-green-700/30 dark:text-slate-200 dark:hover:from-green-700/40 dark:hover:to-green-600/40"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-700 border-t-transparent dark:border-slate-200"></span>
+                      {isEditMode ? 'Updating...' : 'Saving...'}
+                    </>
+                  ) : (
+                    <>
+                      <PlusIcon />
+                      {isEditMode ? 'Update Patient' : 'Save Patient'}
+                    </>
+                  )}
+                </button>
               </div>
             </div>
           </SectionCard>

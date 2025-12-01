@@ -11,6 +11,8 @@ import { getTreatmentNames, type TreatmentName } from '@api/treatments'
 import { S3Service } from '@services/s3Service'
 import ClinicCard from '@components/clinic/ClinicCard'
 import { useDebounce } from '@hooks/utils/useDebounce'
+import RotatingSpinner from '@components/spinner/TeethRotating'
+import clinicIcon from '@assets/clinic.png'
 
 type WorkingDayForm = {
   day: string
@@ -440,43 +442,34 @@ export default function AddClinic() {
   }
 
   if (isLoading) {
-    return (
-      <section className="flex items-center justify-center space-y-6">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
-      </section>
-    )
+    return <RotatingSpinner/>
   }
 
   return (
     <section className="space-y-6">
-      <div className="flex flex-col gap-4 rounded-2xl bg-white/60 p-6 backdrop-blur-sm dark:bg-slate-900/60 lg:flex-row lg:items-center lg:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+      <div className="flex flex-col gap-4 rounded-md bg-white/60 p-6 backdrop-blur-sm dark:bg-slate-900 lg:flex-row lg:items-center lg:gap-6">
+        <img src={clinicIcon} alt="clinic" className="w-[120px] h-[120px]" />
+        <div className="flex-1">
+          <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">
             {isEditMode ? 'Edit Clinic' : 'Add Clinic'}
           </h1>
-          <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+          <p className="text-slate-600 dark:text-slate-300">
             {isEditMode
               ? 'Update clinic location details.'
               : 'Add a new clinic location with contact information and working hours.'}
           </p>
         </div>
-        <button
-          type="submit"
-          form="add-clinic-form"
-          className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-md shadow-blue-600/20 transition-all hover:bg-blue-500 hover:shadow-lg hover:shadow-blue-600/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-blue-500 dark:hover:bg-blue-400"
-          disabled={isSubmitting}
-        >
-          {isSubmitting ? (
-            <>
-              <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
-              {isEditMode ? 'Updating...' : 'Saving...'}
-            </>
-          ) : (
-            isEditMode ? 'Update Clinic' : 'Save Clinic'
-          )}
-        </button>
       </div>
-      <form id="add-clinic-form" onSubmit={submitForm} className="space-y-8">
+      <form 
+        id="add-clinic-form" 
+        onSubmit={submitForm} 
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && e.target instanceof HTMLInputElement) {
+            e.preventDefault()
+          }
+        }}
+        className="space-y-8"
+      >
         <div className="flex flex-col gap-8 xl:flex-row">
           <div className="flex flex-1 flex-col gap-6">
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 2xl:grid-cols-3">
@@ -548,9 +541,8 @@ export default function AddClinic() {
                   </div>
                   <div>
                     <label className={labelStyles}>Address</label>
-                    <input
-                      type="text"
-                      className={inputStyles}
+                    <textarea
+                      className={`${textareaStyles} min-h-[80px]`}
                       value={form.address}
                       onChange={(event) => handleFieldChange('address', event.target.value)}
                       placeholder="Enter street address"
@@ -904,6 +896,23 @@ export default function AddClinic() {
                 isActive: summaryData.isActive,
               }}
             />
+            <div className="mt-4">
+              <button
+                type="submit"
+                form="add-clinic-form"
+                disabled={isSubmitting}
+                className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-blue-100 to-blue-200 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-blue-200 hover:to-blue-300 disabled:cursor-not-allowed disabled:opacity-60 dark:from-blue-800/30 dark:to-blue-700/30 dark:text-slate-200 dark:hover:from-blue-700/40 dark:hover:to-blue-600/40"
+              >
+                {isSubmitting ? (
+                  <>
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-700 border-t-transparent dark:border-slate-200"></span>
+                    {isEditMode ? 'Updating...' : 'Saving...'}
+                  </>
+                ) : (
+                  isEditMode ? 'Update Clinic' : 'Save Clinic'
+                )}
+              </button>
+            </div>
           </aside>
         </div>
       </form>

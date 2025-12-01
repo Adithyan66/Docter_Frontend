@@ -60,6 +60,7 @@ export type ClinicList = {
   numOfPatients: number
   onGoingTreatments: number
   completedTreatments: number
+  isActive?: boolean
 }
 
 export type PaginatedClinicsResponse = {
@@ -185,7 +186,7 @@ export const getClinicWithStatistics = async (
   return data.data
 }
 
-export const updateClinic = async (id: string, payload: ClinicPayload) => {
+export const updateClinic = async (id: string, payload: Partial<ClinicPayload>) => {
   const { data } = await httpClient.patch<ApiResponse<Clinic>>(`clinic/${id}`, payload)
   return data.data
 }

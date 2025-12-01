@@ -78,6 +78,7 @@ export function useTreatmentDetails(treatmentId: string | undefined) {
     handleDateFilterChange,
     formatDate,
     formatDateTime,
+    fetchTreatment,
   }
 }
 

@@ -27,6 +27,7 @@ export type TreatmentPayload = {
   followUpAfterDays?: number
   risks: string[]
   images: string[]
+  isActive?: boolean
 }
 
 export type Treatment = {
@@ -50,6 +51,7 @@ export type Treatment = {
   followUpAfterDays?: number
   risks?: string[]
   images?: string[]
+  isActive?: boolean
   createdAt: string
   updatedAt: string
 }
@@ -62,6 +64,7 @@ export type TreatmentList = {
   numberOfPatients: number
   ongoing: number
   completed: number
+  isActive?: boolean
 }
 
 export type PaginatedTreatmentsResponse = {
@@ -102,7 +105,7 @@ export const getTreatment = async (id: string): Promise<Treatment> => {
   return data.data
 }
 
-export const updateTreatment = async (id: string, payload: TreatmentPayload) => {
+export const updateTreatment = async (id: string, payload: Partial<TreatmentPayload>) => {
   const { data } = await httpClient.patch<ApiResponse<Treatment>>(`treatment/${id}`, payload)
   return data.data
 }

@@ -78,3 +78,7 @@ export const updateTreatmentCourse = async (
   return data.data
 }
 
+export const deleteTreatmentCourse = async (courseId: string): Promise<void> => {
+  await httpClient.delete<ApiResponse<void>>(`treatment-course/${courseId}`)
+}
+

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, type ChangeEvent } from 'react'
 import toast from 'react-hot-toast'
-import { createVisit, type CreateVisitRequestDto, type PrescriptionItemDto, type CreateVisitMediaDto, type MediaType } from '@api/visits'
+import { createVisit, updateVisit, type CreateVisitRequestDto, type PrescriptionItemDto, type CreateVisitMediaDto, type MediaType, type VisitResponseDto } from '@api/visits'
 import { S3Service } from '@services/s3Service'
 import { getClinicNames, type ClinicName } from '@api/clinics'
 
@@ -13,6 +13,8 @@ type CreateVisitModalProps = {
   clinicId?: string
   primaryClinicId?: string
   onSuccess?: () => void
+  visitId?: string
+  visitData?: VisitResponseDto
 }
 
 type PrescriptionItemForm = {
@@ -26,10 +28,12 @@ type PrescriptionItemForm = {
 }
 
 type MediaFileForm = {
-  file: File
+  file?: File
   preview: string
   type: MediaType
   notes: string
+  isExisting?: boolean
+  existingUrl?: string
 }
 
 type PaymentMethod = 'cash' | 'card' | 'upi' | 'bank' | 'insurance' | 'online'
@@ -43,7 +47,10 @@ export default function CreateVisitModal({
   clinicId: initialClinicId,
   primaryClinicId,
   onSuccess,
+  visitId,
+  visitData: initialVisitData,
 }: CreateVisitModalProps) {
+  const isEditMode = !!visitId
   const [clinics, setClinics] = useState<ClinicName[]>([])
   const [isLoadingClinics, setIsLoadingClinics] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -78,14 +85,20 @@ export default function CreateVisitModal({
   useEffect(() => {
     if (isOpen) {
       fetchClinics()
-      resetForm()
+      if (isEditMode && initialVisitData) {
+        loadVisitData(initialVisitData)
+      } else {
+        resetForm()
+      }
     }
-  }, [isOpen, initialClinicId, primaryClinicId])
+  }, [isOpen, initialClinicId, primaryClinicId, isEditMode, initialVisitData])
 
   useEffect(() => {
-    const defaultClinicId = initialClinicId || primaryClinicId || ''
-    setFormData((prev) => ({ ...prev, clinicId: defaultClinicId }))
-  }, [initialClinicId, primaryClinicId])
+    if (!isEditMode) {
+      const defaultClinicId = initialClinicId || primaryClinicId || ''
+      setFormData((prev) => ({ ...prev, clinicId: defaultClinicId }))
+    }
+  }, [initialClinicId, primaryClinicId, isEditMode])
 
   useEffect(() => {
     if (formData.billedAmount && !formData.paymentMethod) {
@@ -115,6 +128,52 @@ export default function CreateVisitModal({
       notes: '',
     })
     setMediaFiles([])
+    setActiveTab('details')
+  }
+
+  const loadVisitData = (visitData: VisitResponseDto) => {
+    const visitDate = new Date(visitData.visitDate).toISOString().split('T')[0]
+    setFormData({
+      clinicId: visitData.clinicId || initialClinicId || primaryClinicId || '',
+      visitDate,
+      notes: visitData.notes || '',
+      billedAmount: visitData.billedAmount?.toString() || '',
+      paymentMethod: 'cash',
+      paymentReference: '',
+    })
+
+    if (visitData.prescription) {
+      setDiagnosisItems(visitData.prescription.diagnosis || [])
+      setPrescriptionItems(
+        visitData.prescription.items.map((item) => ({
+          medicineName: item.medicineName,
+          form: item.form || '',
+          strength: item.strength || '',
+          dosage: item.dosage || '',
+          frequency: item.frequency || '',
+          duration: item.duration || '',
+          notes: item.notes || '',
+        }))
+      )
+    } else {
+      setDiagnosisItems([])
+      setPrescriptionItems([])
+    }
+
+    if (visitData.media && visitData.media.length > 0) {
+      setMediaFiles(
+        visitData.media.map((media) => ({
+          preview: media.url,
+          type: media.type,
+          notes: media.notes || '',
+          isExisting: true,
+          existingUrl: media.url,
+        }))
+      )
+    } else {
+      setMediaFiles([])
+    }
+
     setActiveTab('details')
   }
 
@@ -207,7 +266,9 @@ export default function CreateVisitModal({
   const removeMediaFile = (index: number) => {
     setMediaFiles((prev) => {
       const removed = prev[index]
-      URL.revokeObjectURL(removed.preview)
+      if (!removed.isExisting) {
+        URL.revokeObjectURL(removed.preview)
+      }
       return prev.filter((_, i) => i !== index)
     })
   }
@@ -251,25 +312,34 @@ export default function CreateVisitModal({
       const mediaUploads: CreateVisitMediaDto[] = []
 
       for (const mediaFile of mediaFiles) {
-        try {
-          const { publicUrl, imageKey } = await S3Service.uploadImage(
-            'Patient-Media',
-            mediaFile.file,
-            undefined
-          )
+        if (mediaFile.isExisting && mediaFile.existingUrl) {
           mediaUploads.push({
-            url: publicUrl,
-            filename: mediaFile.file.name,
-            mimeType: mediaFile.file.type,
-            size: mediaFile.file.size,
+            url: mediaFile.existingUrl,
+            filename: 'image',
             type: mediaFile.type,
             notes: mediaFile.notes.trim() || undefined,
           })
-        } catch (error: any) {
-          toast.error(`Failed to upload ${mediaFile.file.name}. Please try again.`)
-          setIsUploading(false)
-          setIsSubmitting(false)
-          return
+        } else if (mediaFile.file) {
+          try {
+            const { publicUrl } = await S3Service.uploadImage(
+              'Patient-Media',
+              mediaFile.file,
+              undefined
+            )
+            mediaUploads.push({
+              url: publicUrl,
+              filename: mediaFile.file.name,
+              mimeType: mediaFile.file.type,
+              size: mediaFile.file.size,
+              type: mediaFile.type,
+              notes: mediaFile.notes.trim() || undefined,
+            })
+          } catch (error: any) {
+            toast.error(`Failed to upload ${mediaFile.file.name}. Please try again.`)
+            setIsUploading(false)
+            setIsSubmitting(false)
+            return
+          }
         }
       }
 
@@ -304,8 +374,13 @@ export default function CreateVisitModal({
         paymentReference: formData.billedAmount && formData.paymentMethod !== 'cash' && formData.paymentReference.trim() ? formData.paymentReference.trim() : undefined,
       }
 
-      await createVisit(payload)
-      toast.success('Visit created successfully')
+      if (isEditMode && visitId) {
+        await updateVisit(visitId, payload)
+        toast.success('Visit updated successfully')
+      } else {
+        await createVisit(payload)
+        toast.success('Visit created successfully')
+      }
       onSuccess?.()
       onClose()
     } catch (error: any) {
@@ -313,7 +388,7 @@ export default function CreateVisitModal({
         error?.response?.data?.error?.message ||
         error?.response?.data?.message ||
         error?.message ||
-        'Unable to create visit. Please try again.'
+        `Unable to ${isEditMode ? 'update' : 'create'} visit. Please try again.`
       toast.error(errorMessage)
     } finally {
       setIsUploading(false)
@@ -323,7 +398,11 @@ export default function CreateVisitModal({
 
   useEffect(() => {
     return () => {
-      mediaFiles.forEach((item) => URL.revokeObjectURL(item.preview))
+      mediaFiles.forEach((item) => {
+        if (!item.isExisting) {
+          URL.revokeObjectURL(item.preview)
+        }
+      })
     }
   }, [mediaFiles])
 
@@ -334,7 +413,9 @@ export default function CreateVisitModal({
       <div className="w-full max-w-4xl max-h-[90vh] flex flex-col rounded-2xl bg-white shadow-xl dark:bg-slate-900 overflow-hidden">
         <div className="sticky top-0 z-10 border-b border-slate-200 bg-white px-6 py-4 dark:border-slate-700 dark:bg-slate-900">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold text-slate-900 dark:text-white">Create New Visit</h2>
+            <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
+              {isEditMode ? 'Edit Visit' : 'Create New Visit'}
+            </h2>
             <button
               type="button"
               onClick={onClose}
@@ -858,10 +939,10 @@ export default function CreateVisitModal({
                 {isUploading || isSubmitting ? (
                   <>
                     <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-700 border-t-transparent dark:border-slate-200"></span>
-                    {isUploading ? 'Uploading...' : 'Creating...'}
+                    {isUploading ? 'Uploading...' : isEditMode ? 'Updating...' : 'Creating...'}
                   </>
                 ) : (
-                  'Create Visit'
+                  isEditMode ? 'Update Visit' : 'Create Visit'
                 )}
               </button>
             </div>

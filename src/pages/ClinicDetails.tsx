@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { deleteClinic } from '@api/clinics'
+import { deleteClinic, updateClinic } from '@api/clinics'
 import ConfirmationModal from '@components/common/ConfirmationModal'
+import DeleteConfirmationModal from '@components/common/DeleteConfirmationModal'
 import RotatingSpinner from '@components/spinner/TeethRotating'
 import ImageViewerModal from '@components/common/ImageViewerModal'
 import { useClinicDetails } from '@hooks/data/useClinicDetails'
@@ -21,6 +22,8 @@ export default function ClinicDetails() {
   const [startDateTo, setStartDateTo] = useState('')
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [statusModalOpen, setStatusModalOpen] = useState(false)
+  const [isTogglingStatus, setIsTogglingStatus] = useState(false)
 
   const {
     clinic,
@@ -29,6 +32,7 @@ export default function ClinicDetails() {
     handleDateFilterChange,
     formatDate,
     formatDateTime,
+    fetchClinic,
   } = useClinicDetails(id)
 
   const handleApplyDateFilter = () => {
@@ -46,28 +50,57 @@ export default function ClinicDetails() {
   }
 
   const confirmDelete = async () => {
-    if (!id || !clinic) return
+    if (!id || isDeleting) return
 
     try {
       setIsDeleting(true)
       await deleteClinic(id)
       toast.success('Clinic deleted successfully.')
-      navigate('/clinics')
+      setTimeout(() => navigate('/clinics'), 800)
     } catch (error: any) {
+      setIsDeleting(false)
       const errorMessage =
         error?.response?.data?.error?.message ||
         error?.response?.data?.message ||
         error?.message ||
         'Unable to delete clinic. Please try again.'
       toast.error(errorMessage)
-    } finally {
-      setIsDeleting(false)
-      setDeleteModalOpen(false)
     }
   }
 
   const closeDeleteModal = () => {
     setDeleteModalOpen(false)
+  }
+
+  const handleToggleStatus = () => {
+    setStatusModalOpen(true)
+  }
+
+  const confirmToggleStatus = async () => {
+    if (!id || !clinic || isTogglingStatus) return
+
+    try {
+      setIsTogglingStatus(true)
+      await updateClinic(id, {
+        isActive: !clinic.isActive,
+      })
+      toast.success(`Clinic marked as ${!clinic.isActive ? 'active' : 'inactive'} successfully.`)
+      setStatusModalOpen(false)
+      await fetchClinic(dateFilters)
+    } catch (error: any) {
+      const errorMessage =
+        error?.response?.data?.error?.message ||
+        error?.response?.data?.message ||
+        error?.message ||
+        'Unable to update clinic status. Please try again.'
+      toast.error(errorMessage)
+    } finally {
+      setIsTogglingStatus(false)
+    }
+  }
+
+  const closeStatusModal = () => {
+    setStatusModalOpen(false)
   }
 
   const displayedImages = clinic?.images
@@ -153,14 +186,35 @@ export default function ClinicDetails() {
             <button
               type="button"
               onClick={() => navigate(`/clinics/edit/${id}`)}
-              className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:cursor-pointer hover:bg-blue-500 dark:bg-blue-500 dark:hover:bg-blue-400"
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-blue-100 to-blue-200 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-blue-200 hover:to-blue-300 dark:from-blue-800/30 dark:to-blue-700/30 dark:text-slate-200 dark:hover:from-blue-700/40 dark:hover:to-blue-600/40"
             >
               Edit
             </button>
             <button
               type="button"
+              onClick={handleToggleStatus}
+              disabled={isTogglingStatus}
+              className={`inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 ${
+                clinic.isActive
+                  ? 'bg-gradient-to-r from-orange-100 to-orange-200 hover:from-orange-200 hover:to-orange-300 dark:from-orange-800/30 dark:to-orange-700/30 dark:text-slate-200 dark:hover:from-orange-700/40 dark:hover:to-orange-600/40'
+                  : 'bg-gradient-to-r from-green-100 to-green-200 hover:from-green-200 hover:to-green-300 dark:from-green-800/30 dark:to-green-700/30 dark:text-slate-200 dark:hover:from-green-700/40 dark:hover:to-green-600/40'
+              }`}
+            >
+              {isTogglingStatus ? (
+                <>
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-700 border-t-transparent dark:border-slate-200"></span>
+                  {clinic.isActive ? 'Deactivating...' : 'Activating...'}
+                </>
+              ) : (
+                <>
+                  {clinic.isActive ? 'Set Inactive' : 'Set Active'}
+                </>
+              )}
+            </button>
+            <button
+              type="button"
               onClick={handleDelete}
-              className="inline-flex items-center justify-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:cursor-pointer hover:bg-red-500 dark:bg-red-500 dark:hover:bg-red-400"
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-red-100 to-red-200 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-red-200 hover:to-red-300 dark:from-red-800/30 dark:to-red-700/30 dark:text-slate-200 dark:hover:from-red-700/40 dark:hover:to-red-600/40"
             >
               Delete
             </button>
@@ -184,7 +238,7 @@ export default function ClinicDetails() {
           <button
             type="button"
             onClick={handleApplyDateFilter}
-            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-all hover:bg-blue-500 dark:bg-blue-500 dark:hover:bg-blue-400"
+            className="rounded-lg bg-gradient-to-r from-blue-100 to-blue-200 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-blue-200 hover:to-blue-300 dark:from-blue-800/30 dark:to-blue-700/30 dark:text-slate-200 dark:hover:from-blue-700/40 dark:hover:to-blue-600/40"
           >
             Apply
           </button>
@@ -192,7 +246,7 @@ export default function ClinicDetails() {
             <button
               type="button"
               onClick={handleClearDateFilter}
-              className="rounded-lg bg-slate-600 px-4 py-2 text-sm font-medium text-white transition-all hover:bg-slate-500 dark:bg-slate-500 dark:hover:bg-slate-400"
+              className="rounded-lg bg-gradient-to-r from-slate-100 to-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-slate-200 hover:to-slate-300 dark:from-slate-800/30 dark:to-slate-700/30 dark:text-slate-200 dark:hover:from-slate-700/40 dark:hover:to-slate-600/40"
             >
               Clear
             </button>
@@ -203,6 +257,21 @@ export default function ClinicDetails() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="lg:col-span-1 space-y-4">
           <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-slate-50/50 p-8 shadow-lg dark:border-slate-800 dark:bg-slate-900 lg:sticky lg:top-1">
+            <div
+              className={`absolute left-0 top-0 z-10 ${
+                clinic.isActive
+                  ? 'bg-green-500 dark:bg-green-600'
+                  : 'bg-red-500 dark:bg-red-600'
+              } px-8 py-1 text-xs font-bold text-white shadow-md`}
+              style={{
+                transform: 'rotate(-45deg)',
+                transformOrigin: 'top left',
+                left: '-15px',
+                top: '58px',
+              }}
+            >
+              {clinic.isActive ? 'ACTIVE' : 'INACTIVE'}
+            </div>
             <div className="flex flex-col items-center space-y-4 mb-8">
               {clinic.images && clinic.images.length > 0 ? (
                 <img
@@ -228,17 +297,6 @@ export default function ClinicDetails() {
                     ID: {clinic.clinicId}
                   </p>
                 )}
-              </div>
-              <div>
-                <span
-                  className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${
-                    clinic.isActive
-                      ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                      : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-                  }`}
-                >
-                  {clinic.isActive ? 'Active' : 'Inactive'}
-                </span>
               </div>
             </div>
 
@@ -441,7 +499,7 @@ export default function ClinicDetails() {
                     <button
                       type="button"
                       onClick={() => setShowAllImages(true)}
-                      className="mt-2 w-full rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white transition-all hover:bg-blue-500 dark:bg-blue-500 dark:hover:bg-blue-400"
+                      className="mt-2 w-full rounded-lg bg-gradient-to-r from-blue-100 to-blue-200 px-3 py-1.5 text-xs font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-blue-200 hover:to-blue-300 dark:from-blue-800/30 dark:to-blue-700/30 dark:text-slate-200 dark:hover:from-blue-700/40 dark:hover:to-blue-600/40"
                     >
                       Show More ({clinic.images!.length - INITIAL_IMAGES_TO_SHOW} more)
                     </button>
@@ -450,7 +508,7 @@ export default function ClinicDetails() {
                     <button
                       type="button"
                       onClick={() => setShowAllImages(false)}
-                      className="mt-2 w-full rounded-lg bg-slate-600 px-3 py-1.5 text-xs font-medium text-white transition-all hover:bg-slate-500 dark:bg-slate-500 dark:hover:bg-slate-400"
+                      className="mt-2 w-full rounded-lg bg-gradient-to-r from-slate-100 to-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-slate-200 hover:to-slate-300 dark:from-slate-800/30 dark:to-slate-700/30 dark:text-slate-200 dark:hover:from-slate-700/40 dark:hover:to-slate-600/40"
                     >
                       Show Less
                     </button>
@@ -899,19 +957,31 @@ export default function ClinicDetails() {
         alt={clinic.name || 'Clinic image'}
       />
 
+      {clinic && (
+        <DeleteConfirmationModal
+          isOpen={deleteModalOpen}
+          onClose={closeDeleteModal}
+          onConfirm={confirmDelete}
+          title="Delete Clinic"
+          message="This action cannot be undone. This will permanently delete the clinic and all associated data."
+          confirmText="Delete Clinic"
+          confirmationWord={clinic.name}
+        />
+      )}
+
       <ConfirmationModal
-        isOpen={deleteModalOpen}
-        onClose={closeDeleteModal}
-        onConfirm={confirmDelete}
-        title="Delete Clinic"
+        isOpen={statusModalOpen}
+        onClose={closeStatusModal}
+        onConfirm={confirmToggleStatus}
+        title="Change Clinic Status"
         message={
           clinic
-            ? `Are you sure you want to delete "${clinic.name}"? This action cannot be undone.`
-            : 'Are you sure you want to delete this clinic? This action cannot be undone.'
+            ? `Are you sure you want to mark "${clinic.name}" as ${!clinic.isActive ? 'active' : 'inactive'}?`
+            : `Are you sure you want to change the clinic status?`
         }
-        confirmText={isDeleting ? 'Deleting...' : 'Delete'}
+        confirmText={isTogglingStatus ? (clinic?.isActive ? 'Deactivating...' : 'Activating...') : 'Confirm'}
         cancelText="Cancel"
-        confirmButtonClassName="bg-red-600 hover:bg-red-500 dark:bg-red-500 dark:hover:bg-red-400 disabled:opacity-50"
+        confirmButtonClassName="bg-blue-600 hover:bg-blue-500 dark:bg-blue-500 dark:hover:bg-blue-400 disabled:opacity-50"
       />
     </section>
   )

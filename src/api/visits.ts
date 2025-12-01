@@ -133,3 +133,15 @@ export const getVisits = async (
   return data.data
 }
 
+export const updateVisit = async (
+  visitId: string,
+  payload: CreateVisitRequestDto
+): Promise<VisitResponseDto> => {
+  const { data } = await httpClient.patch<ApiResponse<VisitResponseDto>>(`visit/${visitId}`, payload)
+  return data.data
+}
+
+export const deleteVisit = async (visitId: string): Promise<void> => {
+  await httpClient.delete<ApiResponse<void>>(`visit/${visitId}`)
+}
+
