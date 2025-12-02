@@ -132,14 +132,16 @@ export default function Calendar() {
     if (!container || !selectedDate) return
 
     const handleScroll = () => {
-      const { scrollTop, scrollHeight, clientHeight } = container
-      if (scrollHeight - scrollTop - clientHeight < 100) {
+      const rect = container.getBoundingClientRect()
+      const windowHeight = window.innerHeight
+      
+      if (rect.bottom - windowHeight < 200) {
         loadMore()
       }
     }
 
-    container.addEventListener('scroll', handleScroll)
-    return () => container.removeEventListener('scroll', handleScroll)
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
   }, [loadMore, selectedDate])
 
   const renderCalendarDays = () => {
@@ -190,7 +192,7 @@ export default function Calendar() {
       </div>
 
       <div className="flex flex-col gap-6 lg:flex-row">
-        <div className="w-full lg:w-[40%]">
+        <div className="w-full lg:w-[40%] lg:sticky lg:top-4 lg:self-start">
           <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-slate-50/50 p-8 shadow-lg dark:border-slate-800 dark:bg-slate-900">
             <div className="mb-6 flex items-center justify-between">
               <button
@@ -225,34 +227,107 @@ export default function Calendar() {
         </div>
 
         <div className="w-full lg:w-[60%]">
-          <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-slate-50/50 p-8 shadow-lg dark:border-slate-800 dark:bg-slate-900">
+          <div ref={scrollContainerRef} className="relative overflow-hidden rounded-2xl border border-slate-200 bg-slate-50/50 p-8 shadow-lg dark:border-slate-800 dark:bg-slate-900">
             {selectedDate ? (
               <div className="space-y-6">
-                <div>
-                  <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
-                    {new Date(selectedDate).toLocaleDateString('en-US', {
-                      weekday: 'long',
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                    })}
-                  </h2>
-                </div>
-
                 {isLoading ? (
                   <div className="flex items-center justify-center py-12">
                     <RotatingSpinner />
                   </div>
                 ) : (
                   <div className="space-y-4">
+                    {summary && (
+                      <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-900/20 dark:to-yellow-800/20 p-6 shadow-lg dark:border-slate-800">
+                        <div className="mb-8 flex items-center gap-2 flex-wrap">
+                          <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
+                            {new Date(selectedDate).toLocaleDateString('en-US', {
+                              weekday: 'long',
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric',
+                            })}
+                          </h2>
+                          {summary.clinicNames && summary.clinicNames.length > 0 && (
+                            <>
+                              <span className="text-2xl font-bold text-slate-400 dark:text-slate-500">
+                                -
+                              </span>
+                              <span className="text-lg font-semibold text-blue-700 dark:text-blue-400">
+                                {summary.clinicNames.join(', ')}
+                              </span>
+                            </>
+                          )}
+                        </div>
+                        <div className="flex justify-center gap-18">
+                          <div className="text-center">
+                            <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+                              Patients
+                            </p>
+                            <p className="text-3xl font-bold text-green-600 dark:text-green-400">
+                              {summary.totalPatientsVisited}
+                            </p>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+                              Visits
+                            </p>
+                            <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">
+                              {summary.totalVisits}
+                            </p>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+                              Total Amount
+                            </p>
+                            <p className="text-3xl font-bold text-orange-600 dark:text-orange-400">
+                              {formatCurrency(summary.totalAmount)}
+                            </p>
+                          </div>
+                        </div>
+                        {summary.visitStartTime && summary.visitEndTime && (
+                          <div className="grid grid-cols-4 gap-4 mt-6 pt-6 border-t border-yellow-200 dark:border-yellow-800">
+                            <div className="text-center">
+                              <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+                                Average Amount per Visit
+                              </p>
+                              <p className="text-xl font-bold text-purple-600 dark:text-purple-400">
+                                {formatCurrency(summary.averageAmountPerVisit)}
+                              </p>
+                            </div>
+                            <div className="text-center">
+                              <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+                                Total Hours Worked
+                              </p>
+                              <p className="text-xl font-bold text-indigo-600 dark:text-indigo-400">
+                                {summary.totalHoursWorked.toFixed(1)} hrs
+                              </p>
+                            </div>
+                            <div className="text-center">
+                              <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+                                First Visit
+                              </p>
+                              <p className="text-xl font-bold text-teal-600 dark:text-teal-400">
+                                {formatTime(summary.visitStartTime)}
+                              </p>
+                            </div>
+                            <div className="text-center">
+                              <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+                                Last Visit
+                              </p>
+                              <p className="text-xl font-bold text-cyan-600 dark:text-cyan-400">
+                                {formatTime(summary.visitEndTime)}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
                     <div>
                       <h3 className="mb-3 text-lg font-semibold text-slate-900 dark:text-white">
                         Visits {summary && `(${summary.totalVisits})`}
                       </h3>
-                      <div
-                        ref={scrollContainerRef}
-                        className="max-h-[400px] space-y-3 overflow-y-auto"
-                      >
+                      <div className="space-y-3">
                         {activities.length > 0 ? (
                           <>
                             {activities.map((activity) => (
@@ -261,26 +336,19 @@ export default function Calendar() {
                                 onClick={() => handleActivityClick(activity.patientId)}
                                 className="cursor-pointer rounded-lg border border-slate-200 bg-slate-50 p-4 transition-colors hover:border-blue-300 hover:bg-blue-50/50 dark:border-slate-700 dark:bg-slate-800/50 dark:hover:border-blue-700 dark:hover:bg-blue-900/20"
                               >
-                                <div className="flex items-start justify-between">
-                                  <div className="flex-1">
-                                    <p className="text-sm font-medium text-slate-900 dark:text-white">
-                                      {activity.patientName}
-                                    </p>
-                                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                                      {activity.treatmentName}
-                                      {activity.clinicName && ` • ${activity.clinicName}`}
-                                      {` • ${formatTime(activity.visitTime)}`}
-                                    </p>
-                                  </div>
-                                  <div className="ml-4 text-right">
-                                    <p className="text-sm font-semibold text-slate-900 dark:text-white">
-                                      {formatCurrency(activity.amountPaid)}
-                                    </p>
-                                    <p className="text-xs text-slate-500 dark:text-slate-400">
-                                      Paid
-                                    </p>
-                                  </div>
-                                </div>
+                                <p className="text-sm text-slate-700 dark:text-slate-300">
+                                  <span className="font-bold text-slate-900 dark:text-white">
+                                    {activity.patientName}
+                                  </span>
+                                  {' visited '}
+                                  {activity.clinicName || 'clinic'}
+                                  {' for '}
+                                  <span className="font-bold text-slate-900 dark:text-white">
+                                    {activity.treatmentName}
+                                  </span>
+                                  {' at '}
+                                  {formatTime(activity.visitTime)}
+                                </p>
                               </div>
                             ))}
                             {isLoadingMore && (
@@ -301,78 +369,6 @@ export default function Calendar() {
                         )}
                       </div>
                     </div>
-
-                    {summary && (
-                      <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-900/20 dark:to-yellow-800/20 p-6 shadow-lg dark:border-slate-800">
-                        <h3 className="mb-4 text-lg font-semibold text-slate-900 dark:text-white">
-                          Summary
-                        </h3>
-                        <div className="flex justify-center gap-8 mb-6">
-                          <div className="text-center">
-                            <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
-                              Total Paid
-                            </p>
-                            <p className="text-3xl font-bold text-green-600 dark:text-green-400">
-                              {formatCurrency(summary.totalAmount)}
-                            </p>
-                          </div>
-                          <div className="text-center">
-                            <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
-                              Total Cost
-                            </p>
-                            <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">
-                              {formatCurrency(summary.totalAmount)}
-                            </p>
-                          </div>
-                          <div className="text-center">
-                            <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
-                              Outstanding
-                            </p>
-                            <p className="text-3xl font-bold text-orange-600 dark:text-orange-400">
-                              {formatCurrency(0)}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-4 pt-4 border-t border-yellow-200 dark:border-yellow-800">
-                          <div className="text-center">
-                            <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
-                              Total Patients
-                            </p>
-                            <p className="text-lg font-semibold text-slate-900 dark:text-white">
-                              {summary.totalPatientsVisited}
-                            </p>
-                          </div>
-                          <div className="text-center">
-                            <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
-                              Total Visits
-                            </p>
-                            <p className="text-lg font-semibold text-slate-900 dark:text-white">
-                              {summary.totalVisits}
-                            </p>
-                          </div>
-                          {summary.visitStartTime && summary.visitEndTime && (
-                            <div className="text-center">
-                              <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
-                                Hours Worked
-                              </p>
-                              <p className="text-lg font-semibold text-slate-900 dark:text-white">
-                                {summary.totalHoursWorked.toFixed(1)} hrs
-                              </p>
-                            </div>
-                          )}
-                          {summary.clinicNames.length > 0 && (
-                            <div className="text-center">
-                              <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
-                                Clinics
-                              </p>
-                              <p className="text-lg font-semibold text-slate-900 dark:text-white">
-                                {summary.clinicNames.length}
-                              </p>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
                   </div>
                 )}
               </div>
