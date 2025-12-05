@@ -7,6 +7,7 @@ import CreateVisitModal from '@components/visit/CreateVisitModal'
 import StatusChangeModal from '@components/treatment/StatusChangeModal'
 import { updateTreatmentCourse, deleteTreatmentCourse, type TreatmentCourseStatus } from '@api/treatmentCourses'
 import Pagination from '@components/common/Pagination'
+import PageHeader from '@components/common/PageHeader'
 import ImageViewerModal from '@components/common/ImageViewerModal'
 import DeleteConfirmationModal from '@components/common/DeleteConfirmationModal'
 import { usePatientDetails } from '@hooks/data/usePatientDetails'
@@ -228,58 +229,48 @@ export default function PatientDetails() {
 
   return (
     <section className="space-y-6">
-      <div className="rounded-2xl bg-white/60 p-6 backdrop-blur-sm dark:bg-slate-900">
-        <div className="flex items-center justify-between">
-          <img src={PatientDetail} alt="teeth" className="w-[120px] h-[120px]" />
-        <div className="flex-1">
-          <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">Patient Details</h1>
-          <p className="text-slate-600 dark:text-slate-300">
-          View comprehensive patient information.
-          </p>
-            <div className="mt-3 flex flex-wrap gap-3">
-          <button
-            onClick={() => setIsModalOpen(true)}
-                className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-purple-100 to-purple-200 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-purple-200 hover:to-purple-300 dark:from-purple-800/30 dark:to-purple-700/30 dark:text-slate-200 dark:hover:from-purple-700/40 dark:hover:to-purple-600/40"
-              >
-                <PlusIcon />
-                Add Treatment
-              </button>
-              <button
-                onClick={() => navigate(`/patients/${id}/edit`)}
-                className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-blue-100 to-blue-200 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-blue-200 hover:to-blue-300 dark:from-blue-800/30 dark:to-blue-700/30 dark:text-slate-200 dark:hover:from-blue-700/40 dark:hover:to-blue-600/40"
-              >
-                Edit Profile
-              </button>
-              <button
-                onClick={() => setIsDeleteModalOpen(true)}
-                className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-red-100 to-red-200 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-red-200 hover:to-red-300 dark:from-red-800/30 dark:to-red-700/30 dark:text-slate-200 dark:hover:from-red-700/40 dark:hover:to-red-600/40"
-              >
-                Delete Profile
-              </button>
-              <button
-                onClick={handleToggleStatus}
-                disabled={isTogglingStatus}
-                className={`inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 ${
-                  patient.isActive
-                    ? 'bg-gradient-to-r from-orange-100 to-orange-200 hover:from-orange-200 hover:to-orange-300 dark:from-orange-800/30 dark:to-orange-700/30 dark:text-slate-200 dark:hover:from-orange-700/40 dark:hover:to-orange-600/40'
-                    : 'bg-gradient-to-r from-green-100 to-green-200 hover:from-green-200 hover:to-green-300 dark:from-green-800/30 dark:to-green-700/30 dark:text-slate-200 dark:hover:from-green-700/40 dark:hover:to-green-600/40'
-                }`}
-              >
-                {isTogglingStatus ? (
-                  <>
-                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-700 border-t-transparent dark:border-slate-200"></span>
-                    {patient.isActive ? 'Deactivating...' : 'Activating...'}
-                  </>
-                ) : (
-                  <>
-                    {patient.isActive ? 'Set Inactive' : 'Set Active'}
-                  </>
-                )}
-          </button>
-            </div>
-          </div>
-        </div>
-      </div>
+      <PageHeader
+        title="Patient Details"
+        description="View comprehensive patient information."
+        image={{
+          src: PatientDetail,
+          alt: 'teeth',
+          className: 'w-[120px] h-[120px]',
+        }}
+        actionButtons={[
+          {
+            label: 'Add Treatment',
+            onClick: () => setIsModalOpen(true),
+            icon: <PlusIcon />,
+            className:
+              'inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-purple-100 to-purple-200 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-purple-200 hover:to-purple-300 dark:from-purple-800/30 dark:to-purple-700/30 dark:text-slate-200 dark:hover:from-purple-700/40 dark:hover:to-purple-600/40',
+          },
+          {
+            label: 'Edit Profile',
+            onClick: () => navigate(`/patients/${id}/edit`),
+            className:
+              'inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-blue-100 to-blue-200 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-blue-200 hover:to-blue-300 dark:from-blue-800/30 dark:to-blue-700/30 dark:text-slate-200 dark:hover:from-blue-700/40 dark:hover:to-blue-600/40',
+          },
+          {
+            label: 'Delete Profile',
+            onClick: () => setIsDeleteModalOpen(true),
+            className:
+              'inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-red-100 to-red-200 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-red-200 hover:to-red-300 dark:from-red-800/30 dark:to-red-700/30 dark:text-slate-200 dark:hover:from-red-700/40 dark:hover:to-red-600/40',
+          },
+          {
+            label: patient.isActive ? 'Set Inactive' : 'Set Active',
+            onClick: handleToggleStatus,
+            disabled: isTogglingStatus,
+            isLoading: isTogglingStatus,
+            loadingLabel: patient.isActive ? 'Deactivating...' : 'Activating...',
+            className: `inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 ${
+              patient.isActive
+                ? 'bg-gradient-to-r from-orange-100 to-orange-200 hover:from-orange-200 hover:to-orange-300 dark:from-orange-800/30 dark:to-orange-700/30 dark:text-slate-200 dark:hover:from-orange-700/40 dark:hover:to-orange-600/40'
+                : 'bg-gradient-to-r from-green-100 to-green-200 hover:from-green-200 hover:to-green-300 dark:from-green-800/30 dark:to-green-700/30 dark:text-slate-200 dark:hover:from-green-700/40 dark:hover:to-green-600/40'
+            }`,
+          },
+        ]}
+      />
 
       <CreateTreatmentCourseModal
         isOpen={isModalOpen}

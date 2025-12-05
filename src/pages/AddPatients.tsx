@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import CameraCapture from '@components/common/CameraCapture'
 import ConfirmationModal from '@components/common/ConfirmationModal'
+import PageHeader from '@components/common/PageHeader'
 import { useAddPatient } from '@hooks/data/useAddPatient'
 import { PlusIcon } from '@assets/Icons'
 import addPatient from '@assets/addPatient.png'
@@ -202,37 +203,35 @@ export default function AddPatients() {
           onClose={() => setShowCamera(false)}
         />
       )}
-      <div className="flex flex-col gap-4 rounded-md bg-white/60 p-6 backdrop-blur-sm dark:bg-slate-900 lg:flex-row lg:items-center lg:gap-6">
-        <img src={addPatient} alt="teeth" className="w-[120px] h-[120px]" />
-        <div className="flex-1">
-          <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">
-            {isEditMode ? 'Edit Patient' : 'Add Patient'}
-          </h1>
-          <p className="text-slate-600 dark:text-slate-300">
-            {isEditMode
-              ? 'Update patient information and consultation details.'
-              : 'Add a new patient with their personal information and consultation details.'}
-          </p>
-          <div className="mt-3 flex flex-wrap gap-3">
-            <button
-              type="button"
-              onClick={() => navigate('/treatments/add')}
-              className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-purple-100 to-purple-200 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-purple-200 hover:to-purple-300 dark:from-purple-800/30 dark:to-purple-700/30 dark:text-slate-200 dark:hover:from-purple-700/40 dark:hover:to-purple-600/40"
-            >
-              <PlusIcon />
-              Add Treatment
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate('/clinics/add')}
-              className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-orange-100 to-orange-200 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-orange-200 hover:to-orange-300 dark:from-orange-800/30 dark:to-orange-700/30 dark:text-slate-200 dark:hover:from-orange-700/40 dark:hover:to-orange-600/40"
-            >
-              <PlusIcon />
-              Add Clinic
-            </button>
-          </div>
-        </div>
-      </div>
+      <PageHeader
+        title={isEditMode ? 'Edit Patient' : 'Add Patient'}
+        description={
+          isEditMode
+            ? 'Update patient information and consultation details.'
+            : 'Add a new patient with their personal information and consultation details.'
+        }
+        image={{
+          src: addPatient,
+          alt: 'teeth',
+          className: 'w-[120px] h-[120px]',
+        }}
+        actionButtons={[
+          {
+            label: 'Add Treatment',
+            onClick: () => navigate('/treatments/add'),
+            icon: <PlusIcon />,
+            className:
+              'inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-purple-100 to-purple-200 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-purple-200 hover:to-purple-300 dark:from-purple-800/30 dark:to-purple-700/30 dark:text-slate-200 dark:hover:from-purple-700/40 dark:hover:to-purple-600/40',
+          },
+          {
+            label: 'Add Clinic',
+            onClick: () => navigate('/clinics/add'),
+            icon: <PlusIcon />,
+            className:
+              'inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-orange-100 to-orange-200 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-orange-200 hover:to-orange-300 dark:from-orange-800/30 dark:to-orange-700/30 dark:text-slate-200 dark:hover:from-orange-700/40 dark:hover:to-orange-600/40',
+          },
+        ]}
+      />
       <form
         id="add-patient-form"
         onSubmit={(e) => {

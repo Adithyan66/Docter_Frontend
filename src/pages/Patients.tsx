@@ -3,9 +3,9 @@ import { useNavigate } from 'react-router-dom'
 import PatientCard from '@components/patient/PatientCard'
 import PatientFilters from '@components/patient/PatientFilters'
 import Pagination from '@components/common/Pagination'
-import DropdownFilter from '@components/common/DropdownFilter'
+import PageHeader from '@components/common/PageHeader'
 import { usePatientsData } from '@hooks/data/usePatientsData'
-import { PlusIcon, FilterIcon } from '@assets/Icons'
+import { PlusIcon } from '@assets/Icons'
 import RotatingSpinner from '@components/spinner/TeethRotating'
 import patientsteeth from '@assets/patientsList.png'
 import type { GetPatientsParams } from '@api/patients'
@@ -20,21 +20,17 @@ export default function Patients() {
     total,
     limit,
     filters,
-    filterDrawerOpen,
     search,
     activeFilterCount,
     pendingFilters,
-    openDropdown,
     clinicOptions,
     genderOptions,
     consultationTypeOptions,
     hasPendingChanges,
     setCurrentPage,
-    setFilterDrawerOpen,
     setSearch,
     setPendingFilters,
     setPendingModalFilters,
-    setOpenDropdown,
     handleApplyFilters,
     handleClearAllFilters,
   } = usePatientsData()
@@ -42,120 +38,88 @@ export default function Patients() {
   const clinicButtonRef = useRef<HTMLButtonElement>(null)
   const genderButtonRef = useRef<HTMLButtonElement>(null)
   const consultationButtonRef = useRef<HTMLButtonElement>(null)
-  const moreFiltersButtonRef = useRef<HTMLButtonElement>(null)
 
   return (
     <section className="space-y-6">
-      <div className="flex flex-col gap-4 rounded-md bg-white/60 p-6 backdrop-blur-sm dark:bg-slate-900 lg:flex-row lg:items-center lg:gap-6">
-        <img src={patientsteeth} alt="teeth" className="w-[120px] h-[120px]" />
-        <div className="flex-1">
-          <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">Patients</h1>
-          <p className="text-slate-600 dark:text-slate-300">
-            Manage patient records, consultations, and medical history.
-          </p>
-          <button
-            type="button"
-            onClick={() => navigate('/patient/add')}
-            className="mt-3 inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-green-100 to-green-200 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-green-200 hover:to-green-300 dark:from-green-800/30 dark:to-green-700/30 dark:text-slate-200 dark:hover:from-green-700/40 dark:hover:to-green-600/40"
-          >
-            <PlusIcon />
-            Add Patient
-          </button>
-        </div>
-        <div className="flex w-full flex-col gap-3 lg:max-w-xl">
-          <div className="flex items-center gap-2">
-            <input
-              type="text"
-              placeholder="Search by name or patient ID..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="flex-1 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-blue-400"
-            />
-            <button
-              ref={moreFiltersButtonRef}
-              type="button"
-              onClick={() => setFilterDrawerOpen(true)}
-              className={`inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 whitespace-nowrap ${
-                activeFilterCount > 0
-                  ? 'border-blue-500 bg-blue-50 dark:border-blue-400 dark:bg-blue-900/20'
-                  : ''
-              }`}
-            >
-              <FilterIcon />
-              More Filters
-              {activeFilterCount > 0 && (
-                <span className="rounded-full bg-blue-600 px-2 py-0.5 text-xs font-semibold text-white dark:bg-blue-500">
-                  {activeFilterCount}
-                </span>
-              )}
-            </button>
-          </div>
-          <div className="flex items-center gap-2 overflow-x-auto overflow-y-visible scrollbar-hide">
-            <DropdownFilter
-              label="Clinic"
-              value={pendingFilters.clinicId || ''}
-              options={clinicOptions}
-              onChange={(value) =>
-                setPendingFilters((prev) => ({ ...prev, clinicId: value || undefined }))
-              }
-              isOpen={openDropdown === 'clinic'}
-              onToggle={() => setOpenDropdown(openDropdown === 'clinic' ? null : 'clinic')}
-              onClose={() => setOpenDropdown(null)}
-              buttonRef={clinicButtonRef}
-              buttonClassName="max-w-[calc((100%-2rem)/5)] min-w-[100px]"
-            />
-            <DropdownFilter
-              label="Gender"
-              value={pendingFilters.gender || ''}
-              options={genderOptions}
-              onChange={(value) =>
-                setPendingFilters((prev) => ({
-                  ...prev,
-                  gender: (value || undefined) as GetPatientsParams['gender'],
-                }))
-              }
-              isOpen={openDropdown === 'gender'}
-              onToggle={() => setOpenDropdown(openDropdown === 'gender' ? null : 'gender')}
-              onClose={() => setOpenDropdown(null)}
-              buttonRef={genderButtonRef}
-              buttonClassName="max-w-[calc((100%-2rem)/5)] min-w-[100px]"
-            />
-            <DropdownFilter
-              label="Consultation Type"
-              value={pendingFilters.consultationType || ''}
-              options={consultationTypeOptions}
-              onChange={(value) =>
-                setPendingFilters((prev) => ({
-                  ...prev,
-                  consultationType: (value || undefined) as GetPatientsParams['consultationType'],
-                }))
-              }
-              isOpen={openDropdown === 'consultation'}
-              onToggle={() =>
-                setOpenDropdown(openDropdown === 'consultation' ? null : 'consultation')
-              }
-              onClose={() => setOpenDropdown(null)}
-              buttonRef={consultationButtonRef}
-              buttonClassName="max-w-[calc((100%-2rem)/5)] min-w-[100px]"
-            />
-            <button
-              type="button"
-              onClick={handleApplyFilters}
-              disabled={!hasPendingChanges}
-              className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-blue-500 dark:hover:bg-blue-400 max-w-[calc((100%-2rem)/5)] min-w-0 whitespace-nowrap"
-            >
-              <span className="truncate">Apply</span>
-            </button>
-            <button
-              type="button"
-              onClick={handleClearAllFilters}
-              className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 max-w-[calc((100%-2rem)/5)] min-w-0 whitespace-nowrap"
-            >
-              <span className="truncate">Clear All</span>
-            </button>
-          </div>
-        </div>
-      </div>
+      <PageHeader
+        title="Patients"
+        description="Manage patient records, consultations, and medical history."
+        image={{
+          src: patientsteeth,
+          alt: 'teeth',
+          className: 'w-[120px] h-[120px]',
+        }}
+        actionButton={{
+          label: 'Add Patient',
+          onClick: () => navigate('/patient/add'),
+          icon: <PlusIcon />,
+        }}
+        searchSlot={
+          <input
+            type="text"
+            placeholder="Search by name or patient ID..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="flex-1 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-blue-400"
+          />
+        }
+        filterControls={[
+          {
+            id: 'clinic',
+            type: 'dropdown',
+            label: 'Clinic',
+            value: pendingFilters.clinicId || '',
+            options: clinicOptions,
+            onChange: (value) =>
+              setPendingFilters((prev) => ({ ...prev, clinicId: value || undefined })),
+            buttonRef: clinicButtonRef,
+            buttonClassName: 'max-w-[calc((100%-2rem)/5)] min-w-[100px]',
+          },
+          {
+            id: 'gender',
+            type: 'dropdown',
+            label: 'Gender',
+            value: pendingFilters.gender || '',
+            options: genderOptions,
+            onChange: (value) =>
+              setPendingFilters((prev) => ({
+                ...prev,
+                gender: (value || undefined) as GetPatientsParams['gender'],
+              })),
+            buttonRef: genderButtonRef,
+            buttonClassName: 'max-w-[calc((100%-2rem)/5)] min-w-[100px]',
+          },
+          {
+            id: 'consultation',
+            type: 'dropdown',
+            label: 'Consultation Type',
+            value: pendingFilters.consultationType || '',
+            options: consultationTypeOptions,
+            onChange: (value) =>
+              setPendingFilters((prev) => ({
+                ...prev,
+                consultationType: (value || undefined) as GetPatientsParams['consultationType'],
+              })),
+            buttonRef: consultationButtonRef,
+            buttonClassName: 'max-w-[calc((100%-2rem)/5)] min-w-[100px]',
+          },
+        ]}
+        filterButton={{
+          activeCount: activeFilterCount,
+        }}
+        filterDrawerContent={({ isOpen, onClose, buttonRef }) => (
+          <PatientFilters
+            isOpen={isOpen}
+            onClose={onClose}
+            filters={filters}
+            onPendingFiltersChange={setPendingModalFilters}
+            buttonRef={buttonRef}
+          />
+        )}
+        onApplyFilters={handleApplyFilters}
+        onClearFilters={handleClearAllFilters}
+        hasPendingChanges={hasPendingChanges}
+      />
 
       {isLoading ? (
         <RotatingSpinner />
@@ -190,13 +154,6 @@ export default function Patients() {
         </>
       )}
 
-      <PatientFilters
-        isOpen={filterDrawerOpen}
-        onClose={() => setFilterDrawerOpen(false)}
-        filters={filters}
-        onPendingFiltersChange={setPendingModalFilters}
-        buttonRef={moreFiltersButtonRef}
-      />
     </section>
   )
 }

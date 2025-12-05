@@ -1,5 +1,6 @@
 import { useRef, useEffect, useState } from 'react'
 import TreatmentCard from '@components/treatment/TreatmentCard'
+import PageHeader from '@components/common/PageHeader'
 import { useAddTreatment } from '@hooks/data/useAddTreatment'
 import treatmentLogo from '@assets/treatment.png'
 import ConfirmationModal from '@components/common/ConfirmationModal'
@@ -78,19 +79,19 @@ export default function AddTreatment() {
 
   return (
     <section className="space-y-6">
-      <div className="flex flex-col gap-4 rounded-md bg-white/60 p-6 backdrop-blur-sm dark:bg-slate-900 lg:flex-row lg:items-center lg:gap-6">
-        <img src={treatmentLogo} alt="teeth" className="w-[120px] h-[120px]" />
-        <div className="flex-1">
-          <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">
-            {isEditMode ? 'Edit Treatment' : 'Add Treatment'}
-          </h1>
-          <p className="text-slate-600 dark:text-slate-300">
-            {isEditMode
-              ? 'Update treatment template details.'
-              : 'Build standardized treatment templates for your care team.'}
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        title={isEditMode ? 'Edit Treatment' : 'Add Treatment'}
+        description={
+          isEditMode
+            ? 'Update treatment template details.'
+            : 'Build standardized treatment templates for your care team.'
+        }
+        image={{
+          src: treatmentLogo,
+          alt: 'teeth',
+          className: 'w-[120px] h-[120px]',
+        }}
+      />
       <form id="add-treatment-form" onSubmit={submitForm} className="space-y-8">
         <div className="flex flex-col gap-8 xl:flex-row">
           <div className="flex flex-1 flex-col gap-6">

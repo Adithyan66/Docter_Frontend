@@ -1,7 +1,7 @@
-import { useState, useRef } from 'react'
+import { useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Pagination from '@components/common/Pagination'
-import DropdownFilter from '@components/common/DropdownFilter'
+import PageHeader from '@components/common/PageHeader'
 import Table from '@components/common/Table'
 import { useClinics } from '@hooks/data/useClinics'
 import { PlusIcon } from '@assets/Icons'
@@ -25,7 +25,6 @@ export default function Clinics() {
     setSortOrder,
   } = useClinics()
 
-  const [openDropdown, setOpenDropdown] = useState<string | null>(null)
   const sortByButtonRef = useRef<HTMLButtonElement>(null)
   const sortOrderButtonRef = useRef<HTMLButtonElement>(null)
 
@@ -44,58 +43,55 @@ export default function Clinics() {
 
   return (
     <section className="space-y-6">
-      <div className="flex flex-col gap-4 rounded-md bg-white/60 p-6 backdrop-blur-sm dark:bg-slate-900 lg:flex-row lg:items-center lg:gap-6">
-        <img src={clinicIcon} alt="clinic" className="w-[120px] h-[120px]" />
-        <div className="flex-1">
-          <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">Clinics</h1>
-          <p className="text-slate-600 dark:text-slate-300">
-            Manage clinic locations, contact information, and working hours.
-          </p>
-          <button
-            type="button"
-            onClick={() => navigate('/clinics/add')}
-            className="mt-3 inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-green-100 to-green-200 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-green-200 hover:to-green-300 dark:from-green-900 dark:to-green-800 dark:text-slate-200 dark:hover:from-green-800/50 dark:hover:to-green-700/50"
-          >
-            <PlusIcon />
-            Add Clinic
-          </button>
-        </div>
-        <div className="flex w-full flex-col gap-3 lg:max-w-xl">
-          <div className="flex items-center gap-2">
-            <input
-              type="text"
-              placeholder="Search by name or city..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="flex-1 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-blue-400"
-            />
-          </div>
-          <div className="flex items-center gap-2 overflow-x-auto overflow-y-visible scrollbar-hide">
-            <DropdownFilter
-              label="Sort by"
-              value={sortBy || ''}
-              options={sortByOptions}
-              onChange={(value) => setSortBy((value || '') as any)}
-              isOpen={openDropdown === 'sortBy'}
-              onToggle={() => setOpenDropdown(openDropdown === 'sortBy' ? null : 'sortBy')}
-              onClose={() => setOpenDropdown(null)}
-              buttonRef={sortByButtonRef}
-            />
-            {sortBy && (
-              <DropdownFilter
-                label="Order"
-                value={sortOrder}
-                options={sortOrderOptions}
-                onChange={(value) => setSortOrder(value as 'asc' | 'desc')}
-                isOpen={openDropdown === 'sortOrder'}
-                onToggle={() => setOpenDropdown(openDropdown === 'sortOrder' ? null : 'sortOrder')}
-                onClose={() => setOpenDropdown(null)}
-                buttonRef={sortOrderButtonRef}
-              />
-            )}
-          </div>
-        </div>
-      </div>
+      <PageHeader
+        title="Clinics"
+        description="Manage clinic locations, contact information, and working hours."
+        image={{
+          src: clinicIcon,
+          alt: 'clinic',
+          className: 'w-[120px] h-[120px]',
+        }}
+        actionButton={{
+          label: 'Add Clinic',
+          onClick: () => navigate('/clinics/add'),
+          icon: <PlusIcon />,
+          className:
+            'mt-3 inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-green-100 to-green-200 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-green-200 hover:to-green-300 dark:from-green-900 dark:to-green-800 dark:text-slate-200 dark:hover:from-green-800/50 dark:hover:to-green-700/50',
+        }}
+        searchSlot={
+          <input
+            type="text"
+            placeholder="Search by name or city..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="flex-1 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-blue-400"
+          />
+        }
+        filterControls={[
+          {
+            id: 'sortBy',
+            type: 'dropdown',
+            label: 'Sort by',
+            value: sortBy || '',
+            options: sortByOptions,
+            onChange: (value) => setSortBy((value || '') as any),
+            buttonRef: sortByButtonRef,
+          },
+          ...(sortBy
+            ? [
+                {
+                  id: 'sortOrder',
+                  type: 'dropdown' as const,
+                  label: 'Order',
+                  value: sortOrder,
+                  options: sortOrderOptions,
+                  onChange: (value: string) => setSortOrder(value as 'asc' | 'desc'),
+                  buttonRef: sortOrderButtonRef,
+                } as const,
+              ]
+            : []),
+        ]}
+      />
 
       {isLoading ? (
         <div className="flex items-center justify-center rounded-2xl bg-white/60 p-12 backdrop-blur-sm dark:bg-slate-900/60">

@@ -10,6 +10,7 @@ import {
 import { getTreatmentNames, type TreatmentName } from '@api/treatments'
 import { S3Service } from '@services/s3Service'
 import ClinicCard from '@components/clinic/ClinicCard'
+import PageHeader from '@components/common/PageHeader'
 import { useDebounce } from '@hooks/utils/useDebounce'
 import RotatingSpinner from '@components/spinner/TeethRotating'
 import clinicIcon from '@assets/clinic.png'
@@ -447,19 +448,19 @@ export default function AddClinic() {
 
   return (
     <section className="space-y-6">
-      <div className="flex flex-col gap-4 rounded-md bg-white/60 p-6 backdrop-blur-sm dark:bg-slate-900 lg:flex-row lg:items-center lg:gap-6">
-        <img src={clinicIcon} alt="clinic" className="w-[120px] h-[120px]" />
-        <div className="flex-1">
-          <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">
-            {isEditMode ? 'Edit Clinic' : 'Add Clinic'}
-          </h1>
-          <p className="text-slate-600 dark:text-slate-300">
-            {isEditMode
-              ? 'Update clinic location details.'
-              : 'Add a new clinic location with contact information and working hours.'}
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        title={isEditMode ? 'Edit Clinic' : 'Add Clinic'}
+        description={
+          isEditMode
+            ? 'Update clinic location details.'
+            : 'Add a new clinic location with contact information and working hours.'
+        }
+        image={{
+          src: clinicIcon,
+          alt: 'clinic',
+          className: 'w-[120px] h-[120px]',
+        }}
+      />
       <form 
         id="add-clinic-form" 
         onSubmit={submitForm} 

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import treatmentLogo from '@assets/treatment.png'
 import RotatingSpinner from '@components/spinner/TeethRotating'
+import PageHeader from '@components/common/PageHeader'
 import ImageViewerModal from '@components/common/ImageViewerModal'
 import DeleteConfirmationModal from '@components/common/DeleteConfirmationModal'
 import ConfirmationModal from '@components/common/ConfirmationModal'
@@ -156,86 +157,71 @@ export default function TreatmentDetails() {
 
   return (
     <section className="space-y-6">
-      <div className="flex flex-col gap-4 rounded-md bg-white/60 p-6 backdrop-blur-sm dark:bg-slate-900 lg:flex-row lg:items-center lg:gap-6">
-        <img src={treatmentLogo} alt="treatment" className="w-[120px] h-[120px]" />
-        <div className="flex-1">
-          <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">
-            {treatment.name}
-          </h1>
-          <p className="text-slate-600 dark:text-slate-300">
-            View comprehensive treatment information and statistics.
-          </p>
-          <div className="mt-3 flex gap-2">
-            <button
-              type="button"
-              onClick={() => navigate(`/treatments/edit/${id}`)}
-              className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-blue-100 to-blue-200 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-blue-200 hover:to-blue-300 dark:from-blue-800/30 dark:to-blue-700/30 dark:text-slate-200 dark:hover:from-blue-700/40 dark:hover:to-blue-600/40"
-            >
-              Edit
-            </button>
-            <button
-              type="button"
-              onClick={handleToggleStatus}
-              disabled={isTogglingStatus}
-              className={`inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 ${
-                treatment.isActive
-                  ? 'bg-gradient-to-r from-orange-100 to-orange-200 hover:from-orange-200 hover:to-orange-300 dark:from-orange-800/30 dark:to-orange-700/30 dark:text-slate-200 dark:hover:from-orange-700/40 dark:hover:to-orange-600/40'
-                  : 'bg-gradient-to-r from-green-100 to-green-200 hover:from-green-200 hover:to-green-300 dark:from-green-800/30 dark:to-green-700/30 dark:text-slate-200 dark:hover:from-green-700/40 dark:hover:to-green-600/40'
-              }`}
-            >
-              {isTogglingStatus ? (
-                <>
-                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-700 border-t-transparent dark:border-slate-200"></span>
-                  {treatment.isActive ? 'Deactivating...' : 'Activating...'}
-                </>
-              ) : (
-                <>
-                  {treatment.isActive ? 'Set Inactive' : 'Set Active'}
-                </>
-              )}
-            </button>
-            <button
-              type="button"
-              onClick={handleDelete}
-              className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-red-100 to-red-200 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-red-200 hover:to-red-300 dark:from-red-800/30 dark:to-red-700/30 dark:text-slate-200 dark:hover:from-red-700/40 dark:hover:to-red-600/40"
-            >
-              Delete
-            </button>
-          </div>
-        </div>
-        <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
-          <input
-            type="date"
-            value={startDateFrom}
-            onChange={(e) => setStartDateFrom(e.target.value)}
-            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
-            placeholder="From Date"
-          />
-          <input
-            type="date"
-            value={startDateTo}
-            onChange={(e) => setStartDateTo(e.target.value)}
-            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
-            placeholder="To Date"
-          />
-          <button
-            type="button"
-            onClick={handleApplyDateFilter}
-            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-all hover:bg-blue-500 dark:bg-blue-500 dark:hover:bg-blue-400"
-          >
-            Apply
-          </button>
-          {(dateFilters.startDateFrom || dateFilters.startDateTo) && (
-            <button
-              type="button"
-              onClick={handleClearDateFilter}
-              className="rounded-lg bg-slate-600 px-4 py-2 text-sm font-medium text-white transition-all hover:bg-slate-500 dark:bg-slate-500 dark:hover:bg-slate-400"
-            >
-              Clear
-            </button>
-          )}
-        </div>
-      </div>
+      <PageHeader
+        title={treatment.name}
+        description="View comprehensive treatment information and statistics."
+        image={{
+          src: treatmentLogo,
+          alt: 'treatment',
+          className: 'w-[120px] h-[120px]',
+        }}
+        actionButtons={[
+          {
+            label: 'Edit',
+            onClick: () => navigate(`/treatments/edit/${id}`),
+            className:
+              'inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-blue-100 to-blue-200 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-blue-200 hover:to-blue-300 dark:from-blue-800/30 dark:to-blue-700/30 dark:text-slate-200 dark:hover:from-blue-700/40 dark:hover:to-blue-600/40',
+          },
+          {
+            label: treatment.isActive ? 'Set Inactive' : 'Set Active',
+            onClick: handleToggleStatus,
+            disabled: isTogglingStatus,
+            isLoading: isTogglingStatus,
+            loadingLabel: treatment.isActive ? 'Deactivating...' : 'Activating...',
+            className: `inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 ${
+              treatment.isActive
+                ? 'bg-gradient-to-r from-orange-100 to-orange-200 hover:from-orange-200 hover:to-orange-300 dark:from-orange-800/30 dark:to-orange-700/30 dark:text-slate-200 dark:hover:from-orange-700/40 dark:hover:to-orange-600/40'
+                : 'bg-gradient-to-r from-green-100 to-green-200 hover:from-green-200 hover:to-green-300 dark:from-green-800/30 dark:to-green-700/30 dark:text-slate-200 dark:hover:from-green-700/40 dark:hover:to-green-600/40'
+            }`,
+          },
+          {
+            label: 'Delete',
+            onClick: handleDelete,
+            className:
+              'inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-red-100 to-red-200 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-red-200 hover:to-red-300 dark:from-red-800/30 dark:to-red-700/30 dark:text-slate-200 dark:hover:from-red-700/40 dark:hover:to-red-600/40',
+          },
+        ]}
+        filterControls={[
+          {
+            id: 'fromDate',
+            type: 'date',
+            label: 'From Date',
+            value: startDateFrom,
+            onChange: setStartDateFrom,
+            placeholder: 'From Date',
+          },
+          {
+            id: 'toDate',
+            type: 'date',
+            label: 'To Date',
+            value: startDateTo,
+            onChange: setStartDateTo,
+            placeholder: 'To Date',
+          },
+        ]}
+        onApplyFilters={handleApplyDateFilter}
+        onClearFilters={
+          dateFilters.startDateFrom || dateFilters.startDateTo
+            ? handleClearDateFilter
+            : undefined
+        }
+        hasPendingChanges={
+          startDateFrom !== (dateFilters.startDateFrom || '') ||
+          startDateTo !== (dateFilters.startDateTo || '')
+        }
+        applyButtonLabel="Apply"
+        clearButtonLabel="Clear"
+      />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="lg:col-span-1 space-y-4">

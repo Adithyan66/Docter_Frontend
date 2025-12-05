@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import PageHeader from '@components/common/PageHeader'
 import calenderIcon from '@assets/calender.png'
 import { useDailyActivities } from '@hooks/data/useDailyActivities'
 import RotatingSpinner from '@components/spinner/TeethRotating'
@@ -181,15 +182,15 @@ export default function Calendar() {
 
   return (
     <section className="space-y-6">
-      <div className="flex flex-col gap-4 rounded-md bg-white/60 p-6 backdrop-blur-sm dark:bg-slate-900 lg:flex-row lg:items-center lg:gap-6">
-        <img src={calenderIcon} alt="calendar" className="w-[120px] h-[120px]" />
-        <div className="flex-1">
-          <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">Calendar</h1>
-          <p className="text-slate-600 dark:text-slate-300">
-            See your daily relations with patients.
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        title="Calendar"
+        description="See your daily relations with patients."
+        image={{
+          src: calenderIcon,
+          alt: 'calendar',
+          className: 'w-[120px] h-[120px]',
+        }}
+      />
 
       <div className="flex flex-col gap-6 lg:flex-row">
         <div className="w-full lg:w-[40%] lg:sticky lg:top-4 lg:self-start">
