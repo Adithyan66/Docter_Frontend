@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import PatientCard from '@components/patient/PatientCard'
 import PatientFilters from '@components/patient/PatientFilters'
@@ -9,15 +9,11 @@ import { PlusIcon, FilterIcon } from '@assets/Icons'
 import RotatingSpinner from '@components/spinner/TeethRotating'
 import patientsteeth from '@assets/patientsList.png'
 import type { GetPatientsParams } from '@api/patients'
-import { useAppDispatch } from '@hooks/store'
-import { clearAllFilters } from '@redux/slices/patientsSlice'
 
 export default function Patients() {
   const navigate = useNavigate()
-  const dispatch = useAppDispatch()
   const {
     patients,
-    clinics,
     isLoading,
     currentPage,
     totalPages,
@@ -27,99 +23,26 @@ export default function Patients() {
     filterDrawerOpen,
     search,
     activeFilterCount,
+    pendingFilters,
+    openDropdown,
+    clinicOptions,
+    genderOptions,
+    consultationTypeOptions,
+    hasPendingChanges,
     setCurrentPage,
     setFilterDrawerOpen,
     setSearch,
-    handleFiltersChange,
+    setPendingFilters,
+    setPendingModalFilters,
+    setOpenDropdown,
+    handleApplyFilters,
+    handleClearAllFilters,
   } = usePatientsData()
 
-  const [pendingFilters, setPendingFilters] = useState<{
-    clinicId?: string
-    gender?: GetPatientsParams['gender']
-    consultationType?: GetPatientsParams['consultationType']
-  }>({
-    clinicId: filters.clinicId,
-    gender: filters.gender,
-    consultationType: filters.consultationType,
-  })
-
-  const [openDropdown, setOpenDropdown] = useState<string | null>(null)
   const clinicButtonRef = useRef<HTMLButtonElement>(null)
   const genderButtonRef = useRef<HTMLButtonElement>(null)
   const consultationButtonRef = useRef<HTMLButtonElement>(null)
   const moreFiltersButtonRef = useRef<HTMLButtonElement>(null)
-  const [pendingModalFilters, setPendingModalFilters] = useState<GetPatientsParams>(filters)
-
-  useEffect(() => {
-    setPendingFilters({
-      clinicId: filters.clinicId,
-      gender: filters.gender,
-      consultationType: filters.consultationType,
-    })
-    setPendingModalFilters({
-      ...filters,
-      minAge: filters.minAge,
-      maxAge: filters.maxAge,
-      sortBy: filters.sortBy || 'createdAt',
-      sortOrder: filters.sortOrder || 'desc',
-    })
-  }, [filters])
-
-  const clinicOptions: Array<{ value: string; label: string }> = [
-    { value: '', label: 'All Clinics' },
-    ...clinics.map((clinic) => ({ value: clinic.id, label: clinic.name })),
-  ]
-
-  const genderOptions: Array<{ value: string; label: string }> = [
-    { value: '', label: 'All Genders' },
-    { value: 'male', label: 'Male' },
-    { value: 'female', label: 'Female' },
-    { value: 'other', label: 'Other' },
-    { value: 'unknown', label: 'Unknown' },
-  ]
-
-  const consultationTypeOptions: Array<{ value: string; label: string }> = [
-    { value: '', label: 'All Types' },
-    { value: 'one-time', label: 'One-time' },
-    { value: 'treatment-plan', label: 'Treatment Plan' },
-  ]
-
-  const handleApplyFilters = () => {
-    handleFiltersChange({
-      ...filters,
-      clinicId: pendingFilters.clinicId || undefined,
-      gender: pendingFilters.gender || undefined,
-      consultationType: pendingFilters.consultationType || undefined,
-      minAge: pendingModalFilters.minAge,
-      maxAge: pendingModalFilters.maxAge,
-      sortBy: pendingModalFilters.sortBy || 'createdAt',
-      sortOrder: pendingModalFilters.sortOrder || 'desc',
-    })
-  }
-
-  const handleClearAllFilters = () => {
-    dispatch(clearAllFilters())
-    setPendingFilters({
-      clinicId: undefined,
-      gender: undefined,
-      consultationType: undefined,
-    })
-    setPendingModalFilters({
-      page: 1,
-      limit: 10,
-      sortBy: 'createdAt',
-      sortOrder: 'desc',
-    })
-  }
-
-  const hasPendingChanges =
-    pendingFilters.clinicId !== filters.clinicId ||
-    pendingFilters.gender !== filters.gender ||
-    pendingFilters.consultationType !== filters.consultationType ||
-    pendingModalFilters.minAge !== filters.minAge ||
-    pendingModalFilters.maxAge !== filters.maxAge ||
-    pendingModalFilters.sortBy !== (filters.sortBy || 'createdAt') ||
-    pendingModalFilters.sortOrder !== (filters.sortOrder || 'desc')
 
   return (
     <section className="space-y-6">

@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import toast from 'react-hot-toast'
 import { getPatients, getClinicNames, type Patient, type GetPatientsParams, type ClinicName } from '@api/patients'
 import { useDebounce } from '@hooks/utils/useDebounce'
 import { useAppDispatch, useAppSelector } from '@hooks/store'
-import { setSearch, setFilters, setCurrentPage } from '@redux/slices/patientsSlice'
+import { setSearch, setFilters, setCurrentPage, clearAllFilters } from '@redux/slices/patientsSlice'
 
 const DEFAULT_LIMIT = 10
 
@@ -17,6 +17,17 @@ export function usePatientsData() {
   const [totalPages, setTotalPages] = useState(1)
   const [total, setTotal] = useState(0)
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false)
+  const [pendingFilters, setPendingFilters] = useState<{
+    clinicId?: string
+    gender?: GetPatientsParams['gender']
+    consultationType?: GetPatientsParams['consultationType']
+  }>({
+    clinicId: filters.clinicId,
+    gender: filters.gender,
+    consultationType: filters.consultationType,
+  })
+  const [pendingModalFilters, setPendingModalFilters] = useState<GetPatientsParams>(filters)
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null)
 
   const debouncedSearch = useDebounce(search, 500)
 
@@ -41,6 +52,21 @@ export function usePatientsData() {
   useEffect(() => {
     dispatch(setCurrentPage(1))
   }, [debouncedSearch, dispatch])
+
+  useEffect(() => {
+    setPendingFilters({
+      clinicId: filters.clinicId,
+      gender: filters.gender,
+      consultationType: filters.consultationType,
+    })
+    setPendingModalFilters({
+      ...filters,
+      minAge: filters.minAge,
+      maxAge: filters.maxAge,
+      sortBy: filters.sortBy || 'createdAt',
+      sortOrder: filters.sortOrder || 'desc',
+    })
+  }, [filters])
 
   useEffect(() => {
     const fetchPatients = async () => {
@@ -81,6 +107,34 @@ export function usePatientsData() {
     setFilterDrawerOpen(false)
   }
 
+  const handleApplyFilters = () => {
+    handleFiltersChange({
+      ...filters,
+      clinicId: pendingFilters.clinicId || undefined,
+      gender: pendingFilters.gender || undefined,
+      consultationType: pendingFilters.consultationType || undefined,
+      minAge: pendingModalFilters.minAge,
+      maxAge: pendingModalFilters.maxAge,
+      sortBy: pendingModalFilters.sortBy || 'createdAt',
+      sortOrder: pendingModalFilters.sortOrder || 'desc',
+    })
+  }
+
+  const handleClearAllFilters = () => {
+    dispatch(clearAllFilters())
+    setPendingFilters({
+      clinicId: undefined,
+      gender: undefined,
+      consultationType: undefined,
+    })
+    setPendingModalFilters({
+      page: 1,
+      limit: 10,
+      sortBy: 'createdAt',
+      sortOrder: 'desc',
+    })
+  }
+
   const getActiveFilterCount = () => {
     let count = 0
     if (filters.minAge !== undefined) count++
@@ -89,6 +143,46 @@ export function usePatientsData() {
   }
 
   const activeFilterCount = getActiveFilterCount()
+
+  const clinicOptions: Array<{ value: string; label: string }> = useMemo(
+    () => [
+      { value: '', label: 'All Clinics' },
+      ...clinics.map((clinic) => ({ value: clinic.id, label: clinic.name })),
+    ],
+    [clinics]
+  )
+
+  const genderOptions: Array<{ value: string; label: string }> = useMemo(
+    () => [
+      { value: '', label: 'All Genders' },
+      { value: 'male', label: 'Male' },
+      { value: 'female', label: 'Female' },
+      { value: 'other', label: 'Other' },
+      { value: 'unknown', label: 'Unknown' },
+    ],
+    []
+  )
+
+  const consultationTypeOptions: Array<{ value: string; label: string }> = useMemo(
+    () => [
+      { value: '', label: 'All Types' },
+      { value: 'one-time', label: 'One-time' },
+      { value: 'treatment-plan', label: 'Treatment Plan' },
+    ],
+    []
+  )
+
+  const hasPendingChanges = useMemo(
+    () =>
+      pendingFilters.clinicId !== filters.clinicId ||
+      pendingFilters.gender !== filters.gender ||
+      pendingFilters.consultationType !== filters.consultationType ||
+      pendingModalFilters.minAge !== filters.minAge ||
+      pendingModalFilters.maxAge !== filters.maxAge ||
+      pendingModalFilters.sortBy !== (filters.sortBy || 'createdAt') ||
+      pendingModalFilters.sortOrder !== (filters.sortOrder || 'desc'),
+    [pendingFilters, pendingModalFilters, filters]
+  )
 
   return {
     patients,
@@ -102,10 +196,22 @@ export function usePatientsData() {
     filterDrawerOpen,
     search,
     activeFilterCount,
+    pendingFilters,
+    pendingModalFilters,
+    openDropdown,
+    clinicOptions,
+    genderOptions,
+    consultationTypeOptions,
+    hasPendingChanges,
     setCurrentPage: (page: number) => dispatch(setCurrentPage(page)),
     setFilterDrawerOpen,
     setSearch: (value: string) => dispatch(setSearch(value)),
+    setPendingFilters,
+    setPendingModalFilters,
+    setOpenDropdown,
     handleFiltersChange,
+    handleApplyFilters,
+    handleClearAllFilters,
   }
 }
 
