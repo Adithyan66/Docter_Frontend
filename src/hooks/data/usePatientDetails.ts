@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from 'react'
 import toast from 'react-hot-toast'
-import { getPatientById, updatePatientDefaultCourse, type PatientDetails } from '@api/patients'
-import { getTreatmentCourseById, type TreatmentCourse } from '@api/treatmentCourses'
+import { getPatientById, updatePatientDefaultCourse, deletePatient, updatePatient, type PatientDetails, type PatientPayload } from '@api/patients'
+import { getTreatmentCourseById, updateTreatmentCourse, deleteTreatmentCourse, type TreatmentCourse, type TreatmentCourseStatus } from '@api/treatmentCourses'
 import { getTreatment, type Treatment } from '@api/treatments'
-import { getVisits, type VisitResponseDto } from '@api/visits'
+import { getVisits, deleteVisit, type VisitResponseDto } from '@api/visits'
 import { useDebounce } from '@hooks/utils/useDebounce'
 import { useNavigate } from 'react-router-dom'
 
@@ -31,6 +31,21 @@ export function usePatientDetails(patientId: string | undefined) {
   const [isLoadingVisits, setIsLoadingVisits] = useState(false)
   const [visitsSearch, setVisitsSearch] = useState('')
   const [isSettingDefault, setIsSettingDefault] = useState(false)
+  const [viewerImage, setViewerImage] = useState<string | null>(null)
+  const [isViewerOpen, setIsViewerOpen] = useState(false)
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [isTogglingStatus, setIsTogglingStatus] = useState(false)
+  const [isEditCourseModalOpen, setIsEditCourseModalOpen] = useState(false)
+  const [isStatusModalOpen, setIsStatusModalOpen] = useState(false)
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false)
+  const [isDeleteCourseModalOpen, setIsDeleteCourseModalOpen] = useState(false)
+  const [isDeletingCourse, setIsDeletingCourse] = useState(false)
+  const [editingVisit, setEditingVisit] = useState<VisitResponseDto | null>(null)
+  const [isEditVisitModalOpen, setIsEditVisitModalOpen] = useState(false)
+  const [deletingVisit, setDeletingVisit] = useState<VisitResponseDto | null>(null)
+  const [isDeleteVisitModalOpen, setIsDeleteVisitModalOpen] = useState(false)
+  const [isDeletingVisit, setIsDeletingVisit] = useState(false)
   const debouncedSearch = useDebounce(visitsSearch, 500)
   const navigate = useNavigate()
   useEffect(() => {
@@ -240,6 +255,147 @@ export function usePatientDetails(patientId: string | undefined) {
     }
   }
 
+  const refetchAllData = async () => {
+    await Promise.all([
+      fetchPatient(),
+      selectedCourseId ? fetchCourseDetails() : Promise.resolve(),
+      selectedCourseId ? fetchVisits() : Promise.resolve(),
+    ])
+  }
+
+  const handleDeletePatient = async () => {
+    if (!patientId || isDeleting) return
+
+    try {
+      setIsDeleting(true)
+      await deletePatient(patientId)
+      toast.success('Patient deleted successfully.')
+      setTimeout(() => navigate('/patients'), 800)
+    } catch (error: any) {
+      setIsDeleting(false)
+      const errorMessage =
+        error?.response?.data?.error?.message ||
+        error?.response?.data?.message ||
+        error?.message ||
+        'Unable to delete patient. Please try again.'
+      toast.error(errorMessage)
+    }
+  }
+
+  const handleToggleStatus = async () => {
+    if (!patient || !patientId || isTogglingStatus) return
+
+    try {
+      setIsTogglingStatus(true)
+      const payload: PatientPayload = {
+        firstName: patient.firstName || '',
+        lastName: patient.lastName,
+        fullName: patient.fullName,
+        address: patient.address,
+        profilePicUrl: patient.profilePicUrl,
+        consultationType: patient.consultationType,
+        primaryClinic: patient.primaryClinic,
+        clinics: patient.clinics,
+        dob: patient.dob,
+        lastVisitAt: patient.lastVisitAt,
+        age: patient.age,
+        visitCount: patient.visitCount,
+        gender: patient.gender,
+        phone: patient.phone,
+        email: patient.email,
+        tags: patient.tags,
+        isActive: !patient.isActive,
+      }
+      await updatePatient(patientId, payload)
+      toast.success(`Patient marked as ${!patient.isActive ? 'active' : 'inactive'} successfully.`)
+      await fetchPatient()
+    } catch (error: any) {
+      const errorMessage =
+        error?.response?.data?.error?.message ||
+        error?.response?.data?.message ||
+        error?.message ||
+        'Unable to update patient status. Please try again.'
+      toast.error(errorMessage)
+    } finally {
+      setIsTogglingStatus(false)
+    }
+  }
+
+  const handleStatusChange = async (status: TreatmentCourseStatus) => {
+    if (!courseDetails) return
+
+    try {
+      setIsUpdatingStatus(true)
+      await updateTreatmentCourse(courseDetails.id, { status })
+      toast.success(`Status updated to ${status.charAt(0).toUpperCase() + status.slice(1)} successfully.`)
+      setIsStatusModalOpen(false)
+      await fetchCourseDetails()
+    } catch (error: any) {
+      const errorMessage =
+        error?.response?.data?.error?.message ||
+        error?.response?.data?.message ||
+        error?.message ||
+        'Unable to update status. Please try again.'
+      toast.error(errorMessage)
+    } finally {
+      setIsUpdatingStatus(false)
+    }
+  }
+
+  const handleDeleteCourse = async () => {
+    if (!courseDetails || !selectedCourseId || isDeletingCourse) return
+
+    try {
+      setIsDeletingCourse(true)
+      await deleteTreatmentCourse(courseDetails.id)
+      toast.success('Treatment course deleted successfully.')
+      setIsDeleteCourseModalOpen(false)
+      await fetchPatient()
+    } catch (error: any) {
+      setIsDeletingCourse(false)
+      const errorMessage =
+        error?.response?.data?.error?.message ||
+        error?.response?.data?.message ||
+        error?.message ||
+        'Unable to delete treatment course. Please try again.'
+      toast.error(errorMessage)
+    }
+  }
+
+  const handleEditVisit = (visit: VisitResponseDto) => {
+    setEditingVisit(visit)
+    setIsEditVisitModalOpen(true)
+  }
+
+  const handleDeleteVisitClick = (visit: VisitResponseDto) => {
+    setIsDeletingVisit(false)
+    setDeletingVisit(visit)
+    setIsDeleteVisitModalOpen(true)
+  }
+
+  const handleDeleteVisit = async () => {
+    const visitToDelete = deletingVisit
+    if (!visitToDelete || isDeletingVisit) return
+
+    try {
+      setIsDeletingVisit(true)
+      await deleteVisit(visitToDelete.id)
+      toast.success('Visit deleted successfully.')
+      setIsDeletingVisit(false)
+      setIsDeleteVisitModalOpen(false)
+      setDeletingVisit(null)
+      await refetchAllData()
+    } catch (error: any) {
+      setIsDeletingVisit(false)
+      const errorMessage =
+        error?.response?.data?.error?.message ||
+        error?.response?.data?.message ||
+        error?.message ||
+        'Unable to delete visit. Please try again.'
+      toast.error(errorMessage)
+    }
+  }
+
   return {
     patient,
     isLoading,
@@ -259,6 +415,21 @@ export function usePatientDetails(patientId: string | undefined) {
     isLoadingVisits,
     visitsSearch,
     setVisitsSearch,
+    viewerImage,
+    isViewerOpen,
+    isDeleteModalOpen,
+    isDeleting,
+    isTogglingStatus,
+    isEditCourseModalOpen,
+    isStatusModalOpen,
+    isUpdatingStatus,
+    isDeleteCourseModalOpen,
+    isDeletingCourse,
+    editingVisit,
+    isEditVisitModalOpen,
+    deletingVisit,
+    isDeleteVisitModalOpen,
+    isDeletingVisit,
     handleVisitsPageChange,
     handleVisitSuccess,
     handleProfileInfoClick,
@@ -271,9 +442,29 @@ export function usePatientDetails(patientId: string | undefined) {
     fetchPatient,
     fetchCourseDetails,
     fetchVisits,
+    refetchAllData,
     formatDate,
     formatDateTime,
     formatDateWithTime,
+    handleDeletePatient,
+    handleToggleStatus,
+    handleStatusChange,
+    handleDeleteCourse,
+    handleEditVisit,
+    handleDeleteVisitClick,
+    handleDeleteVisit,
+    setViewerImage,
+    setIsViewerOpen,
+    setIsDeleteModalOpen,
+    setIsEditCourseModalOpen,
+    setIsStatusModalOpen,
+    setIsDeleteCourseModalOpen,
+    setEditingVisit,
+    setIsEditVisitModalOpen,
+    setDeletingVisit,
+    setIsDeleteVisitModalOpen,
+    setIsDeletingVisit,
+    navigate,
   }
 }
 

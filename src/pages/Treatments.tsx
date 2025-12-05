@@ -1,5 +1,5 @@
-import { useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useMemo } from 'react'
 import Pagination from '@components/common/Pagination'
 import PageHeader from '@components/common/PageHeader'
 import Table from '@components/common/Table'
@@ -21,116 +21,91 @@ export default function Treatments() {
     search,
     sortBy,
     sortOrder,
+    sortByButtonRef,
+    sortOrderButtonRef,
+    sortByOptions,
+    sortOrderOptions,
+    formatCurrency,
+    formatDuration,
+    handleRowClick,
     setCurrentPage,
     setSearch,
     setSortBy,
     setSortOrder,
   } = useTreatments()
 
-  const sortByButtonRef = useRef<HTMLButtonElement>(null)
-  const sortOrderButtonRef = useRef<HTMLButtonElement>(null)
-
-  const formatCurrency = (amount?: number) => {
-    if (amount === undefined || amount === null) return '-'
-    return `₹${amount.toLocaleString('en-IN')}`
-  }
-
-  const formatDuration = (duration?: number) => {
-    if (duration === undefined || duration === null) return '-'
-    return `${duration} ${duration === 1 ? 'month' : 'months'}`
-  }
-
-  const handleRowClick = (treatment: TreatmentList) => {
-    navigate(`/treatment/${treatment.id}`)
-  }
-
-  const sortByOptions: Array<{ value: string; label: string }> = [
-    { value: '', label: 'Sort by' },
-    { value: 'averageAmount', label: 'Average Amount' },
-    { value: 'averageDuration', label: 'Average Duration' },
-    { value: 'numberOfPatients', label: 'Number of Patients' },
-    { value: 'ongoing', label: 'Ongoing' },
-    { value: 'completed', label: 'Completed' },
-  ]
-
-  const sortOrderOptions: Array<{ value: string; label: string }> = [
-    { value: 'asc', label: 'Ascending' },
-    { value: 'desc', label: 'Descending' },
-  ]
-
-  const columns = [
-    {
-      key: 'slNo',
-      header: 'SL No',
-      render: (_: TreatmentList, index: number) => {
-        return <span className="font-medium">{((currentPage - 1) * limit) + index + 1}</span>
+  const columns = useMemo(
+    () => [
+      {
+        key: 'slNo',
+        header: 'SL No',
+        render: (_: TreatmentList, index: number) => {
+          return <span className="font-medium">{(currentPage - 1) * limit + index + 1}</span>
+        },
+        className: 'w-20',
       },
-      className: 'w-20',
-    },
-    {
-      key: 'name',
-      header: 'Treatment Name',
-      render: (treatment: TreatmentList) => (
-        <span className="font-semibold text-slate-900 dark:text-white">{treatment.name}</span>
-      ),
-      className: 'text-left',
-    },
-    {
-      key: 'isActive',
-      header: 'Status',
-      render: (treatment: TreatmentList) => (
-        <span
-          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-            treatment.isActive
-              ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-              : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
-          }`}
-        >
-          {treatment.isActive ? 'Active' : 'Inactive'}
-        </span>
-      ),
-      className: 'text-center',
-    },
-    {
-      key: 'avgCost',
-      header: 'Average Cost',
-      render: (treatment: TreatmentList) => (
-        <span className="text-slate-700 dark:text-slate-300">
-          {formatCurrency(treatment.avgFees)}
-        </span>
-      ),
-    },
-    {
-      key: 'avgDuration',
-      header: 'Average Duration',
-      render: (treatment: TreatmentList) => (
-        <span className="text-slate-700 dark:text-slate-300">
-          {formatDuration(treatment.avgDuration)}
-        </span>
-      ),
-    },
-    {
-      key: 'numberOfPatients',
-      header: 'Number of Patients',
-      render: (treatment: TreatmentList) => (
-        <span className="text-slate-700 dark:text-slate-300">{treatment.numberOfPatients}</span>
-      ),
-    },
-    {
-      key: 'ongoing',
-      header: 'Ongoing',
-      render: (treatment: TreatmentList) => (
-        <span className="text-slate-700 dark:text-slate-300">{treatment.ongoing}</span>
-      ),
-    },
-    {
-      key: 'completed',
-      header: 'Completed',
-      render: (treatment: TreatmentList) => (
-        <span className="text-slate-700 dark:text-slate-300">{treatment.completed}</span>
-      ),
-    },
-  ]
+      {
+        key: 'name',
+        header: 'Treatment Name',
+        render: (treatment: TreatmentList) => (
+          <span className="font-semibold text-slate-900 dark:text-white">{treatment.name}</span>
+        ),
+        className: 'text-left',
+      },
+      {
+        key: 'isActive',
+        header: 'Status',
+        render: (treatment: TreatmentList) => (
+          <span
+            className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+              treatment.isActive
+                ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+            }`}
+          >
+            {treatment.isActive ? 'Active' : 'Inactive'}
+          </span>
+        ),
+        className: 'text-center',
+      },
+      {
+        key: 'avgCost',
+        header: 'Average Cost',
+        render: (treatment: TreatmentList) => (
+          <span className="text-slate-700 dark:text-slate-300">{formatCurrency(treatment.avgFees)}</span>
+        ),
+      },
+      {
+        key: 'avgDuration',
+        header: 'Average Duration',
+        render: (treatment: TreatmentList) => (
+          <span className="text-slate-700 dark:text-slate-300">{formatDuration(treatment.avgDuration)}</span>
+        ),
+      },
+      {
+        key: 'numberOfPatients',
+        header: 'Number of Patients',
+        render: (treatment: TreatmentList) => (
+          <span className="text-slate-700 dark:text-slate-300">{treatment.numberOfPatients}</span>
+        ),
+      },
+      {
+        key: 'ongoing',
+        header: 'Ongoing',
+        render: (treatment: TreatmentList) => (
+          <span className="text-slate-700 dark:text-slate-300">{treatment.ongoing}</span>
+        ),
+      },
+      {
+        key: 'completed',
+        header: 'Completed',
+        render: (treatment: TreatmentList) => (
+          <span className="text-slate-700 dark:text-slate-300">{treatment.completed}</span>
+        ),
+      },
+    ],
+    [currentPage, limit, formatCurrency, formatDuration]
+  )
 
   return (
     <section className="space-y-6">

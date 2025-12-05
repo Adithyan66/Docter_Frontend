@@ -1,4 +1,4 @@
-import { type ChangeEvent, type ReactNode, useState, useRef, useEffect } from 'react'
+import { type ReactNode, useRef, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import CameraCapture from '@components/common/CameraCapture'
@@ -139,57 +139,29 @@ export default function AddPatients() {
     isEditMode,
     pendingImagePreview,
     showCamera,
-    availableClinics,
+    genderDropdownOpen,
+    setGenderDropdownOpen,
+    primaryClinicDropdownOpen,
+    setPrimaryClinicDropdownOpen,
+    showConfirmModal,
+    setShowConfirmModal,
+    genderButtonRef,
+    primaryClinicButtonRef,
+    genderOptions,
+    consultationTypeOptions,
+    primaryClinicOptions,
     validateEmail,
     validatePhone,
     handleFieldChange,
-    handleImageUpload,
+    handleFileInputChange,
     handleCameraCapture,
     removePendingImage,
     addTag,
     removeTag,
-    performSubmit,
+    handleSaveClick,
+    handleConfirmSubmit,
     setShowCamera,
   } = useAddPatient()
-
-  const [genderDropdownOpen, setGenderDropdownOpen] = useState(false)
-  const genderButtonRef = useRef<HTMLButtonElement>(null)
-  const [primaryClinicDropdownOpen, setPrimaryClinicDropdownOpen] = useState(false)
-  const primaryClinicButtonRef = useRef<HTMLButtonElement>(null)
-  const [showConfirmModal, setShowConfirmModal] = useState(false)
-
-  const genderOptions: Array<{ value: string; label: string }> = [
-    { value: 'unknown', label: 'Unknown' },
-    { value: 'male', label: 'Male' },
-    { value: 'female', label: 'Female' },
-    { value: 'other', label: 'Other' },
-  ]
-
-  const consultationTypeOptions: Array<{ value: string; label: string }> = [
-    { value: 'one-time', label: 'One-time' },
-    { value: 'treatment-plan', label: 'Treatment Plan' },
-  ]
-
-  const primaryClinicOptions: Array<{ value: string; label: string }> = [
-    { value: '', label: 'Select primary clinic' },
-    ...availableClinics.map((clinic) => ({ value: clinic.id, label: clinic.name })),
-  ]
-
-  const handleFileInputChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    handleImageUpload(file || null)
-    event.target.value = ''
-  }
-
-  const handleSaveClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-    event.preventDefault()
-    setShowConfirmModal(true)
-  }
-
-  const handleConfirmSubmit = () => {
-    setShowConfirmModal(false)
-    performSubmit()
-  }
 
   if (isLoading) {
     return <RotatingSpinner/>
@@ -236,7 +208,7 @@ export default function AddPatients() {
         id="add-patient-form"
         onSubmit={(e) => {
           e.preventDefault()
-          setShowConfirmModal(true)
+          handleSaveClick(e as any)
         }}
         className="space-y-8"
       >

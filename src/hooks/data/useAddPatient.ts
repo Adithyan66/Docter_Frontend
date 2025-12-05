@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, type ChangeEvent } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { createPatient, updatePatient, getPatientById, getClinicNames, type PatientPayload, type ClinicName } from '@api/patients'
@@ -68,6 +68,11 @@ export function useAddPatient() {
   const [pendingImagePreview, setPendingImagePreview] = useState<string | null>(null)
   const [showCamera, setShowCamera] = useState(false)
   const [availableClinics, setAvailableClinics] = useState<ClinicName[]>([])
+  const [genderDropdownOpen, setGenderDropdownOpen] = useState(false)
+  const [primaryClinicDropdownOpen, setPrimaryClinicDropdownOpen] = useState(false)
+  const [showConfirmModal, setShowConfirmModal] = useState(false)
+  const genderButtonRef = useRef<HTMLButtonElement>(null)
+  const primaryClinicButtonRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
     const fetchClinics = async () => {
@@ -282,6 +287,39 @@ export function useAddPatient() {
     event.preventDefault()
   }
 
+  const genderOptions: Array<{ value: string; label: string }> = [
+    { value: 'unknown', label: 'Unknown' },
+    { value: 'male', label: 'Male' },
+    { value: 'female', label: 'Female' },
+    { value: 'other', label: 'Other' },
+  ]
+
+  const consultationTypeOptions: Array<{ value: string; label: string }> = [
+    { value: 'one-time', label: 'One-time' },
+    { value: 'treatment-plan', label: 'Treatment Plan' },
+  ]
+
+  const primaryClinicOptions: Array<{ value: string; label: string }> = [
+    { value: '', label: 'Select primary clinic' },
+    ...availableClinics.map((clinic) => ({ value: clinic.id, label: clinic.name })),
+  ]
+
+  const handleFileInputChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    handleImageUpload(file || null)
+    event.target.value = ''
+  }
+
+  const handleSaveClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault()
+    setShowConfirmModal(true)
+  }
+
+  const handleConfirmSubmit = () => {
+    setShowConfirmModal(false)
+    performSubmit()
+  }
+
   const performSubmit = async () => {
     if (!form.firstName.trim()) {
       toast.error('First name is required.')
@@ -384,11 +422,23 @@ export function useAddPatient() {
     pendingImagePreview,
     showCamera,
     availableClinics,
+    genderDropdownOpen,
+    setGenderDropdownOpen,
+    primaryClinicDropdownOpen,
+    setPrimaryClinicDropdownOpen,
+    showConfirmModal,
+    setShowConfirmModal,
+    genderButtonRef,
+    primaryClinicButtonRef,
+    genderOptions,
+    consultationTypeOptions,
+    primaryClinicOptions,
     validateEmail,
     validatePhone,
     validateUrl,
     handleFieldChange,
     handleImageUpload,
+    handleFileInputChange,
     handleCameraCapture,
     removePendingImage,
     addTag,
@@ -396,6 +446,8 @@ export function useAddPatient() {
     toggleClinic,
     submitForm,
     performSubmit,
+    handleSaveClick,
+    handleConfirmSubmit,
     setShowCamera,
   }
 }

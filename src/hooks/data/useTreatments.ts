@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { getTreatments, deleteTreatment, type TreatmentList, type GetTreatmentsParams } from '@api/treatments'
 import { useDebounce } from '@hooks/utils/useDebounce'
@@ -6,6 +7,7 @@ import { useDebounce } from '@hooks/utils/useDebounce'
 const DEFAULT_LIMIT = 10
 
 export function useTreatments() {
+  const navigate = useNavigate()
   const [treatments, setTreatments] = useState<TreatmentList[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [currentPage, setCurrentPage] = useState(1)
@@ -17,6 +19,8 @@ export function useTreatments() {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [treatmentToDelete, setTreatmentToDelete] = useState<TreatmentList | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+  const sortByButtonRef = useRef<HTMLButtonElement>(null)
+  const sortOrderButtonRef = useRef<HTMLButtonElement>(null)
 
   const debouncedSearch = useDebounce(search, 500)
 
@@ -115,6 +119,34 @@ export function useTreatments() {
     setTreatmentToDelete(null)
   }
 
+  const formatCurrency = (amount?: number) => {
+    if (amount === undefined || amount === null) return '-'
+    return `₹${amount.toLocaleString('en-IN')}`
+  }
+
+  const formatDuration = (duration?: number) => {
+    if (duration === undefined || duration === null) return '-'
+    return `${duration} ${duration === 1 ? 'month' : 'months'}`
+  }
+
+  const handleRowClick = (treatment: TreatmentList) => {
+    navigate(`/treatment/${treatment.id}`)
+  }
+
+  const sortByOptions: Array<{ value: string; label: string }> = [
+    { value: '', label: 'Sort by' },
+    { value: 'averageAmount', label: 'Average Amount' },
+    { value: 'averageDuration', label: 'Average Duration' },
+    { value: 'numberOfPatients', label: 'Number of Patients' },
+    { value: 'ongoing', label: 'Ongoing' },
+    { value: 'completed', label: 'Completed' },
+  ]
+
+  const sortOrderOptions: Array<{ value: string; label: string }> = [
+    { value: 'asc', label: 'Ascending' },
+    { value: 'desc', label: 'Descending' },
+  ]
+
   return {
     treatments,
     isLoading,
@@ -128,6 +160,13 @@ export function useTreatments() {
     deleteModalOpen,
     treatmentToDelete,
     isDeleting,
+    sortByButtonRef,
+    sortOrderButtonRef,
+    sortByOptions,
+    sortOrderOptions,
+    formatCurrency,
+    formatDuration,
+    handleRowClick,
     setCurrentPage,
     setSearch,
     setSortBy,
