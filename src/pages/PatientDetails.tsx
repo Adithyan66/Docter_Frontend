@@ -136,9 +136,9 @@ export default function PatientDetails() {
             isLoading: isTogglingStatus,
             loadingLabel: patient.isActive ? 'Deactivating...' : 'Activating...',
             className: `inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 ${
-              patient.isActive
-                ? 'bg-gradient-to-r from-orange-100 to-orange-200 hover:from-orange-200 hover:to-orange-300 dark:from-orange-800/30 dark:to-orange-700/30 dark:text-slate-200 dark:hover:from-orange-700/40 dark:hover:to-orange-600/40'
-                : 'bg-gradient-to-r from-green-100 to-green-200 hover:from-green-200 hover:to-green-300 dark:from-green-800/30 dark:to-green-700/30 dark:text-slate-200 dark:hover:from-green-700/40 dark:hover:to-green-600/40'
+                  patient.isActive
+                    ? 'bg-gradient-to-r from-orange-100 to-orange-200 hover:from-orange-200 hover:to-orange-300 dark:from-orange-800/30 dark:to-orange-700/30 dark:text-slate-200 dark:hover:from-orange-700/40 dark:hover:to-orange-600/40'
+                    : 'bg-gradient-to-r from-green-100 to-green-200 hover:from-green-200 hover:to-green-300 dark:from-green-800/30 dark:to-green-700/30 dark:text-slate-200 dark:hover:from-green-700/40 dark:hover:to-green-600/40'
             }`,
           },
         ]}
@@ -178,6 +178,7 @@ export default function PatientDetails() {
           doctorId={doctorId}
           clinicId={courseDetails.clinicId}
           primaryClinicId={patient.primaryClinic}
+          treatmentDetails={treatmentDetails}
           onSuccess={async () => {
             setIsVisitModalOpen(false)
             await refetchAllData()
@@ -199,6 +200,7 @@ export default function PatientDetails() {
           primaryClinicId={patient.primaryClinic}
           visitId={editingVisit.id}
           visitData={editingVisit}
+          treatmentDetails={treatmentDetails}
           onSuccess={async () => {
             setIsEditVisitModalOpen(false)
             setEditingVisit(null)
@@ -259,9 +261,9 @@ export default function PatientDetails() {
           formatDateTime={formatDateTime}
           onImageClick={(imageUrl) => {
             setViewerImage(imageUrl)
-            setIsViewerOpen(true)
-          }}
-        />
+                  setIsViewerOpen(true)
+                }}
+              />
 
         <div className="lg:col-span-2">
           {patient.treatmentCourses && patient.treatmentCourses.length > 0 ? (
@@ -324,9 +326,9 @@ export default function PatientDetails() {
                     onDeleteVisit={handleDeleteVisitClick}
                     onImageClick={(imageUrl) => {
                       setViewerImage(imageUrl)
-                      setIsViewerOpen(true)
-                    }}
-                  />
+                                              setIsViewerOpen(true)
+                                            }}
+                                          />
                 </div>
               ) : (
                 <div className="flex items-center justify-center p-12">

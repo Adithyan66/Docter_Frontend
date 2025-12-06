@@ -111,6 +111,33 @@ export function usePatientDetails(patientId: string | undefined) {
     fetchCourseDetails()
   }, [selectedCourseId])
 
+  const fetchTreatmentDetails = useCallback(async () => {
+    if (!courseDetails?.treatmentId) {
+      setTreatmentDetails(null)
+      return
+    }
+
+    try {
+      setIsLoadingTreatment(true)
+      const treatmentData = await getTreatment(courseDetails.treatmentId)
+      setTreatmentDetails(treatmentData)
+    } catch (error: any) {
+      const errorMessage =
+        error?.response?.data?.error?.message ||
+        error?.response?.data?.message ||
+        error?.message ||
+        'Unable to fetch treatment details. Please try again.'
+      toast.error(errorMessage)
+      setTreatmentDetails(null)
+    } finally {
+      setIsLoadingTreatment(false)
+    }
+  }, [courseDetails?.treatmentId])
+
+  useEffect(() => {
+    fetchTreatmentDetails()
+  }, [fetchTreatmentDetails])
+
   const fetchVisits = useCallback(async () => {
     if (!selectedCourseId || !patient?.id) {
       setVisits([])

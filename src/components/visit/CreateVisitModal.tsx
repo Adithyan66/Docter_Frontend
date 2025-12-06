@@ -3,6 +3,7 @@ import toast from 'react-hot-toast'
 import { createVisit, updateVisit, type CreateVisitRequestDto, type PrescriptionItemDto, type CreateVisitMediaDto, type MediaType, type VisitResponseDto } from '@api/visits'
 import { S3Service } from '@services/s3Service'
 import { getClinicNames, type ClinicName } from '@api/clinics'
+import { type Treatment } from '@api/treatments'
 
 type CreateVisitModalProps = {
   isOpen: boolean
@@ -15,6 +16,7 @@ type CreateVisitModalProps = {
   onSuccess?: () => void
   visitId?: string
   visitData?: VisitResponseDto
+  treatmentDetails?: Treatment | null
 }
 
 type PrescriptionItemForm = {
@@ -49,15 +51,64 @@ export default function CreateVisitModal({
   onSuccess,
   visitId,
   visitData: initialVisitData,
+  treatmentDetails,
 }: CreateVisitModalProps) {
   const isEditMode = !!visitId
   const [clinics, setClinics] = useState<ClinicName[]>([])
   const [isLoadingClinics, setIsLoadingClinics] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
+  const formatDateTimeLocal = (date: Date): string => {
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    const hours = String(date.getHours()).padStart(2, '0')
+    const minutes = String(date.getMinutes()).padStart(2, '0')
+    return `${year}-${month}-${day}T${hours}:${minutes}`
+  }
+
+  const calculateNextVisitDate = (visitDateStr: string): string | null => {
+    if (!treatmentDetails || treatmentDetails.isOneTime) {
+      return null
+    }
+
+    const regularInterval = treatmentDetails.regularVisitInterval
+    if (!regularInterval || !regularInterval.interval || !regularInterval.unit) {
+      return null
+    }
+
+    const visitDate = new Date(visitDateStr)
+    if (isNaN(visitDate.getTime())) {
+      return null
+    }
+
+    const nextDate = new Date(visitDate)
+    const { interval, unit } = regularInterval
+
+    switch (unit) {
+      case 'days':
+        nextDate.setDate(nextDate.getDate() + interval)
+        break
+      case 'weeks':
+        nextDate.setDate(nextDate.getDate() + interval * 7)
+        break
+      case 'months':
+        nextDate.setMonth(nextDate.getMonth() + interval)
+        break
+      case 'years':
+        nextDate.setFullYear(nextDate.getFullYear() + interval)
+        break
+      default:
+        return null
+    }
+
+    return formatDateTimeLocal(nextDate)
+  }
+
   const [formData, setFormData] = useState({
     clinicId: initialClinicId || primaryClinicId || '',
-    visitDate: new Date().toISOString().split('T')[0],
+    visitDate: formatDateTimeLocal(new Date()),
+    nextVisitDate: '',
     notes: '',
     billedAmount: '',
     paymentMethod: 'cash' as PaymentMethod,
@@ -113,10 +164,29 @@ export default function CreateVisitModal({
     }
   }, [formData.billedAmount])
 
+  useEffect(() => {
+    if (!isEditMode && !treatmentDetails?.isOneTime && formData.visitDate) {
+      const calculatedNextVisitDate = calculateNextVisitDate(formData.visitDate)
+      if (calculatedNextVisitDate) {
+        setFormData((prev) => {
+          if (prev.nextVisitDate !== calculatedNextVisitDate) {
+            return { ...prev, nextVisitDate: calculatedNextVisitDate }
+          }
+          return prev
+        })
+      } else {
+        setFormData((prev) => ({ ...prev, nextVisitDate: '' }))
+      }
+    }
+  }, [formData.visitDate, treatmentDetails, isEditMode])
+
   const resetForm = () => {
+    const initialVisitDate = formatDateTimeLocal(new Date())
+    const initialNextVisitDate = calculateNextVisitDate(initialVisitDate) || ''
     setFormData({
       clinicId: initialClinicId || primaryClinicId || '',
-      visitDate: new Date().toISOString().split('T')[0],
+      visitDate: initialVisitDate,
+      nextVisitDate: initialNextVisitDate,
       notes: '',
       billedAmount: '',
       paymentMethod: 'cash',
@@ -139,10 +209,11 @@ export default function CreateVisitModal({
   }
 
   const loadVisitData = (visitData: VisitResponseDto) => {
-    const visitDate = new Date(visitData.visitDate).toISOString().split('T')[0]
+    const visitDate = formatDateTimeLocal(new Date(visitData.visitDate))
     setFormData({
       clinicId: visitData.clinicId || initialClinicId || primaryClinicId || '',
       visitDate,
+      nextVisitDate: '',
       notes: visitData.notes || '',
       billedAmount: visitData.billedAmount?.toString() || '',
       paymentMethod: 'cash',
@@ -377,6 +448,7 @@ export default function CreateVisitModal({
         courseId,
         clinicId: formData.clinicId || undefined,
         visitDate: new Date(formData.visitDate).toISOString(),
+        nextVisitDate: !isEditMode && formData.nextVisitDate ? new Date(formData.nextVisitDate).toISOString() : undefined,
         notes: formData.notes.trim() || undefined,
         billedAmount: formData.billedAmount ? Number(formData.billedAmount) : undefined,
         prescription: prescriptionPayload,
@@ -506,10 +578,10 @@ export default function CreateVisitModal({
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                   <div>
                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                      Visit Date <span className="text-red-500">*</span>
+                      Visit Date & Time <span className="text-red-500">*</span>
                     </label>
                     <input
-                      type="date"
+                      type="datetime-local"
                       value={formData.visitDate}
                       onChange={(e) => setFormData((prev) => ({ ...prev, visitDate: e.target.value }))}
                       className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
@@ -617,6 +689,20 @@ export default function CreateVisitModal({
                       />
                     </div>
                   )}
+
+                  {!isEditMode && treatmentDetails && !treatmentDetails.isOneTime && treatmentDetails.regularVisitInterval?.interval && treatmentDetails.regularVisitInterval?.unit ? (
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                        Next Visit Date <span className="text-slate-400">(Optional)</span>
+                      </label>
+                      <input
+                        type="datetime-local"
+                        value={formData.nextVisitDate}
+                        onChange={(e) => setFormData((prev) => ({ ...prev, nextVisitDate: e.target.value }))}
+                        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+                      />
+                    </div>
+                  ) : null}
                 </div>
 
                 <div>

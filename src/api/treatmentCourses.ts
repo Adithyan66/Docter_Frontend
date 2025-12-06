@@ -37,6 +37,8 @@ export type TreatmentCourse = {
   isPaymentCompleted: boolean
   isMedicallyCompleted: boolean
   status: TreatmentCourseStatus
+  lastVisitDate: string
+  nextVisitDate: string
   notes?: string
   visits: string[]
   payments: string[]

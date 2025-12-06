@@ -40,6 +40,7 @@ export type CreateVisitRequestDto = {
   courseId: string
   clinicId?: string
   visitDate: string
+  nextVisitDate?: string
   notes?: string
   billedAmount?: number
   mediaIds?: string[]

@@ -272,12 +272,30 @@ export default function PatientTreatmentDetails({
         </div>
       </div>
 
+      <div className='flex justify-center gap-8'>
+        <div className='text-center'>
+          <h1 className='text-sm font-semibold text-slate-900 dark:text-white mb-2'>Last Visit :</h1>
+          <p className='text-xl font-bold text-slate-900 dark:text-white'>{formatDate(courseDetails.lastVisitDate)}</p>
+        </div>
+        <div className='text-center'>
+          <h1 className='text-sm font-semibold text-slate-900 dark:text-white mb-2'>Next Visit :</h1>
+          <p className='text-xl font-bold text-slate-900 dark:text-white'>{formatDate(courseDetails.nextVisitDate)}</p>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {courseDetails.notes && (
+        {(courseDetails.notes) ? (
           <div className="md:col-span-2">
             <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 p-4">
               <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-2 block">Notes</span>
               <p className="text-sm text-slate-900 dark:text-white whitespace-pre-line">{courseDetails.notes}</p>
+            </div>
+          </div>
+        ):(
+          <div className='md:col-span-2'>
+            <div className='rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 p-4'>
+            <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-2 block">Notes</span>
+            <span className='text-xs font-semibold text-slate-700 dark:text-slate-300 mb-2 block'>No notes found</span>
             </div>
           </div>
         )}
