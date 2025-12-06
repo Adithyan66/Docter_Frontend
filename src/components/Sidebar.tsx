@@ -123,6 +123,27 @@ const ClinicsIcon = ({ className }: IconProps) => (
   </svg>
 )
 
+const AppointmentsIcon = ({ className }: IconProps) => (
+  <svg
+    className={className}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={1.8}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M6 2v4" />
+    <path d="M18 2v4" />
+    <path d="M3 8h18" />
+    <path d="M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" />
+    <circle cx="8" cy="14" r="1" />
+    <circle cx="12" cy="14" r="1" />
+    <circle cx="16" cy="14" r="1" />
+    <path d="M8 18h8" />
+  </svg>
+)
+
 const links: SidebarLink[] = [
   { label: 'Dashboard', to: '/', icon: DashboardIcon },
   { label: 'Patients', to: '/patients', icon: PatientsIcon },
@@ -130,6 +151,7 @@ const links: SidebarLink[] = [
   { label: 'Treatments', to: '/treatments', icon: TreatmentsIcon },
   { label: 'Clinics', to: '/clinics', icon: ClinicsIcon },
   { label: 'Calendar', to: '/calendar', icon: CalendarIcon },
+  { label: 'Appointments', to: '/appointments', icon: AppointmentsIcon },
 ]
 
 export default function Sidebar({ mobileOpen, onClose, collapsed, onToggleCollapse }: SidebarProps) {

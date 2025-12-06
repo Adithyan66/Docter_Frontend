@@ -20,7 +20,7 @@ export default function Table<T extends { id: string }>({
   onRowClick,
   emptyMessage = 'No data available.',
 }: TableProps<T>) {
-  if (data.length === 0) {
+  if (!data || data.length === 0) {
     return (
       <div className="rounded-xl border border-slate-200 bg-white p-6 text-sm text-slate-600 shadow-sm dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
         {emptyMessage}
