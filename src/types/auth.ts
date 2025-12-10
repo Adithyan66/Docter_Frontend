@@ -4,8 +4,10 @@ export type UserSummary = {
 }
 
 export type LoginPayload = {
-  email: string
+  email?: string
+  username?: string
   password: string
+  role: 'doctor' | 'staff'
 }
 
 export type LoginSuccessResponse = {

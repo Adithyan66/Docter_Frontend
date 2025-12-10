@@ -123,6 +123,25 @@ const ClinicsIcon = ({ className }: IconProps) => (
   </svg>
 )
 
+const StaffIcon = ({ className }: IconProps) => (
+  <svg
+    className={className}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={1.8}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M17 21v-4a4 4 0 0 0-8 0v4" />
+    <circle cx="13" cy="9" r="3" />
+    <path d="M5 8a2 2 0 0 1 2-2" />
+    <path d="M5 12a4 4 0 0 0 4 4" />
+    <path d="M19 8a2 2 0 0 0-2-2" />
+    <path d="M19 12a4 4 0 0 1-4 4" />
+  </svg>
+)
+
 const AppointmentsIcon = ({ className }: IconProps) => (
   <svg
     className={className}
@@ -150,6 +169,7 @@ const links: SidebarLink[] = [
   { label: 'Addpatients', to: '/patient/add', icon: AddPatientsIcon },
   { label: 'Treatments', to: '/treatments', icon: TreatmentsIcon },
   { label: 'Clinics', to: '/clinics', icon: ClinicsIcon },
+  { label: 'Clinic Staffs', to: '/staff', icon: StaffIcon },
   { label: 'Calendar', to: '/calendar', icon: CalendarIcon },
   { label: 'Appointments', to: '/appointments', icon: AppointmentsIcon },
 ]

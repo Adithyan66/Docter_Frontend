@@ -15,6 +15,9 @@ import AddClinic from '@pages/AddClinic'
 import ClinicDetails from '@pages/ClinicDetails'
 import Appointments from '@pages/Appointments'
 import NotFound from '@pages/NotFound'
+import Staff from '@pages/Staff'
+import StaffDetails from '@pages/StaffDetails'
+import AddStaff from '@pages/AddStaff'
 
 export default function AppRoutes() {
   return (
@@ -37,6 +40,10 @@ export default function AppRoutes() {
           <Route path="/calendar" element={<Calendar />} />
           <Route path="/appointments" element={<Appointments />} />
           <Route path="/treatment/:id" element={<TreatmentDetails />} />
+          <Route path="/staff" element={<Staff />} />
+          <Route path="/staff/add" element={<AddStaff />} />
+          <Route path="/staff/edit/:id" element={<AddStaff />} />
+          <Route path="/staff/:id" element={<StaffDetails />} />
           <Route path="/*" element={<NotFound />} />
         </Route>
       </Route> 
