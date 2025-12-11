@@ -6,6 +6,7 @@ import PageHeader from '@components/common/PageHeader'
 import ImageViewerModal from '@components/common/ImageViewerModal'
 import DeleteConfirmationModal from '@components/common/DeleteConfirmationModal'
 import ConfirmationModal from '@components/common/ConfirmationModal'
+import Gallery, { type GalleryItem } from '@components/common/Gallery'
 import { useTreatmentDetails } from '@hooks/data/useTreatmentDetails'
 import { updateTreatment, deleteTreatment } from '@api/treatments'
 import toast from 'react-hot-toast'
@@ -18,6 +19,7 @@ export default function TreatmentDetails() {
   const [viewerImage, setViewerImage] = useState<string | null>(null)
   const [isViewerOpen, setIsViewerOpen] = useState(false)
   const [showAllImages, setShowAllImages] = useState(false)
+  const [showGallery, setShowGallery] = useState(false)
   const [startDateFrom, setStartDateFrom] = useState('')
   const [startDateTo, setStartDateTo] = useState('')
   const [statusModalOpen, setStatusModalOpen] = useState(false)
@@ -126,6 +128,13 @@ export default function TreatmentDetails() {
   }
 
   const statistics = treatment.statistics
+
+  const galleryItems: GalleryItem[] = treatment.images
+    ? treatment.images.map((imageUrl, index) => ({
+        imageUrl,
+        alt: `${treatment.name} ${index + 1}`,
+      }))
+    : []
 
   const getPaymentMethodColor = (method: string) => {
     const colors: Record<string, string> = {
@@ -530,15 +539,26 @@ export default function TreatmentDetails() {
         </div>
 
         <div className="lg:col-span-2 space-y-6">
-          {statistics && (
-            <>
-              <div className="rounded-2xl border border-slate-200 bg-white/60 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900 overflow-hidden">
+          {showGallery ? (
+            <Gallery items={galleryItems} onBack={() => setShowGallery(false)} />
+          ) : statistics ? (
+            <div className="rounded-2xl border border-slate-200 bg-white/60 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900 overflow-hidden">
                 <div className="p-6 space-y-6">
-                  <div>
-                    <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-4">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
                       Statistics
                     </h2>
-                    <div className="flex justify-center gap-32 mb-6">
+                    {galleryItems.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setShowGallery(true)}
+                        className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-blue-100 to-blue-200 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-blue-200 hover:to-blue-300 dark:from-blue-800/30 dark:to-blue-700/30 dark:text-slate-200 dark:hover:from-blue-700/40 dark:hover:to-blue-600/40"
+                      >
+                        View Gallery
+                      </button>
+                    )}
+                  </div>
+                  <div className="flex justify-center gap-32 mb-6">
                     <div className="text-center">
                       <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
                         Total Paid
@@ -901,20 +921,27 @@ export default function TreatmentDetails() {
                     </div>
                   </div>
                 </div>
-                </div>
               </div>
-            </>
-          )}
+          ) : null}
 
-          {!statistics && (
+          {!statistics && !showGallery && (
             <div className="rounded-2xl border border-slate-200 bg-white/60 p-12 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900">
-              <div className="text-center">
+              <div className="text-center space-y-4">
                 <p className="text-lg font-semibold text-slate-600 dark:text-slate-400 mb-2">
                   No Statistics Available
                 </p>
-                <p className="text-sm text-slate-500 dark:text-slate-500">
+                <p className="text-sm text-slate-500 dark:text-slate-500 mb-4">
                   Statistics will be available once treatment courses are created.
                 </p>
+                {galleryItems.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setShowGallery(true)}
+                    className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-blue-100 to-blue-200 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-blue-200 hover:to-blue-300 dark:from-blue-800/30 dark:to-blue-700/30 dark:text-slate-200 dark:hover:from-blue-700/40 dark:hover:to-blue-600/40"
+                  >
+                    View Gallery
+                  </button>
+                )}
               </div>
             </div>
           )}

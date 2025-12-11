@@ -6,10 +6,20 @@ import { getTreatment, type Treatment } from '@api/treatments'
 import { getVisits, deleteVisit, type VisitResponseDto } from '@api/visits'
 import { useDebounce } from '@hooks/utils/useDebounce'
 import { useNavigate } from 'react-router-dom'
+import { useAppSelector } from '@hooks/store'
 
 const DEFAULT_VISITS_LIMIT = 5
 
+type AuthUser = {
+  id: string
+  email: string
+  role?: string
+}
+
 export function usePatientDetails(patientId: string | undefined) {
+  const authUser = useAppSelector((state) => state.auth.user) as AuthUser | null
+  const userRole = typeof authUser?.role === 'string' ? authUser.role.toLowerCase() : undefined
+  const isStaff = userRole === 'staff'
   const [patient, setPatient] = useState<PatientDetails | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -112,6 +122,10 @@ export function usePatientDetails(patientId: string | undefined) {
   }, [selectedCourseId])
 
   const fetchTreatmentDetails = useCallback(async () => {
+    if (isStaff) {
+      setTreatmentDetails(null)
+      return
+    }
     if (!courseDetails?.treatmentId) {
       setTreatmentDetails(null)
       return
@@ -132,11 +146,13 @@ export function usePatientDetails(patientId: string | undefined) {
     } finally {
       setIsLoadingTreatment(false)
     }
-  }, [courseDetails?.treatmentId])
+  }, [courseDetails?.treatmentId, isStaff])
 
   useEffect(() => {
+    if (isStaff) return
+    if (!isVisitModalOpen && !isEditVisitModalOpen) return
     fetchTreatmentDetails()
-  }, [fetchTreatmentDetails])
+  }, [fetchTreatmentDetails, isVisitModalOpen, isEditVisitModalOpen, isStaff])
 
   const fetchVisits = useCallback(async () => {
     if (!selectedCourseId || !patient?.id) {

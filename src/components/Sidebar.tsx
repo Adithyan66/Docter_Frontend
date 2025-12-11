@@ -2,6 +2,7 @@ import type { JSX } from 'react'
 import { NavLink } from 'react-router-dom'
 import icon from '@assets/icon.png'
 import './Sidebar.css'
+import { useAppSelector } from '@hooks/store'
 
 type SidebarProps = {
   mobileOpen: boolean
@@ -163,18 +164,27 @@ const AppointmentsIcon = ({ className }: IconProps) => (
   </svg>
 )
 
-const links: SidebarLink[] = [
-  { label: 'Dashboard', to: '/', icon: DashboardIcon },
-  { label: 'Patients', to: '/patients', icon: PatientsIcon },
-  { label: 'Addpatients', to: '/patient/add', icon: AddPatientsIcon },
-  { label: 'Treatments', to: '/treatments', icon: TreatmentsIcon },
-  { label: 'Clinics', to: '/clinics', icon: ClinicsIcon },
-  { label: 'Clinic Staffs', to: '/staff', icon: StaffIcon },
-  { label: 'Calendar', to: '/calendar', icon: CalendarIcon },
-  { label: 'Appointments', to: '/appointments', icon: AppointmentsIcon },
-]
-
 export default function Sidebar({ mobileOpen, onClose, collapsed, onToggleCollapse }: SidebarProps) {
+  const authUser = useAppSelector((state) => state.auth.user) as
+    | ({ id: string; email: string; role?: 'doctor' | 'staff'; clinicId?: string })
+    | null
+  const isStaff = authUser?.role === 'staff'
+  const clinicLink = isStaff && authUser?.clinicId ? `/clinics/${authUser.clinicId}` : '/clinics'
+  const clinicLabel = isStaff ? 'Clinic' : 'Clinics'
+  const links: SidebarLink[] = [
+    { label: 'Dashboard', to: '/', icon: DashboardIcon },
+    { label: 'Patients', to: '/patients', icon: PatientsIcon },
+    { label: 'Addpatients', to: '/patient/add', icon: AddPatientsIcon },
+    { label: 'Treatments', to: '/treatments', icon: TreatmentsIcon },
+    { label: clinicLabel, to: clinicLink, icon: ClinicsIcon },
+    { label: 'Clinic Staffs', to: '/staff', icon: StaffIcon },
+    { label: 'Calendar', to: '/calendar', icon: CalendarIcon },
+    { label: 'Appointments', to: '/appointments', icon: AppointmentsIcon },
+  ]
+  const visibleLinks = isStaff
+    ? links.filter((link) => !['/', '/treatments', '/staff'].includes(link.to))
+    : links
+
   const baseClasses =
     'fixed inset-y-0 left-0 z-40 flex h-screen flex-col border-r border-slate-100 bg-white/95 shadow-lg transition-all duration-300 ease-in-out backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900 md:fixed md:flex md:shadow-none'
   const widthClasses = collapsed ? 'md:w-20' : 'md:w-64'
@@ -218,7 +228,7 @@ export default function Sidebar({ mobileOpen, onClose, collapsed, onToggleCollap
         </div>
       </div>
       <nav className="flex flex-1 flex-col gap-1 overflow-y-auto px-2 pb-6 pt-3">
-        {links.map((link) => {
+        {visibleLinks.map((link) => {
           const Icon = link.icon
           return (
             <NavLink

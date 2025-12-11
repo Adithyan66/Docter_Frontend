@@ -24,6 +24,9 @@ export default function Patients() {
     activeFilterCount,
     pendingFilters,
     clinicOptions,
+    isStaff,
+    staffHasMultipleClinics,
+    staffSingleClinic,
     genderOptions,
     consultationTypeOptions,
     hasPendingChanges,
@@ -64,17 +67,27 @@ export default function Patients() {
           />
         }
         filterControls={[
-          {
-            id: 'clinic',
-            type: 'dropdown',
-            label: 'Clinic',
-            value: pendingFilters.clinicId || '',
-            options: clinicOptions,
-            onChange: (value) =>
-              setPendingFilters((prev) => ({ ...prev, clinicId: value || undefined })),
-            buttonRef: clinicButtonRef,
-            buttonClassName: 'max-w-[calc((100%-2rem)/5)] min-w-[100px]',
-          },
+          isStaff && !staffHasMultipleClinics && staffSingleClinic
+            ? {
+                id: 'clinic',
+                type: 'custom' as const,
+                render: () => (
+                  <div className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100">
+                    Clinic: {staffSingleClinic.name}
+                  </div>
+                ),
+              }
+            : {
+                id: 'clinic',
+                type: 'dropdown' as const,
+                label: 'Clinic',
+                value: pendingFilters.clinicId || '',
+                options: clinicOptions,
+                onChange: (value) =>
+                  setPendingFilters((prev) => ({ ...prev, clinicId: value || undefined })),
+                buttonRef: clinicButtonRef,
+                buttonClassName: 'max-w-[calc((100%-2rem)/5)] min-w-[100px]',
+              },
           {
             id: 'gender',
             type: 'dropdown',

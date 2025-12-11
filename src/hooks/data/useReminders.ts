@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import {
@@ -9,6 +9,7 @@ import {
 import { getTreatmentNames, type TreatmentName } from '@api/treatments'
 import { getClinicNames, type ClinicName } from '@api/clinics'
 import { getTreatmentCourseById } from '@api/treatmentCourses'
+import { useAppSelector } from '@hooks/store'
 
 const DEFAULT_LIMIT = 10
 const DEFAULT_DAYS_BEFORE = 5
@@ -16,6 +17,17 @@ const DEFAULT_DAYS_AFTER = 5
 
 export function useReminders() {
   const navigate = useNavigate()
+  const authUser = useAppSelector((state) => state.auth.user) as
+    | {
+        id: string
+        email: string
+        role?: 'doctor' | 'staff'
+        clinicId?: string
+        clinicName?: string
+        clinics?: Array<string | { id?: string; name?: string; clinicId?: string; clinicName?: string }>
+      }
+    | null
+  const isStaff = authUser?.role === 'staff'
   const [reminders, setReminders] = useState<VisitReminderResponseDto[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [currentPage, setCurrentPage] = useState(1)
@@ -49,20 +61,65 @@ export function useReminders() {
     clinicIds: [],
   })
 
+  const [pendingModalFilters, setPendingModalFilters] = useState<{
+    daysBefore?: number
+    daysAfter?: number
+  }>({
+    daysBefore: DEFAULT_DAYS_BEFORE,
+    daysAfter: DEFAULT_DAYS_AFTER,
+  })
+
+  const [activeDelayedFilter, setActiveDelayedFilter] = useState<'5-30' | '30-60' | '60+' | null>(null)
+
   const treatmentButtonRef = useRef<HTMLButtonElement>(null)
   const clinicButtonRef = useRef<HTMLButtonElement>(null)
   const [openDropdown, setOpenDropdown] = useState<string | null>(null)
+  const hasAppliedStaffDefault = useRef(false)
+
+  const staffClinics = useMemo(() => {
+    if (!isStaff) return []
+    const list: ClinicName[] = []
+    if (Array.isArray(authUser?.clinics)) {
+      authUser?.clinics.forEach((entry) => {
+        if (typeof entry === 'string') {
+          list.push({ id: entry, name: entry })
+          return
+        }
+        const id = entry?.id || entry?.clinicId
+        const name = entry?.name || entry?.clinicName || id || ''
+        if (id) list.push({ id, name })
+      })
+    } else if (authUser?.clinicId) {
+      list.push({ id: authUser.clinicId, name: authUser.clinicName || authUser.clinicId })
+    }
+    return list
+  }, [authUser, isStaff])
 
   useEffect(() => {
     const fetchOptions = async () => {
       try {
         setIsLoadingOptions(true)
-        const [treatments, clinics] = await Promise.all([
-          getTreatmentNames(),
-          getClinicNames(),
-        ])
-        setTreatmentOptions(treatments)
-        setClinicOptions(clinics)
+        if (isStaff) {
+          setClinicOptions(staffClinics)
+          try {
+            const treatments = await getTreatmentNames()
+            setTreatmentOptions(treatments)
+          } catch (error: any) {
+            const errorMessage =
+              error?.response?.data?.error?.message ||
+              error?.response?.data?.message ||
+              error?.message ||
+              'Unable to fetch treatments. Please try again.'
+            toast.error(errorMessage)
+          }
+        } else {
+          const [treatments, clinics] = await Promise.all([
+            getTreatmentNames(),
+            getClinicNames(),
+          ])
+          setTreatmentOptions(treatments)
+          setClinicOptions(clinics)
+        }
       } catch (error: any) {
         const errorMessage =
           error?.response?.data?.error?.message ||
@@ -76,7 +133,21 @@ export function useReminders() {
     }
 
     fetchOptions()
-  }, [])
+  }, [isStaff, staffClinics])
+
+  useEffect(() => {
+    if (!isStaff || hasAppliedStaffDefault.current) return
+    if (staffClinics.length === 1) {
+      const singleClinicId = staffClinics[0].id
+      if (filters.clinicIds.length === 0 || filters.clinicIds[0] !== singleClinicId) {
+        setFilters((prev) => ({ ...prev, clinicIds: [singleClinicId] }))
+      }
+      setPendingFilters((prev) => ({ ...prev, clinicIds: [singleClinicId] }))
+      hasAppliedStaffDefault.current = true
+    } else {
+      hasAppliedStaffDefault.current = true
+    }
+  }, [isStaff, staffClinics, filters.clinicIds])
 
   useEffect(() => {
     setCurrentPage(1)
@@ -121,7 +192,13 @@ export function useReminders() {
   }, [currentPage, filters])
 
   const handleApplyFilters = () => {
-    setFilters({ ...pendingFilters })
+    const newFilters = {
+      ...pendingFilters,
+      daysBefore: pendingModalFilters.daysBefore,
+      daysAfter: pendingModalFilters.daysAfter,
+    }
+    setFilters(newFilters)
+    setPendingFilters(newFilters)
   }
 
   const handleClearAllFilters = () => {
@@ -132,20 +209,72 @@ export function useReminders() {
       clinicIds: [],
     }
     setPendingFilters(clearedFilters)
+    setPendingModalFilters({
+      daysBefore: DEFAULT_DAYS_BEFORE,
+      daysAfter: DEFAULT_DAYS_AFTER,
+    })
     setFilters(clearedFilters)
+    setActiveDelayedFilter(null)
+  }
+
+  const handleDelayedFilter = (range: '5-30' | '30-60' | '60+') => {
+    if (activeDelayedFilter === range) {
+      setActiveDelayedFilter(null)
+      const clearedFilters = {
+        ...pendingFilters,
+        daysBefore: DEFAULT_DAYS_BEFORE,
+        daysAfter: DEFAULT_DAYS_AFTER,
+      }
+      setPendingFilters(clearedFilters)
+      setPendingModalFilters({
+        daysBefore: DEFAULT_DAYS_BEFORE,
+        daysAfter: DEFAULT_DAYS_AFTER,
+      })
+      setFilters(clearedFilters)
+    } else {
+      setActiveDelayedFilter(range)
+      let daysBefore: number
+      let daysAfter: number | undefined
+
+      if (range === '5-30') {
+        daysBefore = -5
+        daysAfter = -30
+      } else if (range === '30-60') {
+        daysBefore = -30
+        daysAfter = -60
+      } else {
+        daysBefore = -60
+        daysAfter = -3650
+      }
+
+      const newFilters = {
+        ...pendingFilters,
+        daysBefore,
+        daysAfter,
+      }
+      setPendingFilters(newFilters)
+      setPendingModalFilters({
+        daysBefore,
+        daysAfter,
+      })
+      setFilters(newFilters)
+    }
   }
 
   const hasPendingChanges =
     pendingFilters.daysBefore !== filters.daysBefore ||
     pendingFilters.daysAfter !== filters.daysAfter ||
     JSON.stringify(pendingFilters.treatmentIds.sort()) !== JSON.stringify(filters.treatmentIds.sort()) ||
-    JSON.stringify(pendingFilters.clinicIds.sort()) !== JSON.stringify(filters.clinicIds.sort())
+    JSON.stringify(pendingFilters.clinicIds.sort()) !== JSON.stringify(filters.clinicIds.sort()) ||
+    pendingModalFilters.daysBefore !== filters.daysBefore ||
+    pendingModalFilters.daysAfter !== filters.daysAfter
 
   const activeFilterCount =
     (pendingFilters.treatmentIds.length > 0 ? 1 : 0) +
     (pendingFilters.clinicIds.length > 0 ? 1 : 0) +
-    (pendingFilters.daysBefore !== DEFAULT_DAYS_BEFORE ? 1 : 0) +
-    (pendingFilters.daysAfter !== DEFAULT_DAYS_AFTER ? 1 : 0)
+    (pendingModalFilters.daysBefore !== DEFAULT_DAYS_BEFORE ? 1 : 0) +
+    (pendingModalFilters.daysAfter !== DEFAULT_DAYS_AFTER ? 1 : 0) +
+    (activeDelayedFilter !== null ? 1 : 0)
 
   const handleRowClick = async (reminder: VisitReminderResponseDto) => {
     try {
@@ -180,6 +309,9 @@ export function useReminders() {
     label: c.name,
   }))
 
+  const isStaffWithSingleClinic = isStaff && staffClinics.length === 1
+  const staffSingleClinic = isStaffWithSingleClinic ? staffClinics[0] : null
+
   return {
     reminders,
     isLoading,
@@ -188,6 +320,7 @@ export function useReminders() {
     total,
     limit: DEFAULT_LIMIT,
     filters: pendingFilters,
+    pendingModalFilters,
     treatmentOptions: treatmentDropdownOptions,
     clinicOptions: clinicDropdownOptions,
     isLoadingOptions,
@@ -199,10 +332,15 @@ export function useReminders() {
     setOpenDropdown,
     setCurrentPage,
     setPendingFilters,
+    setPendingModalFilters,
     handleApplyFilters,
     handleClearAllFilters,
+    handleDelayedFilter,
+    activeDelayedFilter,
     handleRowClick,
     formatDate,
+    isStaffWithSingleClinic,
+    staffSingleClinic,
   }
 }
 

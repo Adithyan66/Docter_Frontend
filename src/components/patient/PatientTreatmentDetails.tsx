@@ -15,6 +15,7 @@ type PatientTreatmentDetailsProps = {
   onDeleteCourse: () => void
   onEditCourse: () => void
   onAddVisit: () => void
+  isStaff?: boolean
 }
 
 const calculateTimeProgress = (startDate: string, expectedEndDate: string): number => {
@@ -54,6 +55,7 @@ export default function PatientTreatmentDetails({
   onDeleteCourse,
   onEditCourse,
   onAddVisit,
+  isStaff = false,
 }: PatientTreatmentDetailsProps) {
   const treatmentName = useMemo(() => {
     if (!selectedCourseId || !treatmentCourses) return 'Treatment Course'
@@ -97,7 +99,7 @@ export default function PatientTreatmentDetails({
           </div>
         )}
         <div className="flex gap-2">
-          {courseDetails.treatmentId && (
+          {courseDetails.treatmentId && !isStaff && (
             <button
               onClick={onViewTreatmentDetails}
               className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-purple-100 to-purple-200 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-purple-200 hover:to-purple-300 dark:from-purple-800/30 dark:to-purple-700/30 dark:text-slate-200 dark:hover:from-purple-700/40 dark:hover:to-purple-600/40"
@@ -127,12 +129,14 @@ export default function PatientTreatmentDetails({
           >
             Change Status
           </button>
-          <button
-            onClick={onDeleteCourse}
-            className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-red-100 to-red-200 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-red-200 hover:to-red-300 dark:from-red-800/30 dark:to-red-700/30 dark:text-slate-200 dark:hover:from-red-700/40 dark:hover:to-red-600/40"
-          >
-            Delete Course
-          </button>
+          {!isStaff && (
+            <button
+              onClick={onDeleteCourse}
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-red-100 to-red-200 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-red-200 hover:to-red-300 dark:from-red-800/30 dark:to-red-700/30 dark:text-slate-200 dark:hover:from-red-700/40 dark:hover:to-red-600/40"
+            >
+              Delete Course
+            </button>
+          )}
         </div>
       </div>
 
@@ -310,20 +314,22 @@ export default function PatientTreatmentDetails({
         </div>
       </div>
 
-      <div className="flex gap-2 mt-4">
-        <button
-          onClick={onEditCourse}
-          className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-yellow-100 to-yellow-200 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-yellow-200 hover:to-yellow-300 dark:from-yellow-800/30 dark:to-yellow-700/30 dark:text-slate-200 dark:hover:from-yellow-700/40 dark:hover:to-yellow-600/40"
-        >
-          Edit Course
-        </button>
-        <button
-          onClick={onAddVisit}
-          className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-green-100 to-green-200 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-green-200 hover:to-green-300 dark:from-green-800/30 dark:to-green-700/30 dark:text-slate-200 dark:hover:from-green-700/40 dark:hover:to-green-600/40"
-        >
-          Add Visit Data
-        </button>
-      </div>
+      {!isStaff && (
+        <div className="flex gap-2 mt-4">
+          <button
+            onClick={onEditCourse}
+            className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-yellow-100 to-yellow-200 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-yellow-200 hover:to-yellow-300 dark:from-yellow-800/30 dark:to-yellow-700/30 dark:text-slate-200 dark:hover:from-yellow-700/40 dark:hover:to-yellow-600/40"
+          >
+            Edit Course
+          </button>
+          <button
+            onClick={onAddVisit}
+            className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-green-100 to-green-200 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-green-200 hover:to-green-300 dark:from-green-800/30 dark:to-green-700/30 dark:text-slate-200 dark:hover:from-green-700/40 dark:hover:to-green-600/40"
+          >
+            Add Visit Data
+          </button>
+        </div>
+      )}
     </div>
   )
 }

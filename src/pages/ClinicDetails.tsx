@@ -1,15 +1,28 @@
+import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { useAppSelector } from '@hooks/store'
 import ConfirmationModal from '@components/common/ConfirmationModal'
 import DeleteConfirmationModal from '@components/common/DeleteConfirmationModal'
 import PageHeader from '@components/common/PageHeader'
 import RotatingSpinner from '@components/spinner/TeethRotating'
 import ImageViewerModal from '@components/common/ImageViewerModal'
+import Gallery from '@components/common/Gallery'
 import { useClinicDetails } from '@hooks/data/useClinicDetails'
+import { useClinicImages } from '@hooks/data/useClinicImages'
 import clinicIcon from '@assets/clinic.png'
 
 export default function ClinicDetails() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const [showGallery, setShowGallery] = useState(false)
+  const authUser = useAppSelector((state) => state.auth.user) as
+    | {
+        id: string
+        email: string
+        role?: 'doctor' | 'staff'
+      }
+    | null
+  const isStaff = authUser?.role === 'staff'
   const {
     clinic,
     isLoading,
@@ -47,6 +60,16 @@ export default function ClinicDetails() {
     getPaymentMethodLabel,
   } = useClinicDetails(id)
 
+  const {
+    images: galleryItems,
+    isLoading: isLoadingImages,
+    currentPage: imagesPage,
+    totalPages: imagesTotalPages,
+    total: imagesTotal,
+    limit: imagesLimit,
+    handlePageChange: handleImagesPageChange,
+  } = useClinicImages(id, 20)
+
   if (isLoading) {
     return <RotatingSpinner />
   }
@@ -63,6 +86,60 @@ export default function ClinicDetails() {
 
   const statistics = clinic.statistics
 
+  const headerActionButtons = isStaff
+    ? [
+        {
+          label: 'Edit',
+          onClick: () => undefined,
+          className:
+            'invisible pointer-events-none inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-blue-100 to-blue-200 px-4 py-2 text-sm font-medium text-slate-700 dark:from-blue-800/30 dark:to-blue-700/30',
+          disabled: true,
+        },
+        {
+          label: clinic.isActive ? 'Set Inactive' : 'Set Active',
+          onClick: () => undefined,
+          disabled: true,
+          className: `invisible pointer-events-none inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-slate-700 ${
+            clinic.isActive
+              ? 'bg-gradient-to-r from-orange-100 to-orange-200 dark:from-orange-800/30 dark:to-orange-700/30'
+              : 'bg-gradient-to-r from-green-100 to-green-200 dark:from-green-800/30 dark:to-green-700/30'
+          }`,
+        },
+        {
+          label: 'Delete',
+          onClick: () => undefined,
+          className:
+            'invisible pointer-events-none inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-red-100 to-red-200 px-4 py-2 text-sm font-medium text-slate-700 dark:from-red-800/30 dark:to-red-700/30',
+          disabled: true,
+        },
+      ]
+    : [
+        {
+          label: 'Edit',
+          onClick: () => navigate(`/clinics/edit/${id}`),
+          className:
+            'inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-blue-100 to-blue-200 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-blue-200 hover:to-blue-300 dark:from-blue-800/30 dark:to-blue-700/30 dark:text-slate-200 dark:hover:from-blue-700/40 dark:hover:to-blue-600/40',
+        },
+        {
+          label: clinic.isActive ? 'Set Inactive' : 'Set Active',
+          onClick: handleToggleStatus,
+          disabled: isTogglingStatus,
+          isLoading: isTogglingStatus,
+          loadingLabel: clinic.isActive ? 'Deactivating...' : 'Activating...',
+          className: `inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 ${
+            clinic.isActive
+              ? 'bg-gradient-to-r from-orange-100 to-orange-200 hover:from-orange-200 hover:to-orange-300 dark:from-orange-800/30 dark:to-orange-700/30 dark:text-slate-200 dark:hover:from-orange-700/40 dark:hover:to-orange-600/40'
+              : 'bg-gradient-to-r from-green-100 to-green-200 hover:from-green-200 hover:to-green-300 dark:from-green-800/30 dark:to-green-700/30 dark:text-slate-200 dark:hover:from-green-700/40 dark:hover:to-green-600/40'
+          }`,
+        },
+        {
+          label: 'Delete',
+          onClick: handleDelete,
+          className:
+            'inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-red-100 to-red-200 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-red-200 hover:to-red-300 dark:from-red-800/30 dark:to-red-700/30 dark:text-slate-200 dark:hover:from-red-700/40 dark:hover:to-red-600/40',
+        },
+      ]
+
   return (
     <section className="space-y-6">
       <PageHeader
@@ -73,32 +150,7 @@ export default function ClinicDetails() {
           alt: 'clinic',
           className: 'w-[120px] h-[120px]',
         }}
-        actionButtons={[
-          {
-            label: 'Edit',
-            onClick: () => navigate(`/clinics/edit/${id}`),
-            className:
-              'inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-blue-100 to-blue-200 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-blue-200 hover:to-blue-300 dark:from-blue-800/30 dark:to-blue-700/30 dark:text-slate-200 dark:hover:from-blue-700/40 dark:hover:to-blue-600/40',
-          },
-          {
-            label: clinic.isActive ? 'Set Inactive' : 'Set Active',
-            onClick: handleToggleStatus,
-            disabled: isTogglingStatus,
-            isLoading: isTogglingStatus,
-            loadingLabel: clinic.isActive ? 'Deactivating...' : 'Activating...',
-            className: `inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 ${
-              clinic.isActive
-                ? 'bg-gradient-to-r from-orange-100 to-orange-200 hover:from-orange-200 hover:to-orange-300 dark:from-orange-800/30 dark:to-orange-700/30 dark:text-slate-200 dark:hover:from-orange-700/40 dark:hover:to-orange-600/40'
-                : 'bg-gradient-to-r from-green-100 to-green-200 hover:from-green-200 hover:to-green-300 dark:from-green-800/30 dark:to-green-700/30 dark:text-slate-200 dark:hover:from-green-700/40 dark:hover:to-green-600/40'
-            }`,
-          },
-          {
-            label: 'Delete',
-            onClick: handleDelete,
-            className:
-              'inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-red-100 to-red-200 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-red-200 hover:to-red-300 dark:from-red-800/30 dark:to-red-700/30 dark:text-slate-200 dark:hover:from-red-700/40 dark:hover:to-red-600/40',
-          },
-        ]}
+        actionButtons={headerActionButtons}
         filterControls={[
           {
             id: 'fromDate',
@@ -427,39 +479,64 @@ export default function ClinicDetails() {
         </div>
 
         <div className="lg:col-span-2 space-y-6">
-          {statistics && (
-            <>
-              <div className="rounded-2xl border border-slate-200 bg-white/60 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900 overflow-hidden">
+          {showGallery ? (
+            <Gallery
+              items={galleryItems}
+              onBack={() => setShowGallery(false)}
+              isLoading={isLoadingImages}
+              pagination={
+                imagesTotalPages > 1
+                  ? {
+                      currentPage: imagesPage,
+                      totalPages: imagesTotalPages,
+                      total: imagesTotal,
+                      limit: imagesLimit,
+                      onPageChange: handleImagesPageChange,
+                    }
+                  : undefined
+              }
+            />
+          ) : statistics ? (
+            <div className="rounded-2xl border border-slate-200 bg-white/60 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900 overflow-hidden">
                 <div className="p-6 space-y-6">
-                  <div>
-                    <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-4">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
                       Statistics
                     </h2>
-                    <div className="flex justify-center gap-32 mb-6">
-                      <div className="text-center">
-                        <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
-                          Total Paid
-                        </p>
-                        <p className="text-3xl font-bold text-green-600 dark:text-green-400">
-                          ₹{statistics.revenue.totalPaid.toLocaleString()}
-                        </p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
-                          Total Cost
-                        </p>
-                        <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">
-                          ₹{statistics.revenue.totalCost.toLocaleString()}
-                        </p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
-                          Outstanding
-                        </p>
-                        <p className="text-3xl font-bold text-orange-600 dark:text-orange-400">
-                          ₹{statistics.revenue.outstanding.toLocaleString()}
-                        </p>
-                      </div>
+                    {imagesTotal > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setShowGallery(true)}
+                        className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-blue-100 to-blue-200 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-blue-200 hover:to-blue-300 dark:from-blue-800/30 dark:to-blue-700/30 dark:text-slate-200 dark:hover:from-blue-700/40 dark:hover:to-blue-600/40"
+                      >
+                        View Gallery ({imagesTotal})
+                      </button>
+                    )}
+                  </div>
+                  <div className="flex justify-center gap-32 mb-6">
+                    <div className="text-center">
+                      <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+                        Total Paid
+                      </p>
+                      <p className="text-3xl font-bold text-green-600 dark:text-green-400">
+                        ₹{statistics.revenue.totalPaid.toLocaleString()}
+                      </p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+                        Total Cost
+                      </p>
+                      <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">
+                        ₹{statistics.revenue.totalCost.toLocaleString()}
+                      </p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+                        Outstanding
+                      </p>
+                      <p className="text-3xl font-bold text-orange-600 dark:text-orange-400">
+                        ₹{statistics.revenue.outstanding.toLocaleString()}
+                      </p>
                     </div>
                   </div>
 
@@ -806,18 +883,26 @@ export default function ClinicDetails() {
                   </div>
                 </div>
               </div>
-            </>
-          )}
+          ) : null}
 
-          {!statistics && (
+          {!statistics && !showGallery && (
             <div className="rounded-2xl border border-slate-200 bg-white/60 p-12 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900">
-              <div className="text-center">
+              <div className="text-center space-y-4">
                 <p className="text-lg font-semibold text-slate-600 dark:text-slate-400 mb-2">
                   No Statistics Available
                 </p>
-                <p className="text-sm text-slate-500 dark:text-slate-500">
+                <p className="text-sm text-slate-500 dark:text-slate-500 mb-4">
                   Statistics will be available once treatment courses are created.
                 </p>
+                {imagesTotal > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setShowGallery(true)}
+                    className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-blue-100 to-blue-200 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-blue-200 hover:to-blue-300 dark:from-blue-800/30 dark:to-blue-700/30 dark:text-slate-200 dark:hover:from-blue-700/40 dark:hover:to-blue-600/40"
+                  >
+                    View Gallery ({imagesTotal})
+                  </button>
+                )}
               </div>
             </div>
           )}

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import toast from 'react-hot-toast'
 import { getPatients, getClinicNames, type Patient, type GetPatientsParams, type ClinicName } from '@api/patients'
 import { useDebounce } from '@hooks/utils/useDebounce'
@@ -10,6 +10,17 @@ const DEFAULT_LIMIT = 10
 export function usePatientsData() {
   const dispatch = useAppDispatch()
   const { search, filters, currentPage } = useAppSelector((state) => state.patients)
+  const authUser = useAppSelector((state) => state.auth.user) as
+    | {
+        id: string
+        email: string
+        role?: 'doctor' | 'staff'
+        clinicId?: string
+        clinicName?: string
+        clinics?: Array<string | { id?: string; name?: string; clinicId?: string; clinicName?: string }>
+      }
+    | null
+  const isStaff = authUser?.role === 'staff'
   
   const [patients, setPatients] = useState<Patient[]>([])
   const [clinics, setClinics] = useState<ClinicName[]>([])
@@ -31,7 +42,30 @@ export function usePatientsData() {
 
   const debouncedSearch = useDebounce(search, 500)
 
+  const staffClinics = useMemo(() => {
+    if (!isStaff) return []
+    const list: ClinicName[] = []
+    if (Array.isArray(authUser?.clinics)) {
+      authUser?.clinics.forEach((entry) => {
+        if (typeof entry === 'string') {
+          list.push({ id: entry, name: entry })
+          return
+        }
+        const id = entry?.id || entry?.clinicId
+        const name = entry?.name || entry?.clinicName || id || ''
+        if (id) list.push({ id, name })
+      })
+    } else if (authUser?.clinicId) {
+      list.push({ id: authUser.clinicId, name: authUser.clinicName || authUser.clinicId })
+    }
+    return list
+  }, [authUser, isStaff])
+
   useEffect(() => {
+    if (isStaff) {
+      setClinics(staffClinics)
+      return
+    }
     const fetchClinics = async () => {
       try {
         const clinicList = await getClinicNames()
@@ -47,7 +81,29 @@ export function usePatientsData() {
     }
 
     fetchClinics()
-  }, [])
+  }, [isStaff, staffClinics])
+
+  useEffect(() => {
+    if (!isStaff) return
+    setClinics(staffClinics)
+  }, [isStaff, staffClinics])
+
+  const hasAppliedStaffDefault = useRef(false)
+
+  useEffect(() => {
+    if (!isStaff || hasAppliedStaffDefault.current) return
+    if (staffClinics.length === 1) {
+      const singleClinicId = staffClinics[0].id
+      if (filters.clinicId !== singleClinicId) {
+        dispatch(setFilters({ ...filters, clinicId: singleClinicId }))
+      }
+      setPendingFilters((prev) => ({ ...prev, clinicId: singleClinicId }))
+      setPendingModalFilters((prev) => ({ ...prev, clinicId: singleClinicId }))
+      hasAppliedStaffDefault.current = true
+    } else {
+      hasAppliedStaffDefault.current = true
+    }
+  }, [dispatch, filters, isStaff, staffClinics])
 
   useEffect(() => {
     dispatch(setCurrentPage(1))
@@ -187,6 +243,9 @@ export function usePatientsData() {
   return {
     patients,
     clinics,
+    isStaff,
+    staffHasMultipleClinics: isStaff && clinics.length > 1,
+    staffSingleClinic: isStaff && clinics.length === 1 ? clinics[0] : null,
     isLoading,
     currentPage,
     totalPages,

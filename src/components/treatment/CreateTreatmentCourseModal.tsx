@@ -12,6 +12,7 @@ import {
 } from '@api/treatmentCourses'
 import DropdownFilter from '@components/common/DropdownFilter'
 import ConfirmationModal from '@components/common/ConfirmationModal'
+import { useAppSelector } from '@hooks/store'
 
 type CreateTreatmentCourseModalProps = {
   isOpen: boolean
@@ -34,6 +35,15 @@ export default function CreateTreatmentCourseModal({
   courseId,
   courseData: initialCourseData,
 }: CreateTreatmentCourseModalProps) {
+  const authUser = useAppSelector((state) => state.auth.user) as
+    | {
+        id: string
+        email: string
+        role?: string
+      }
+    | null
+  const userRole = typeof authUser?.role === 'string' ? authUser.role.toLowerCase() : undefined
+  const isStaff = userRole === 'staff'
   const isEditMode = !!courseId
   const [clinics, setClinics] = useState<ClinicName[]>([])
   const [treatments, setTreatments] = useState<Array<{ id: string; name: string }>>([])
@@ -51,6 +61,7 @@ export default function CreateTreatmentCourseModal({
   const [clinicDropdownOpen, setClinicDropdownOpen] = useState(false)
   const [treatmentDropdownOpen, setTreatmentDropdownOpen] = useState(false)
   const [courseData, setCourseData] = useState<TreatmentCourse | null>(initialCourseData || null)
+  const [isInitializing, setIsInitializing] = useState(false)
   const clinicButtonRef = useRef<HTMLButtonElement>(null)
   const treatmentButtonRef = useRef<HTMLButtonElement>(null)
   const notesTextareaRef = useRef<HTMLTextAreaElement>(null)
@@ -66,6 +77,7 @@ export default function CreateTreatmentCourseModal({
 
   useEffect(() => {
     if (isOpen) {
+      setIsInitializing(true)
       if (isEditMode && courseId) {
         fetchCourseData()
       } else {
@@ -86,15 +98,18 @@ export default function CreateTreatmentCourseModal({
         setShowAllImages(false)
         setClinicDropdownOpen(false)
         setTreatmentDropdownOpen(false)
+        setTimeout(() => setIsInitializing(false), 100)
       }
     } else {
       setCourseData(null)
       setShowConfirmModal(false)
+      setIsInitializing(false)
     }
   }, [isOpen, primaryClinicId, courseId, isEditMode])
 
   useEffect(() => {
     if (isEditMode && courseData) {
+      setIsInitializing(true)
       const formatDate = (dateString?: string) => {
         if (!dateString) return ''
         try {
@@ -117,6 +132,7 @@ export default function CreateTreatmentCourseModal({
         notes: courseData.notes || '',
       })
       setSelectedTreatmentId(courseData.treatmentId)
+      setTimeout(() => setIsInitializing(false), 100)
     }
   }, [courseData, isEditMode])
 
@@ -125,9 +141,10 @@ export default function CreateTreatmentCourseModal({
 
     try {
       setIsLoadingCourse(true)
+      setIsInitializing(true)
       const course = initialCourseData || await getTreatmentCourseById(courseId)
       setCourseData(course)
-      if (course.treatmentId) {
+      if (course.treatmentId && !isStaff) {
         await fetchTreatmentDetails(course.treatmentId)
       }
       await fetchClinics()
@@ -142,14 +159,16 @@ export default function CreateTreatmentCourseModal({
       onClose()
     } finally {
       setIsLoadingCourse(false)
+      setTimeout(() => setIsInitializing(false), 100)
     }
   }
 
   useEffect(() => {
+    if (isStaff || isInitializing) return
     if (selectedTreatmentId && selectedTreatmentId !== treatmentDetails?.id) {
       fetchTreatmentDetails(selectedTreatmentId)
     }
-  }, [selectedTreatmentId, treatmentDetails?.id])
+  }, [selectedTreatmentId, treatmentDetails?.id, isStaff, isInitializing])
 
   useEffect(() => {
     if (treatmentDetails && selectedTreatmentId && !isEditMode) {
@@ -227,6 +246,7 @@ export default function CreateTreatmentCourseModal({
   }
 
   const fetchTreatmentDetails = async (treatmentId: string) => {
+    if (isStaff) return
     try {
       setIsLoadingTreatmentDetails(true)
       const treatment = await getTreatment(treatmentId)

@@ -1,8 +1,9 @@
-import { useState, useEffect, useRef, type ChangeEvent } from 'react'
+import { useState, useEffect, useRef, useMemo, type ChangeEvent } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { createPatient, updatePatient, getPatientById, getClinicNames, type PatientPayload, type ClinicName } from '@api/patients'
 import { S3Service } from '@services/s3Service'
+import { useAppSelector } from '@hooks/store'
 
 type PatientFormState = {
   firstName: string
@@ -57,9 +58,20 @@ const createBlankForm = (): PatientFormState => {
 }
 
 export function useAddPatient() {
+  const authUser = useAppSelector((state) => state.auth.user) as
+    | {
+        id: string
+        email: string
+        role?: 'doctor' | 'staff'
+        clinicId?: string
+        clinicName?: string
+        clinics?: Array<string | { id?: string; name?: string; clinicId?: string; clinicName?: string }>
+      }
+    | null
   const navigate = useNavigate()
   const { id } = useParams<{ id: string }>()
   const isEditMode = !!id
+  const isStaff = authUser?.role === 'staff'
   const [form, setForm] = useState<PatientFormState>(() => createBlankForm())
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isLoading, setIsLoading] = useState(isEditMode)
@@ -74,7 +86,30 @@ export function useAddPatient() {
   const genderButtonRef = useRef<HTMLButtonElement>(null)
   const primaryClinicButtonRef = useRef<HTMLButtonElement>(null)
 
+  const staffClinics = useMemo(() => {
+    if (!isStaff) return []
+    const clinics: ClinicName[] = []
+    if (Array.isArray(authUser?.clinics)) {
+      authUser?.clinics.forEach((item) => {
+        if (typeof item === 'string') {
+          clinics.push({ id: item, name: item })
+          return
+        }
+        const id = item?.id || item?.clinicId
+        const name = item?.name || item?.clinicName || id || ''
+        if (id) clinics.push({ id, name })
+      })
+    } else if (authUser?.clinicId) {
+      clinics.push({ id: authUser.clinicId, name: authUser.clinicName || authUser.clinicId })
+    }
+    return clinics
+  }, [authUser, isStaff])
+
   useEffect(() => {
+    if (isStaff) {
+      setAvailableClinics(staffClinics)
+      return
+    }
     const fetchClinics = async () => {
       try {
         const clinics = await getClinicNames()
@@ -85,7 +120,7 @@ export function useAddPatient() {
       }
     }
     fetchClinics()
-  }, [])
+  }, [isStaff, staffClinics])
 
   useEffect(() => {
     if (isEditMode && id) {
@@ -167,6 +202,13 @@ export function useAddPatient() {
       setPendingImagePreview(null)
     }
   }, [pendingImage])
+
+  useEffect(() => {
+    if (isEditMode) return
+    if (availableClinics.length === 1 && !form.primaryClinic) {
+      setForm((prev) => ({ ...prev, primaryClinic: availableClinics[0].id }))
+    }
+  }, [availableClinics, form.primaryClinic, isEditMode])
 
   const validateEmail = (email: string): boolean => {
     if (!email.trim()) return true
@@ -433,6 +475,9 @@ export function useAddPatient() {
     genderOptions,
     consultationTypeOptions,
     primaryClinicOptions,
+    isStaff,
+    staffHasMultipleClinics: isStaff && availableClinics.length > 1,
+    staffSingleClinic: isStaff && availableClinics.length === 1 ? availableClinics[0] : null,
     validateEmail,
     validatePhone,
     validateUrl,

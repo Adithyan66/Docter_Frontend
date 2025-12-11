@@ -150,6 +150,9 @@ export default function AddPatients() {
     genderOptions,
     consultationTypeOptions,
     primaryClinicOptions,
+    isStaff,
+    staffHasMultipleClinics,
+    staffSingleClinic,
     validateEmail,
     validatePhone,
     handleFieldChange,
@@ -162,6 +165,42 @@ export default function AddPatients() {
     handleConfirmSubmit,
     setShowCamera,
   } = useAddPatient()
+
+  const headerActionButtons = isStaff
+    ? [
+        {
+          label: 'Add Treatment',
+          onClick: () => undefined,
+          icon: <PlusIcon />,
+          className:
+            'pointer-events-none invisible inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-purple-100 to-purple-200 px-4 py-2 text-sm font-medium text-slate-700 dark:from-purple-800/30 dark:to-purple-700/30',
+          disabled: true,
+        },
+        {
+          label: 'Add Clinic',
+          onClick: () => undefined,
+          icon: <PlusIcon />,
+          className:
+            'pointer-events-none invisible inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-orange-100 to-orange-200 px-4 py-2 text-sm font-medium text-slate-700 dark:from-orange-800/30 dark:to-orange-700/30',
+          disabled: true,
+        },
+      ]
+    : [
+        {
+          label: 'Add Treatment',
+          onClick: () => navigate('/treatments/add'),
+          icon: <PlusIcon />,
+          className:
+            'inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-purple-100 to-purple-200 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-purple-200 hover:to-purple-300 dark:from-purple-800/30 dark:to-purple-700/30 dark:text-slate-200 dark:hover:from-purple-700/40 dark:hover:to-purple-600/40',
+        },
+        {
+          label: 'Add Clinic',
+          onClick: () => navigate('/clinics/add'),
+          icon: <PlusIcon />,
+          className:
+            'inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-orange-100 to-orange-200 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-orange-200 hover:to-orange-300 dark:from-orange-800/30 dark:to-orange-700/30 dark:text-slate-200 dark:hover:from-orange-700/40 dark:hover:to-orange-600/40',
+        },
+      ]
 
   if (isLoading) {
     return <RotatingSpinner/>
@@ -187,22 +226,7 @@ export default function AddPatients() {
           alt: 'teeth',
           className: 'w-[120px] h-[120px]',
         }}
-        actionButtons={[
-          {
-            label: 'Add Treatment',
-            onClick: () => navigate('/treatments/add'),
-            icon: <PlusIcon />,
-            className:
-              'inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-purple-100 to-purple-200 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-purple-200 hover:to-purple-300 dark:from-purple-800/30 dark:to-purple-700/30 dark:text-slate-200 dark:hover:from-purple-700/40 dark:hover:to-purple-600/40',
-          },
-          {
-            label: 'Add Clinic',
-            onClick: () => navigate('/clinics/add'),
-            icon: <PlusIcon />,
-            className:
-              'inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-orange-100 to-orange-200 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-orange-200 hover:to-orange-300 dark:from-orange-800/30 dark:to-orange-700/30 dark:text-slate-200 dark:hover:from-orange-700/40 dark:hover:to-orange-600/40',
-          },
-        ]}
+        actionButtons={headerActionButtons}
       />
       <form
         id="add-patient-form"
@@ -450,18 +474,24 @@ export default function AddPatients() {
                     <label className={labelStyles}>
                       Primary Clinic <span className="text-red-500">*</span>
                     </label>
-                    <FormDropdown
-                      label="Select primary clinic"
-                      value={form.primaryClinic}
-                      options={primaryClinicOptions}
-                      onChange={(value) => handleFieldChange('primaryClinic', value)}
-                      isOpen={primaryClinicDropdownOpen}
-                      onToggle={() => setPrimaryClinicDropdownOpen(!primaryClinicDropdownOpen)}
-                      onClose={() => setPrimaryClinicDropdownOpen(false)}
-                      buttonRef={primaryClinicButtonRef}
-                      showLabel={false}
-                      disabled={isEditMode}
-                    />
+                    {isStaff && !staffHasMultipleClinics && staffSingleClinic ? (
+                      <div className={`${inputStyles} cursor-not-allowed opacity-70`}>
+                        {staffSingleClinic.name}
+                      </div>
+                    ) : (
+                      <FormDropdown
+                        label="Select primary clinic"
+                        value={form.primaryClinic}
+                        options={primaryClinicOptions}
+                        onChange={(value) => handleFieldChange('primaryClinic', value)}
+                        isOpen={primaryClinicDropdownOpen}
+                        onToggle={() => setPrimaryClinicDropdownOpen(!primaryClinicDropdownOpen)}
+                        onClose={() => setPrimaryClinicDropdownOpen(false)}
+                        buttonRef={primaryClinicButtonRef}
+                        showLabel={false}
+                        disabled={isEditMode}
+                      />
+                    )}
                   </div>
                   <div>
                     <label className={labelStyles}>Last Visit Date</label>

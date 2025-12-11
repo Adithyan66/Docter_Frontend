@@ -208,3 +208,29 @@ export const getClinicNames = async (params?: { search?: string }): Promise<Clin
   return data.data
 }
 
+export type PaginatedClinicImagesResponse = {
+  images: string[]
+  total: number
+  page: number
+  limit: number
+  totalPages: number
+}
+
+export type GetClinicImagesParams = {
+  page?: number
+  limit?: number
+}
+
+export const getClinicImages = async (
+  id: string,
+  params?: GetClinicImagesParams
+): Promise<PaginatedClinicImagesResponse> => {
+  const { data } = await httpClient.get<ApiResponse<PaginatedClinicImagesResponse>>(
+    `clinic/${id}/images`,
+    {
+      params,
+    }
+  )
+  return data.data
+}
+

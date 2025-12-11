@@ -16,6 +16,7 @@ type TreatmentCourseVisitsProps = {
   onEditVisit: (visit: VisitResponseDto) => void
   onDeleteVisit: (visit: VisitResponseDto) => void
   onImageClick: (imageUrl: string) => void
+  isStaff?: boolean
 }
 
 export default function TreatmentCourseVisits({
@@ -29,6 +30,7 @@ export default function TreatmentCourseVisits({
   onEditVisit,
   onDeleteVisit,
   onImageClick,
+  isStaff = false,
 }: TreatmentCourseVisitsProps) {
   return (
     <div>
@@ -59,18 +61,22 @@ export default function TreatmentCourseVisits({
                     Visit on {formatDateWithTime(visit.visitDate)}
                   </h4>
                   <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => onEditVisit(visit)}
-                      className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-yellow-100 to-yellow-200 px-3 py-1.5 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-yellow-200 hover:to-yellow-300 dark:from-yellow-800/30 dark:to-yellow-700/30 dark:text-slate-200 dark:hover:from-yellow-700/40 dark:hover:to-yellow-600/40"
-                    >
-                      Update
-                    </button>
-                    <button
-                      onClick={() => onDeleteVisit(visit)}
-                      className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-red-100 to-red-200 px-3 py-1.5 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-red-200 hover:to-red-300 dark:from-red-800/30 dark:to-red-700/30 dark:text-slate-200 dark:hover:from-red-700/40 dark:hover:to-red-600/40"
-                    >
-                      Delete
-                    </button>
+                    {!isStaff && (
+                      <>
+                        <button
+                          onClick={() => onEditVisit(visit)}
+                          className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-yellow-100 to-yellow-200 px-3 py-1.5 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-yellow-200 hover:to-yellow-300 dark:from-yellow-800/30 dark:to-yellow-700/30 dark:text-slate-200 dark:hover:from-yellow-700/40 dark:hover:to-yellow-600/40"
+                        >
+                          Update
+                        </button>
+                        <button
+                          onClick={() => onDeleteVisit(visit)}
+                          className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-red-100 to-red-200 px-3 py-1.5 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-red-200 hover:to-red-300 dark:from-red-800/30 dark:to-red-700/30 dark:text-slate-200 dark:hover:from-red-700/40 dark:hover:to-red-600/40"
+                        >
+                          Delete
+                        </button>
+                      </>
+                    )}
                     {visit.billedAmount ? (
                       <span className="rounded-lg bg-green-100 px-3 py-1 text-lg font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">
                         ₹{visit.billedAmount.toLocaleString()}
