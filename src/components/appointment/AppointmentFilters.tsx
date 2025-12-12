@@ -146,3 +146,4 @@ export default function AppointmentFilters({
   return typeof document !== 'undefined' ? createPortal(modalContent, document.body) : null
 }
 
+

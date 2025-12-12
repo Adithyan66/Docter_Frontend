@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { getClinicWithStatistics, deleteClinic, updateClinic, type ClinicWithStatistics, type GetClinicWithStatisticsParams } from '@api/clinics'
 
-const INITIAL_IMAGES_TO_SHOW = 6
 const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
 export function useClinicDetails(clinicId: string | undefined) {
@@ -16,7 +15,6 @@ export function useClinicDetails(clinicId: string | undefined) {
   }>({})
   const [viewerImage, setViewerImage] = useState<string | null>(null)
   const [isViewerOpen, setIsViewerOpen] = useState(false)
-  const [showAllImages, setShowAllImages] = useState(false)
   const [startDateFrom, setStartDateFrom] = useState('')
   const [startDateTo, setStartDateTo] = useState('')
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
@@ -123,15 +121,6 @@ export function useClinicDetails(clinicId: string | undefined) {
     return labels[method] || method
   }
 
-  const displayedImages = useMemo(() => {
-    if (!clinic?.images) return []
-    return showAllImages ? clinic.images : clinic.images.slice(0, INITIAL_IMAGES_TO_SHOW)
-  }, [clinic?.images, showAllImages])
-
-  const hasMoreImages = useMemo(() => {
-    return clinic?.images && clinic.images.length > INITIAL_IMAGES_TO_SHOW
-  }, [clinic?.images])
-
   const maxRevenue = useMemo(() => {
     const statistics = clinic?.statistics
     if (!statistics?.revenue) return 0
@@ -212,15 +201,12 @@ export function useClinicDetails(clinicId: string | undefined) {
     dateFilters,
     viewerImage,
     isViewerOpen,
-    showAllImages,
     startDateFrom,
     startDateTo,
     deleteModalOpen,
     isDeleting,
     statusModalOpen,
     isTogglingStatus,
-    displayedImages,
-    hasMoreImages,
     workingDaysMap: getWorkingDaysMap,
     maxRevenue,
     daysOfWeek,
@@ -235,7 +221,6 @@ export function useClinicDetails(clinicId: string | undefined) {
     setStartDateTo,
     setViewerImage,
     setIsViewerOpen,
-    setShowAllImages,
     handleDelete,
     confirmDelete,
     closeDeleteModal,

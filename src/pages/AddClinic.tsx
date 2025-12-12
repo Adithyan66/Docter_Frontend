@@ -25,8 +25,6 @@ export default function AddClinic() {
     form,
     isSubmitting,
     isLoading,
-    pendingImages,
-    pendingImagePreviews,
     isEditMode,
     summaryData,
     availableTreatments,
@@ -36,9 +34,6 @@ export default function AddClinic() {
     handleWorkingDayFieldChange,
     addWorkingDay,
     removeWorkingDay,
-    handleImageUpload,
-    removePendingImage,
-    removeImage,
     submitForm,
     toggleTreatment,
     validateClinicId,
@@ -385,93 +380,6 @@ export default function AddClinic() {
                   </div>
                 </div>
               </SectionCard>
-
-              <SectionCard title="Clinic Images">
-                <div className="space-y-4">
-                  <label
-                    htmlFor="clinic-images"
-                    className="flex cursor-pointer items-center justify-between rounded-lg border-2 border-dashed border-slate-300 bg-slate-50/50 px-5 py-4 text-sm font-medium text-slate-600 transition-all hover:border-blue-400 hover:bg-blue-50/50 dark:border-slate-700 dark:bg-slate-800/30 dark:text-slate-300 dark:hover:border-blue-500 dark:hover:bg-blue-900/20"
-                  >
-                    <span className="flex items-center gap-2">
-                      <svg
-                        className="h-5 w-5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M12 4v16m8-8H4"
-                        />
-                      </svg>
-                      Select clinic images
-                    </span>
-                    <input
-                      id="clinic-images"
-                      type="file"
-                      multiple
-                      accept="image/*"
-                      className="hidden"
-                      onChange={handleImageUpload}
-                      disabled={isSubmitting}
-                    />
-                    {(form.images.length > 0 || pendingImages.length > 0) && (
-                      <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700 dark:bg-blue-900/40 dark:text-blue-200">
-                        {form.images.length + pendingImages.length} selected
-                      </span>
-                    )}
-                  </label>
-                  {(form.images.length > 0 || pendingImages.length > 0) && (
-                    <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
-                      {form.images.map((image, index) => (
-                        <div
-                          key={image}
-                          className="group relative aspect-square overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800"
-                        >
-                          <img
-                            src={image}
-                            alt={`Clinic image ${index + 1}`}
-                            className="h-full w-full object-cover"
-                          />
-                          <button
-                            type="button"
-                            className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-white/95 text-xs font-semibold text-slate-700 opacity-0 shadow-md transition-all group-hover:opacity-100 hover:bg-red-50 hover:text-red-600 dark:bg-slate-900/95 dark:text-slate-200 dark:hover:bg-red-900/30 dark:hover:text-red-400"
-                            onClick={() => removeImage(index)}
-                          >
-                            ×
-                          </button>
-                        </div>
-                      ))}
-                      {pendingImages.map((_, index) => (
-                        <div
-                          key={`pending-${index}`}
-                          className="group relative aspect-square overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800"
-                        >
-                          <img
-                            src={pendingImagePreviews[index]}
-                            alt={`Pending upload ${index + 1}`}
-                            className="h-full w-full object-cover opacity-75"
-                          />
-                          <div className="absolute inset-0 flex items-center justify-center bg-slate-900/40">
-                            <span className="rounded-full bg-yellow-500 px-2 py-1 text-xs font-semibold text-white">
-                              Pending
-                            </span>
-                          </div>
-                          <button
-                            type="button"
-                            className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-white/95 text-xs font-semibold text-slate-700 opacity-0 shadow-md transition-all group-hover:opacity-100 hover:bg-red-50 hover:text-red-600 dark:bg-slate-900/95 dark:text-slate-200 dark:hover:bg-red-900/30 dark:hover:text-red-400"
-                            onClick={() => removePendingImage(index)}
-                          >
-                            ×
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </SectionCard>
             </div>
           </div>
           <aside className="xl:sticky xl:top-6 xl:h-fit xl:w-96">
@@ -489,9 +397,7 @@ export default function AddClinic() {
                 locationUrl: summaryData.locationUrl,
                 workingDays: summaryData.workingDays,
                 treatments: summaryData.treatments,
-                images: summaryData.images,
-                pendingImages: pendingImages,
-                pendingImagePreviews: pendingImagePreviews,
+                images: isEditMode ? summaryData.images : undefined,
                 notes: summaryData.notes,
                 isActive: summaryData.isActive,
               }}

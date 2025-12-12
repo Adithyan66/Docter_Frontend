@@ -6,19 +6,17 @@ import PageHeader from '@components/common/PageHeader'
 import ImageViewerModal from '@components/common/ImageViewerModal'
 import DeleteConfirmationModal from '@components/common/DeleteConfirmationModal'
 import ConfirmationModal from '@components/common/ConfirmationModal'
-import Gallery, { type GalleryItem } from '@components/common/Gallery'
+import Gallery from '@components/common/Gallery'
 import { useTreatmentDetails } from '@hooks/data/useTreatmentDetails'
+import { useTreatmentImages } from '@hooks/data/useTreatmentImages'
 import { updateTreatment, deleteTreatment } from '@api/treatments'
 import toast from 'react-hot-toast'
-
-const INITIAL_IMAGES_TO_SHOW = 6
 
 export default function TreatmentDetails() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const [viewerImage, setViewerImage] = useState<string | null>(null)
   const [isViewerOpen, setIsViewerOpen] = useState(false)
-  const [showAllImages, setShowAllImages] = useState(false)
   const [showGallery, setShowGallery] = useState(false)
   const [startDateFrom, setStartDateFrom] = useState('')
   const [startDateTo, setStartDateTo] = useState('')
@@ -36,6 +34,17 @@ export default function TreatmentDetails() {
     formatDateTime,
     fetchTreatment,
   } = useTreatmentDetails(id)
+
+  const {
+    images: galleryItems,
+    isLoading: isLoadingImages,
+    currentPage: imagesPage,
+    totalPages: imagesTotalPages,
+    total: imagesTotal,
+    limit: imagesLimit,
+    handlePageChange: handleImagesPageChange,
+    refetch: refetchImages,
+  } = useTreatmentImages(id, 20)
 
   const handleApplyDateFilter = () => {
     handleDateFilterChange(startDateFrom || undefined, startDateTo || undefined)
@@ -105,14 +114,6 @@ export default function TreatmentDetails() {
     setDeleteModalOpen(false)
   }
 
-  const displayedImages = treatment?.images
-    ? showAllImages
-      ? treatment.images
-      : treatment.images.slice(0, INITIAL_IMAGES_TO_SHOW)
-    : []
-
-  const hasMoreImages = treatment?.images && treatment.images.length > INITIAL_IMAGES_TO_SHOW
-
   if (isLoading) {
     return <RotatingSpinner />
   }
@@ -128,13 +129,6 @@ export default function TreatmentDetails() {
   }
 
   const statistics = treatment.statistics
-
-  const galleryItems: GalleryItem[] = treatment.images
-    ? treatment.images.map((imageUrl, index) => ({
-        imageUrl,
-        alt: `${treatment.name} ${index + 1}`,
-      }))
-    : []
 
   const getPaymentMethodColor = (method: string) => {
     const colors: Record<string, string> = {
@@ -475,47 +469,6 @@ export default function TreatmentDetails() {
                 )}
               </div>
 
-              {displayedImages.length > 0 && (
-                <div>
-                  <span className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-3 block text-center">
-                    Images ({treatment.images?.length || 0})
-                  </span>
-                  <div className="grid grid-cols-3 gap-2">
-                    {displayedImages.map((imageUrl, index) => (
-                      <div key={index} className="relative group aspect-square">
-                        <img
-                          src={imageUrl}
-                          alt={`${treatment.name} ${index + 1}`}
-                          className="h-full w-full rounded-lg object-cover border border-slate-200 dark:border-slate-700 cursor-pointer hover:opacity-80 transition-opacity"
-                          onClick={() => {
-                            setViewerImage(imageUrl)
-                            setIsViewerOpen(true)
-                          }}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                  {hasMoreImages && !showAllImages && (
-                    <button
-                      type="button"
-                      onClick={() => setShowAllImages(true)}
-                      className="mt-2 w-full rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white transition-all hover:bg-blue-500 dark:bg-blue-500 dark:hover:bg-blue-400"
-                    >
-                      Show More ({treatment.images!.length - INITIAL_IMAGES_TO_SHOW} more)
-                    </button>
-                  )}
-                  {showAllImages && hasMoreImages && (
-                    <button
-                      type="button"
-                      onClick={() => setShowAllImages(false)}
-                      className="mt-2 w-full rounded-lg bg-slate-600 px-3 py-1.5 text-xs font-medium text-white transition-all hover:bg-slate-500 dark:bg-slate-500 dark:hover:bg-slate-400"
-                    >
-                      Show Less
-                    </button>
-                  )}
-                </div>
-              )}
-
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col items-center">
                   <span className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-2">
@@ -540,7 +493,25 @@ export default function TreatmentDetails() {
 
         <div className="lg:col-span-2 space-y-6">
           {showGallery ? (
-            <Gallery items={galleryItems} onBack={() => setShowGallery(false)} />
+            <Gallery
+              items={galleryItems}
+              onBack={() => setShowGallery(false)}
+              isLoading={isLoadingImages}
+              entityId={id}
+              entityType="treatment"
+              onImagesUploaded={refetchImages}
+              pagination={
+                imagesTotalPages > 1
+                  ? {
+                      currentPage: imagesPage,
+                      totalPages: imagesTotalPages,
+                      total: imagesTotal,
+                      limit: imagesLimit,
+                      onPageChange: handleImagesPageChange,
+                    }
+                  : undefined
+              }
+            />
           ) : statistics ? (
             <div className="rounded-2xl border border-slate-200 bg-white/60 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900 overflow-hidden">
                 <div className="p-6 space-y-6">
@@ -548,13 +519,13 @@ export default function TreatmentDetails() {
                     <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
                       Statistics
                     </h2>
-                    {galleryItems.length > 0 && (
+                    {imagesTotal > 0 && (
                       <button
                         type="button"
                         onClick={() => setShowGallery(true)}
                         className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-blue-100 to-blue-200 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-blue-200 hover:to-blue-300 dark:from-blue-800/30 dark:to-blue-700/30 dark:text-slate-200 dark:hover:from-blue-700/40 dark:hover:to-blue-600/40"
                       >
-                        View Gallery
+                        View Gallery ({imagesTotal})
                       </button>
                     )}
                   </div>
@@ -933,13 +904,13 @@ export default function TreatmentDetails() {
                 <p className="text-sm text-slate-500 dark:text-slate-500 mb-4">
                   Statistics will be available once treatment courses are created.
                 </p>
-                {galleryItems.length > 0 && (
+                {imagesTotal > 0 && (
                   <button
                     type="button"
                     onClick={() => setShowGallery(true)}
                     className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-blue-100 to-blue-200 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-blue-200 hover:to-blue-300 dark:from-blue-800/30 dark:to-blue-700/30 dark:text-slate-200 dark:hover:from-blue-700/40 dark:hover:to-blue-600/40"
                   >
-                    View Gallery
+                    View Gallery ({imagesTotal})
                   </button>
                 )}
               </div>

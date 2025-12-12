@@ -257,25 +257,8 @@ export function useAddTreatment() {
 
   const performSubmit = async () => {
     setIsSubmitting(true)
-    setIsUploadingImages(true)
 
     try {
-      const uploadedUrls: string[] = [...form.images]
-
-      if (pendingImages.length > 0) {
-        for (const file of pendingImages) {
-          const { publicUrl } = await S3Service.uploadImage(
-            'Treatment-Images',
-            file
-          )
-          if (publicUrl) {
-            uploadedUrls.push(publicUrl)
-          }
-        }
-      }
-
-      setIsUploadingImages(false)
-
       const payload: TreatmentPayload = {
         name: form.name.trim(),
         description: form.description.trim() || undefined,
@@ -300,7 +283,7 @@ export function useAddTreatment() {
             ? Number(form.followUpAfterDays)
             : undefined,
         risks: form.risks,
-        images: uploadedUrls,
+        images: [],
       }
 
       if (isEditMode && id) {
@@ -314,7 +297,6 @@ export function useAddTreatment() {
       }
       setTimeout(() => navigate('/treatments'), 800)
     } catch (error: any) {
-      setIsUploadingImages(false)
       const errorMessage =
         error?.response?.data?.error?.message ||
         error?.response?.data?.message ||
@@ -351,19 +333,15 @@ export function useAddTreatment() {
       steps: form.steps,
       aftercare: form.aftercare,
       risks: form.risks,
-      images: form.images,
-      pendingImages,
+      images: isEditMode ? form.images : undefined,
     }),
-    [form, pendingImages]
+    [form, isEditMode]
   )
 
   return {
     form,
     isSubmitting,
     isLoading,
-    isUploadingImages,
-    pendingImages,
-    pendingImagePreviews,
     isEditMode,
     summaryData,
     handleFieldChange,
@@ -373,8 +351,6 @@ export function useAddTreatment() {
     addRisk,
     removeArrayEntry,
     clearField,
-    handleImageUpload,
-    removePendingImage,
     submitForm,
     performSubmit,
     validateForm,

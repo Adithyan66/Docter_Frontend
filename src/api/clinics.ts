@@ -234,3 +234,12 @@ export const getClinicImages = async (
   return data.data
 }
 
+export const uploadClinicImages = async (
+  id: string,
+  imageUrls: string[]
+): Promise<void> => {
+  await httpClient.post<ApiResponse<void>>(`clinic/${id}/images`, {
+    images: imageUrls,
+  })
+}
+

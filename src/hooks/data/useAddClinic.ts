@@ -320,26 +320,8 @@ export function useAddClinic() {
 
   const performSubmit = async () => {
     setIsSubmitting(true)
-    setIsUploadingImages(true)
 
     try {
-      let uploadedUrls: string[] = []
-
-      if (isEditMode) {
-        uploadedUrls = (form.images || []).filter((url) => url && url.trim().length > 0)
-      }
-
-      if (pendingImages.length > 0) {
-        for (const file of pendingImages) {
-          const { publicUrl } = await S3Service.uploadImage('Clinic-Images', file)
-          if (publicUrl && publicUrl.trim().length > 0) {
-            uploadedUrls.push(publicUrl)
-          }
-        }
-      }
-
-      setIsUploadingImages(false)
-
       const payload: ClinicPayload = {
         name: form.name.trim(),
         address: form.address.trim() || undefined,
@@ -359,7 +341,6 @@ export function useAddClinic() {
               }))
             : undefined,
         treatments: form.treatments.length > 0 ? form.treatments : undefined,
-        images: uploadedUrls.length > 0 ? uploadedUrls : undefined,
         notes: form.notes.trim() || undefined,
         isActive: form.isActive,
       }
@@ -376,7 +357,6 @@ export function useAddClinic() {
       }
       setTimeout(() => navigate('/clinics'), 800)
     } catch (error: any) {
-      setIsUploadingImages(false)
       const errorMessage =
         error?.response?.data?.error?.message ||
         error?.response?.data?.message ||
@@ -422,7 +402,7 @@ export function useAddClinic() {
           endTime: wd.endTime,
         })),
         treatments: treatmentsWithNames,
-        images: form.images,
+        images: isEditMode ? form.images : undefined,
         notes: form.notes,
         isActive: form.isActive,
       }

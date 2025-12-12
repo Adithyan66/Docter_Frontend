@@ -212,3 +212,38 @@ export const getTreatmentWithStatistics = async (
   return data.data
 }
 
+export type PaginatedTreatmentImagesResponse = {
+  images: string[]
+  total: number
+  page: number
+  limit: number
+  totalPages: number
+}
+
+export type GetTreatmentImagesParams = {
+  page?: number
+  limit?: number
+}
+
+export const getTreatmentImages = async (
+  id: string,
+  params?: GetTreatmentImagesParams
+): Promise<PaginatedTreatmentImagesResponse> => {
+  const { data } = await httpClient.get<ApiResponse<PaginatedTreatmentImagesResponse>>(
+    `treatment/${id}/images`,
+    {
+      params,
+    }
+  )
+  return data.data
+}
+
+export const uploadTreatmentImages = async (
+  id: string,
+  imageUrls: string[]
+): Promise<void> => {
+  await httpClient.post<ApiResponse<void>>(`treatment/${id}/images`, {
+    images: imageUrls,
+  })
+}
+

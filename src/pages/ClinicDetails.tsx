@@ -29,14 +29,11 @@ export default function ClinicDetails() {
     dateFilters,
     viewerImage,
     isViewerOpen,
-    showAllImages,
     startDateFrom,
     startDateTo,
     deleteModalOpen,
     statusModalOpen,
     isTogglingStatus,
-    displayedImages,
-    hasMoreImages,
     workingDaysMap,
     maxRevenue,
     daysOfWeek,
@@ -49,7 +46,6 @@ export default function ClinicDetails() {
     setStartDateTo,
     setViewerImage,
     setIsViewerOpen,
-    setShowAllImages,
     handleDelete,
     confirmDelete,
     closeDeleteModal,
@@ -68,6 +64,7 @@ export default function ClinicDetails() {
     total: imagesTotal,
     limit: imagesLimit,
     handlePageChange: handleImagesPageChange,
+    refetch: refetchImages,
   } = useClinicImages(id, 20)
 
   if (isLoading) {
@@ -404,47 +401,6 @@ export default function ClinicDetails() {
                 </div>
               )}
 
-              {displayedImages.length > 0 && (
-                <div>
-                  <span className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-3 block text-center">
-                    Images ({clinic.images?.length || 0})
-                  </span>
-                  <div className="grid grid-cols-3 gap-2">
-                    {displayedImages.map((imageUrl, index) => (
-                      <div key={index} className="relative group aspect-square">
-                        <img
-                          src={imageUrl}
-                          alt={`${clinic.name} ${index + 1}`}
-                          className="h-full w-full rounded-lg object-cover border border-slate-200 dark:border-slate-700 cursor-pointer hover:opacity-80 transition-opacity"
-                          onClick={() => {
-                            setViewerImage(imageUrl)
-                            setIsViewerOpen(true)
-                          }}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                  {hasMoreImages && !showAllImages && (
-                    <button
-                      type="button"
-                      onClick={() => setShowAllImages(true)}
-                      className="mt-2 w-full rounded-lg bg-gradient-to-r from-blue-100 to-blue-200 px-3 py-1.5 text-xs font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-blue-200 hover:to-blue-300 dark:from-blue-800/30 dark:to-blue-700/30 dark:text-slate-200 dark:hover:from-blue-700/40 dark:hover:to-blue-600/40"
-                    >
-                      Show More ({clinic.images!.length - displayedImages.length} more)
-                    </button>
-                  )}
-                  {showAllImages && hasMoreImages && (
-                    <button
-                      type="button"
-                      onClick={() => setShowAllImages(false)}
-                      className="mt-2 w-full rounded-lg bg-gradient-to-r from-slate-100 to-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-slate-200 hover:to-slate-300 dark:from-slate-800/30 dark:to-slate-700/30 dark:text-slate-200 dark:hover:from-slate-700/40 dark:hover:to-slate-600/40"
-                    >
-                      Show Less
-                    </button>
-                  )}
-                </div>
-              )}
-
               {clinic.notes && (
                 <div className="flex flex-col items-center">
                   <span className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-2">
@@ -484,6 +440,9 @@ export default function ClinicDetails() {
               items={galleryItems}
               onBack={() => setShowGallery(false)}
               isLoading={isLoadingImages}
+              entityId={id}
+              entityType="clinic"
+              onImagesUploaded={refetchImages}
               pagination={
                 imagesTotalPages > 1
                   ? {
