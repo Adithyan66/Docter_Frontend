@@ -6,6 +6,7 @@ import Table from '@components/common/Table'
 import { useClinics } from '@hooks/data/useClinics'
 import { PlusIcon } from '@assets/Icons'
 import clinicIcon from '@assets/clinic.png'
+import RotatingSpinner from '@components/spinner/TeethRotating'
 
 export default function Clinics() {
   const navigate = useNavigate()
@@ -94,9 +95,7 @@ export default function Clinics() {
       />
 
       {isLoading ? (
-        <div className="flex items-center justify-center rounded-2xl bg-white/60 p-12 backdrop-blur-sm dark:bg-slate-900/60">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
-        </div>
+        <RotatingSpinner />
       ) : clinics.length === 0 ? (
         <div className="rounded-xl border border-slate-200 bg-white p-6 text-sm text-slate-600 shadow-sm dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
           {search.trim()

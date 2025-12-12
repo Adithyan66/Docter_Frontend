@@ -5,6 +5,7 @@ import Table from '@components/common/Table'
 import { useStaff } from '@hooks/data/useStaff'
 import clinicIcon from '@assets/clinic.png'
 import { PlusIcon } from '@assets/Icons'
+import RotatingSpinner from '@components/spinner/TeethRotating'
 
 export default function Staff() {
   const navigate = useNavigate()
@@ -41,9 +42,7 @@ export default function Staff() {
       />
 
       {isLoading ? (
-        <div className="flex items-center justify-center rounded-2xl bg-white/60 p-12 backdrop-blur-sm dark:bg-slate-900/60">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
-        </div>
+        <RotatingSpinner />
       ) : (
         <>
           <Table
