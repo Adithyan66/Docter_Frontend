@@ -38,7 +38,7 @@ export default function AddTreatment() {
     submitForm,
     performSubmit,
     validateForm,
-    setForm,
+    // setForm,
   } = useAddTreatment()
 
   const [showConfirmModal, setShowConfirmModal] = useState(false)
@@ -395,7 +395,7 @@ export default function AddTreatment() {
                     steps: summaryData.steps,
                     aftercare: summaryData.aftercare,
                     risks: summaryData.risks,
-                    images: isEditMode ? summaryData.images : undefined,
+                    images: summaryData.images ?? [],
                   }}
                   onRemoveStep={(index) => removeArrayEntry('steps', index)}
                   onRemoveAftercare={(index) => removeArrayEntry('aftercare', index)}

@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect, type ChangeEvent } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import {
@@ -7,7 +7,6 @@ import {
   updateTreatment,
   type TreatmentPayload,
 } from '@api/treatments'
-import { S3Service } from '@services/s3Service'
 
 type TreatmentFormState = {
   name: string
@@ -66,9 +65,8 @@ export function useAddTreatment() {
   const [form, setForm] = useState<TreatmentFormState>(() => createBlankForm())
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isLoading, setIsLoading] = useState(isEditMode)
-  const [isUploadingImages, setIsUploadingImages] = useState(false)
   const [pendingImages, setPendingImages] = useState<File[]>([])
-  const [pendingImagePreviews, setPendingImagePreviews] = useState<string[]>([])
+  const [_pendingImagePreviews, setPendingImagePreviews] = useState<string[]>([])
 
   useEffect(() => {
     const previews = pendingImages.map((file) => URL.createObjectURL(file))
@@ -180,43 +178,43 @@ export function useAddTreatment() {
     handleFieldChange(field, typeof form[field] === 'boolean' ? false : '')
   }
 
-  const handleImageUpload = (event: ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files
-    if (!files?.length) return
+  // const handleImageUpload = (event: ChangeEvent<HTMLInputElement>) => {
+  //   const files = event.target.files
+  //   if (!files?.length) return
 
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
-    const maxFileSize = 5 * 1024 * 1024
-    const validFiles: File[] = []
+  //   const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+  //   const maxFileSize = 5 * 1024 * 1024
+  //   const validFiles: File[] = []
 
-    for (const file of Array.from(files)) {
-      if (!file.type.startsWith('image/')) {
-        toast.error('Please select an image file')
-        event.target.value = ''
-        return
-      }
+  //   for (const file of Array.from(files)) {
+  //     if (!file.type.startsWith('image/')) {
+  //       toast.error('Please select an image file')
+  //       event.target.value = ''
+  //       return
+  //     }
 
-      if (file.size > maxFileSize) {
-        toast.error('File size must be less than 5MB')
-        event.target.value = ''
-        return
-      }
+  //     if (file.size > maxFileSize) {
+  //       toast.error('File size must be less than 5MB')
+  //       event.target.value = ''
+  //       return
+  //     }
 
-      if (!allowedTypes.includes(file.type)) {
-        toast.error('Only JPEG, PNG, and WebP images are allowed')
-        event.target.value = ''
-        return
-      }
+  //     if (!allowedTypes.includes(file.type)) {
+  //       toast.error('Only JPEG, PNG, and WebP images are allowed')
+  //       event.target.value = ''
+  //       return
+  //     }
 
-      validFiles.push(file)
-    }
+  //     validFiles.push(file)
+  //   }
 
-    setPendingImages((prev) => [...prev, ...validFiles])
-    event.target.value = ''
-  }
+  //   setPendingImages((prev) => [...prev, ...validFiles])
+  //   event.target.value = ''
+  // }
 
-  const removePendingImage = (index: number) => {
-    setPendingImages((prev) => prev.filter((_, i) => i !== index))
-  }
+  // const removePendingImage = (index: number) => {
+  //   setPendingImages((prev) => prev.filter((_, i) => i !== index))
+  // }
 
   const validateForm = (): boolean => {
     if (!form.name.trim()) {

@@ -7,7 +7,7 @@ type HeaderProps = {
   userEmail?: string | null
 }
 
-export default function Header({ onMenuClick, onLogout, userEmail }: HeaderProps) {
+export default function Header({ onMenuClick, onLogout }: HeaderProps) {
   const { theme, toggleTheme } = useTheme()
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)

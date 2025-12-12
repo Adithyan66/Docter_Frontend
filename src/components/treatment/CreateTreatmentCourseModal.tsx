@@ -13,6 +13,7 @@ import {
 import DropdownFilter from '@components/common/DropdownFilter'
 import ConfirmationModal from '@components/common/ConfirmationModal'
 import { useAppSelector } from '@hooks/store'
+import RotatingSpinner from '@components/spinner/TeethRotating'
 
 type CreateTreatmentCourseModalProps = {
   isOpen: boolean
@@ -466,13 +467,9 @@ export default function CreateTreatmentCourseModal({
 
   if (!isOpen) return null
 
-  if (isLoadingCourse) {
+  if (isLoadingCourse  || isLoadingClinics  || isLoadingTreatments) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-        <div className="rounded-2xl bg-white p-6 dark:bg-slate-900">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
-        </div>
-      </div>
+    <RotatingSpinner />
     )
   }
 

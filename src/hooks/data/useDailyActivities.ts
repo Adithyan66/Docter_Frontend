@@ -8,10 +8,10 @@ export function useDailyActivities(date: string | null) {
   const [isLoading, setIsLoading] = useState(false)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(0)
+  const [_totalPages, setTotalPages] = useState(0)
   const [hasMore, setHasMore] = useState(false)
   const limit = 10
-  const throttleTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const throttleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const fetchActivities = useCallback(async (page: number, append: boolean = false) => {
     if (!date) {

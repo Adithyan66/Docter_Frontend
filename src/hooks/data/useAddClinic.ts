@@ -8,7 +8,6 @@ import {
   type ClinicPayload,
 } from '@api/clinics'
 import { getTreatmentNames, type TreatmentName } from '@api/treatments'
-import { S3Service } from '@services/s3Service'
 import { useDebounce } from '@hooks/utils/useDebounce'
 
 export type WorkingDayForm = {
@@ -76,7 +75,6 @@ export function useAddClinic() {
   const [form, setForm] = useState<ClinicFormState>(() => createBlankForm())
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isLoading, setIsLoading] = useState(isEditMode)
-  const [isUploadingImages, setIsUploadingImages] = useState(false)
   const [pendingImages, setPendingImages] = useState<File[]>([])
   const [pendingImagePreviews, setPendingImagePreviews] = useState<string[]>([])
   const [availableTreatments, setAvailableTreatments] = useState<TreatmentName[]>([])
@@ -427,7 +425,6 @@ export function useAddClinic() {
     form,
     isSubmitting,
     isLoading,
-    isUploadingImages,
     pendingImages,
     pendingImagePreviews,
     isEditMode,
