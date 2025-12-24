@@ -12,9 +12,9 @@ export default function Login() {
   const navigate = useNavigate()
   const { status, error, isAuthenticated } = useAppSelector((state) => state.auth)
   const [activeTab, setActiveTab] = useState<LoginTab>('doctor')
-  const [email, setEmail] = useState('doctor@gmail.com')
+  const [email, setEmail] = useState('')
   const [username, setUsername] = useState('')
-  const [password, setPassword] = useState('koodecode')
+  const [password, setPassword] = useState('')
   const [formError, setFormError] = useState<string | null>(null)
 
   useEffect(() => {
