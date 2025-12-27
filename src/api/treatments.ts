@@ -247,3 +247,13 @@ export const uploadTreatmentImages = async (
   })
 }
 
+export const deleteTreatmentImage = async (
+  id: string,
+  imageIndex: number,
+  imageUrl: string
+): Promise<void> => {
+  await httpClient.delete<ApiResponse<void>>(`treatment/${id}/images/${imageIndex}`, {
+    data: { imageUrl },
+  })
+}
+

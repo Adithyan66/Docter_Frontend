@@ -130,7 +130,7 @@ export function useTreatments() {
   }
 
   const handleRowClick = (treatment: TreatmentList) => {
-    navigate(`/treatment/${treatment.id}`)
+    navigate(`/treatments/${treatment.id}`)
   }
 
   const sortByOptions: Array<{ value: string; label: string }> = [

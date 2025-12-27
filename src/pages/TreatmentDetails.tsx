@@ -519,15 +519,13 @@ export default function TreatmentDetails() {
                     <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
                       Statistics
                     </h2>
-                    {imagesTotal > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => setShowGallery(true)}
-                        className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-blue-100 to-blue-200 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-blue-200 hover:to-blue-300 dark:from-blue-800/30 dark:to-blue-700/30 dark:text-slate-200 dark:hover:from-blue-700/40 dark:hover:to-blue-600/40"
-                      >
-                        View Gallery ({imagesTotal})
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      onClick={() => setShowGallery(true)}
+                      className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-blue-100 to-blue-200 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-blue-200 hover:to-blue-300 dark:from-blue-800/30 dark:to-blue-700/30 dark:text-slate-200 dark:hover:from-blue-700/40 dark:hover:to-blue-600/40"
+                    >
+                      View Gallery {imagesTotal > 0 && `(${imagesTotal})`}
+                    </button>
                   </div>
                   <div className="flex justify-center gap-32 mb-6">
                     <div className="text-center">
@@ -555,140 +553,139 @@ export default function TreatmentDetails() {
                       </p>
                     </div>
                   </div>
-                </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="rounded-2xl bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 p-6 shadow-lg border border-green-200 dark:border-green-800">
-                    <h4 className="text-sm font-semibold text-green-900 dark:text-green-200 mb-4">
-                      Patients
-                    </h4>
-                    <div className="space-y-3 mb-6">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                          Total Count
-                        </span>
-                        <p className="text-lg font-bold text-green-600 dark:text-green-400">
-                          {statistics.patients.totalCount}
-                        </p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="rounded-2xl bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 p-6 shadow-lg border border-green-200 dark:border-green-800">
+                      <h4 className="text-sm font-semibold text-green-900 dark:text-green-200 mb-4">
+                        Patients
+                      </h4>
+                      <div className="space-y-3 mb-6">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
+                            Total Count
+                          </span>
+                          <p className="text-lg font-bold text-green-600 dark:text-green-400">
+                            {statistics.patients.totalCount}
+                          </p>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
+                            Unique Patients
+                          </span>
+                          <p className="text-lg font-bold text-green-600 dark:text-green-400">
+                            {statistics.patients.uniqueCount}
+                          </p>
+                        </div>
                       </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                          Unique Patients
-                        </span>
-                        <p className="text-lg font-bold text-green-600 dark:text-green-400">
-                          {statistics.patients.uniqueCount}
-                        </p>
-                      </div>
-                    </div>
 
-                    <h4 className="text-sm font-semibold text-green-900 dark:text-green-200 mb-4 mt-6 pt-6 border-t border-green-200 dark:border-green-700">
-                      Treatment Courses
-                    </h4>
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                          Total Courses
-                        </span>
-                        <p className="text-lg font-bold text-green-600 dark:text-green-400">
-                          {statistics.treatmentCourses.totalCount}
-                        </p>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2 mt-3">
-                        <div className="text-center">
-                          <p className="text-xs text-slate-600 dark:text-slate-400">Active</p>
-                          <p className="text-sm font-semibold text-green-600 dark:text-green-400">
-                            {statistics.treatmentCourses.statusBreakdown.active}
+                      <h4 className="text-sm font-semibold text-green-900 dark:text-green-200 mb-4 mt-6 pt-6 border-t border-green-200 dark:border-green-700">
+                        Treatment Courses
+                      </h4>
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
+                            Total Courses
+                          </span>
+                          <p className="text-lg font-bold text-green-600 dark:text-green-400">
+                            {statistics.treatmentCourses.totalCount}
                           </p>
                         </div>
-                        <div className="text-center">
-                          <p className="text-xs text-slate-600 dark:text-slate-400">Paused</p>
-                          <p className="text-sm font-semibold text-yellow-600 dark:text-yellow-400">
-                            {statistics.treatmentCourses.statusBreakdown.paused}
-                          </p>
-                        </div>
-                        <div className="text-center">
-                          <p className="text-xs text-slate-600 dark:text-slate-400">Completed</p>
-                          <p className="text-sm font-semibold text-blue-600 dark:text-blue-400">
-                            {statistics.treatmentCourses.statusBreakdown.completed}
-                          </p>
-                        </div>
-                        <div className="text-center">
-                          <p className="text-xs text-slate-600 dark:text-slate-400">Cancelled</p>
-                          <p className="text-sm font-semibold text-red-600 dark:text-red-400">
-                            {statistics.treatmentCourses.statusBreakdown.cancelled}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between mt-3 pt-3 border-t border-green-200 dark:border-green-700">
-                        <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                          Medically Completed
-                        </span>
-                        <p className="text-sm font-semibold text-green-600 dark:text-green-400">
-                          {statistics.treatmentCourses.medicallyCompleted}
-                        </p>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                          Payment Completed
-                        </span>
-                        <p className="text-sm font-semibold text-green-600 dark:text-green-400">
-                          {statistics.treatmentCourses.paymentCompleted}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="rounded-2xl bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 p-6 shadow-lg border border-green-200 dark:border-green-800">
-                    <h4 className="text-sm font-semibold text-green-900 dark:text-green-200 mb-6">
-                      Revenue by Payment Method
-                    </h4>
-                    <div className="space-y-3 mb-6">
-                      {Object.entries(statistics.revenue.byPaymentMethod).map(([method, amount]) => (
-                        <div key={method} className="flex items-center gap-3">
-                          <div className="w-20 text-xs font-medium text-slate-600 dark:text-slate-400">
-                            {getPaymentMethodLabel(method)}
+                        <div className="grid grid-cols-2 gap-2 mt-3">
+                          <div className="text-center">
+                            <p className="text-xs text-slate-600 dark:text-slate-400">Active</p>
+                            <p className="text-sm font-semibold text-green-600 dark:text-green-400">
+                              {statistics.treatmentCourses.statusBreakdown.active}
+                            </p>
                           </div>
-                          <div className="flex-1">
-                            <div className="relative w-full bg-white/80 dark:bg-slate-800/80 rounded-full h-6 shadow-inner overflow-hidden">
-                              <div
-                                className={`h-full rounded-full ${getPaymentMethodColor(method)} transition-all duration-1000 ease-out shadow-lg flex items-center justify-end pr-2`}
-                                style={{
-                                  width: `${maxRevenue > 0 ? (amount / maxRevenue) * 100 : 0}%`,
-                                }}
-                              >
-                                {amount > 0 && (
-                                  <span className="text-xs font-bold text-white drop-shadow-md">
-                                    ₹{amount.toLocaleString()}
-                                  </span>
-                                )}
+                          <div className="text-center">
+                            <p className="text-xs text-slate-600 dark:text-slate-400">Paused</p>
+                            <p className="text-sm font-semibold text-yellow-600 dark:text-yellow-400">
+                              {statistics.treatmentCourses.statusBreakdown.paused}
+                            </p>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-xs text-slate-600 dark:text-slate-400">Completed</p>
+                            <p className="text-sm font-semibold text-blue-600 dark:text-blue-400">
+                              {statistics.treatmentCourses.statusBreakdown.completed}
+                            </p>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-xs text-slate-600 dark:text-slate-400">Cancelled</p>
+                            <p className="text-sm font-semibold text-red-600 dark:text-red-400">
+                              {statistics.treatmentCourses.statusBreakdown.cancelled}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between mt-3 pt-3 border-t border-green-200 dark:border-green-700">
+                          <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
+                            Medically Completed
+                          </span>
+                          <p className="text-sm font-semibold text-green-600 dark:text-green-400">
+                            {statistics.treatmentCourses.medicallyCompleted}
+                          </p>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
+                            Payment Completed
+                          </span>
+                          <p className="text-sm font-semibold text-green-600 dark:text-green-400">
+                            {statistics.treatmentCourses.paymentCompleted}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 p-6 shadow-lg border border-green-200 dark:border-green-800">
+                      <h4 className="text-sm font-semibold text-green-900 dark:text-green-200 mb-6">
+                        Revenue by Payment Method
+                      </h4>
+                      <div className="space-y-3 mb-6">
+                        {Object.entries(statistics.revenue.byPaymentMethod).map(([method, amount]) => (
+                          <div key={method} className="flex items-center gap-3">
+                            <div className="w-20 text-xs font-medium text-slate-600 dark:text-slate-400">
+                              {getPaymentMethodLabel(method)}
+                            </div>
+                            <div className="flex-1">
+                              <div className="relative w-full bg-white/80 dark:bg-slate-800/80 rounded-full h-6 shadow-inner overflow-hidden">
+                                <div
+                                  className={`h-full rounded-full ${getPaymentMethodColor(method)} transition-all duration-1000 ease-out shadow-lg flex items-center justify-end pr-2`}
+                                  style={{
+                                    width: `${maxRevenue > 0 ? (amount / maxRevenue) * 100 : 0}%`,
+                                  }}
+                                >
+                                  {amount > 0 && (
+                                    <span className="text-xs font-bold text-white drop-shadow-md">
+                                      ₹{amount.toLocaleString()}
+                                    </span>
+                                  )}
+                                </div>
                               </div>
                             </div>
+                            <div className="w-24 text-right text-xs font-semibold text-slate-900 dark:text-white">
+                              ₹{amount.toLocaleString()}
+                            </div>
                           </div>
-                          <div className="w-24 text-right text-xs font-semibold text-slate-900 dark:text-white">
-                            ₹{amount.toLocaleString()}
-                          </div>
+                        ))}
+                      </div>
+                      <div className="grid grid-cols-2 gap-4 pt-4 border-t border-green-200 dark:border-green-700">
+                        <div>
+                          <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+                            Avg Paid per Course
+                          </p>
+                          <p className="text-sm font-semibold text-green-600 dark:text-green-400">
+                            ₹{statistics.revenue.averagePerCourse.paid.toLocaleString()}
+                          </p>
                         </div>
-                      ))}
-                    </div>
-                    <div className="grid grid-cols-2 gap-4 pt-4 border-t border-green-200 dark:border-green-700">
-                      <div>
-                        <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
-                          Avg Paid per Course
-                        </p>
-                        <p className="text-sm font-semibold text-green-600 dark:text-green-400">
-                          ₹{statistics.revenue.averagePerCourse.paid.toLocaleString()}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
-                          Avg Cost per Course
-                        </p>
-                        <p className="text-sm font-semibold text-blue-600 dark:text-blue-400">
-                          ₹{statistics.revenue.averagePerCourse.cost.toLocaleString()}
-                        </p>
+                        <div>
+                          <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+                            Avg Cost per Course
+                          </p>
+                          <p className="text-sm font-semibold text-blue-600 dark:text-blue-400">
+                            ₹{statistics.revenue.averagePerCourse.cost.toLocaleString()}
+                          </p>
+                        </div>
                       </div>
                     </div>
-                  </div>
                 </div>
 
                 {statistics.clinics && statistics.clinics.length > 0 && (
@@ -893,6 +890,7 @@ export default function TreatmentDetails() {
                   </div>
                 </div>
               </div>
+            </div>
           ) : null}
 
           {!statistics && !showGallery && (
@@ -904,15 +902,13 @@ export default function TreatmentDetails() {
                 <p className="text-sm text-slate-500 dark:text-slate-500 mb-4">
                   Statistics will be available once treatment courses are created.
                 </p>
-                {imagesTotal > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => setShowGallery(true)}
-                    className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-blue-100 to-blue-200 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-blue-200 hover:to-blue-300 dark:from-blue-800/30 dark:to-blue-700/30 dark:text-slate-200 dark:hover:from-blue-700/40 dark:hover:to-blue-600/40"
-                  >
-                    View Gallery ({imagesTotal})
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={() => setShowGallery(true)}
+                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-blue-100 to-blue-200 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-blue-200 hover:to-blue-300 dark:from-blue-800/30 dark:to-blue-700/30 dark:text-slate-200 dark:hover:from-blue-700/40 dark:hover:to-blue-600/40"
+                >
+                  View Gallery {imagesTotal > 0 && `(${imagesTotal})`}
+                </button>
               </div>
             </div>
           )}
@@ -927,6 +923,14 @@ export default function TreatmentDetails() {
           setViewerImage(null)
         }}
         alt={treatment.name || 'Treatment image'}
+        entityId={id}
+        entityType="treatment"
+        imageIndex={treatment.images?.findIndex(img => img === viewerImage) ?? 0}
+        onImageDeleted={() => {
+          setIsViewerOpen(false)
+          setViewerImage(null)
+          fetchTreatment(dateFilters)
+        }}
       />
 
       <ConfirmationModal

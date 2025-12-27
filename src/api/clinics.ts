@@ -243,3 +243,13 @@ export const uploadClinicImages = async (
   })
 }
 
+export const deleteClinicImage = async (
+  id: string,
+  imageIndex: number,
+  imageUrl: string
+): Promise<void> => {
+  await httpClient.delete<ApiResponse<void>>(`clinic/${id}/images/${imageIndex}`, {
+    data: { imageUrl },
+  })
+}
+

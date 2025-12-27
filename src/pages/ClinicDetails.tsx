@@ -462,15 +462,13 @@ export default function ClinicDetails() {
                     <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
                       Statistics
                     </h2>
-                    {imagesTotal > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => setShowGallery(true)}
-                        className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-blue-100 to-blue-200 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-blue-200 hover:to-blue-300 dark:from-blue-800/30 dark:to-blue-700/30 dark:text-slate-200 dark:hover:from-blue-700/40 dark:hover:to-blue-600/40"
-                      >
-                        View Gallery ({imagesTotal})
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      onClick={() => setShowGallery(true)}
+                      className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-blue-100 to-blue-200 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-blue-200 hover:to-blue-300 dark:from-blue-800/30 dark:to-blue-700/30 dark:text-slate-200 dark:hover:from-blue-700/40 dark:hover:to-blue-600/40"
+                    >
+                      View Gallery {imagesTotal > 0 && `(${imagesTotal})`}
+                    </button>
                   </div>
                   <div className="flex justify-center gap-32 mb-6">
                     <div className="text-center">
@@ -853,15 +851,13 @@ export default function ClinicDetails() {
                 <p className="text-sm text-slate-500 dark:text-slate-500 mb-4">
                   Statistics will be available once treatment courses are created.
                 </p>
-                {imagesTotal > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => setShowGallery(true)}
-                    className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-blue-100 to-blue-200 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-blue-200 hover:to-blue-300 dark:from-blue-800/30 dark:to-blue-700/30 dark:text-slate-200 dark:hover:from-blue-700/40 dark:hover:to-blue-600/40"
-                  >
-                    View Gallery ({imagesTotal})
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={() => setShowGallery(true)}
+                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-blue-100 to-blue-200 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-blue-200 hover:to-blue-300 dark:from-blue-800/30 dark:to-blue-700/30 dark:text-slate-200 dark:hover:from-blue-700/40 dark:hover:to-blue-600/40"
+                >
+                  View Gallery {imagesTotal > 0 && `(${imagesTotal})`}
+                </button>
               </div>
             </div>
           )}
@@ -876,6 +872,14 @@ export default function ClinicDetails() {
           setViewerImage(null)
         }}
         alt={clinic.name || 'Clinic image'}
+        entityId={id}
+        entityType="clinic"
+        imageIndex={clinic.images?.findIndex(img => img === viewerImage) ?? 0}
+        onImageDeleted={() => {
+          setIsViewerOpen(false)
+          setViewerImage(null)
+          window.location.reload()
+        }}
       />
 
       {clinic && (

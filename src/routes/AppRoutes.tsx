@@ -39,7 +39,7 @@ export default function AppRoutes() {
           <Route path="/clinics/:id" element={<ClinicDetails />} />
           <Route path="/calendar" element={<Calendar />} />
           <Route path="/appointments" element={<Appointments />} />
-          <Route path="/treatment/:id" element={<TreatmentDetails />} />
+          <Route path="/treatments/:id" element={<TreatmentDetails />} />
           <Route path="/staff" element={<Staff />} />
           <Route path="/staff/add" element={<AddStaff />} />
           <Route path="/staff/edit/:id" element={<AddStaff />} />

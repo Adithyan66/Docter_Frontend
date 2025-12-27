@@ -5,6 +5,7 @@ import Pagination from './Pagination'
 import { uploadClinicImages } from '@api/clinics'
 import { uploadTreatmentImages } from '@api/treatments'
 import { CloudStorageService } from '@services/cloudStorageService'
+import RotatingSpinner from '@components/spinner/TeethRotating'
 
 export type GalleryItem = {
   imageUrl: string
@@ -235,16 +236,44 @@ export default function Gallery({ items, onBack, pagination, isLoading, entityId
           </div>
 
           {isLoading ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
-                Loading images...
-              </p>
-            </div>
+            <RotatingSpinner/>
           ) : items.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
+            <div className="flex flex-col items-center justify-center py-12 text-center space-y-4">
+              <p className="text-lg font-semibold text-slate-600 dark:text-slate-400">
                 No images
               </p>
+              {entityId && entityType && (
+                <>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    capture="environment"
+                    className="hidden"
+                    onChange={handleFileChange}
+                    disabled={isUploading}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddImagesClick}
+                    disabled={isUploading}
+                    className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-blue-100 to-blue-200 px-6 py-3 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-blue-200 hover:to-blue-300 disabled:cursor-not-allowed disabled:opacity-60 dark:from-blue-800/30 dark:to-blue-700/30 dark:text-slate-200 dark:hover:from-blue-700/40 dark:hover:to-blue-600/40"
+                  >
+                    {isUploading ? (
+                      <>
+                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-700 border-t-transparent dark:border-slate-200"></span>
+                        Uploading... {Math.round(uploadProgress)}%
+                      </>
+                    ) : (
+                      <>
+                        <PlusIcon className="h-5 w-5" />
+                        Add Image
+                      </>
+                    )}
+                  </button>
+                </>
+              )}
             </div>
           ) : (
             <>
@@ -298,6 +327,15 @@ export default function Gallery({ items, onBack, pagination, isLoading, entityId
         imageUrl={viewerImage}
         onClose={handleCloseViewer}
         alt={items.find((item) => item.imageUrl === viewerImage)?.alt || 'Gallery image'}
+        entityId={entityId}
+        entityType={entityType}
+        imageIndex={pagination ? (pagination.currentPage - 1) * pagination.limit + items.findIndex((item) => item.imageUrl === viewerImage) : items.findIndex((item) => item.imageUrl === viewerImage)}
+        onImageDeleted={() => {
+          handleCloseViewer()
+          if (onImagesUploaded) {
+            onImagesUploaded()
+          }
+        }}
       />
     </>
   )

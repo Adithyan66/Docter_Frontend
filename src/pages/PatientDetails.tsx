@@ -391,6 +391,7 @@ export default function PatientDetails() {
           setViewerImage(null)
         }}
         alt={patient.fullName || 'Patient image'}
+        entityType="patient"
       />
 
       <DeleteConfirmationModal
