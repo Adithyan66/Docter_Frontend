@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo, type ChangeEvent } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { createPatient, updatePatient, getPatientById, getClinicNames, type PatientPayload, type ClinicName } from '@api/patients'
-import { S3Service } from '@services/s3Service'
+import { CloudStorageService } from '@services/cloudStorageService'
 import { useAppSelector } from '@hooks/store'
 
 type PatientFormState = {
@@ -400,7 +400,7 @@ export function useAddPatient() {
       let profilePicUrl = form.profilePicUrl.trim()
 
       if (pendingImage) {
-        const { publicUrl } = await S3Service.uploadImage('Patient-profile', pendingImage)
+        const { publicUrl } = await CloudStorageService.uploadImage('Patient-profile', pendingImage)
         if (publicUrl && publicUrl.trim().length > 0) {
           profilePicUrl = publicUrl
         }

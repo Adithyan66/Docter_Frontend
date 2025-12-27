@@ -4,7 +4,7 @@ import ImageViewerModal from './ImageViewerModal'
 import Pagination from './Pagination'
 import { uploadClinicImages } from '@api/clinics'
 import { uploadTreatmentImages } from '@api/treatments'
-import { S3Service } from '@services/s3Service'
+import { CloudStorageService } from '@services/cloudStorageService'
 
 export type GalleryItem = {
   imageUrl: string
@@ -128,7 +128,7 @@ export default function Gallery({ items, onBack, pagination, isLoading, entityId
       for (let i = 0; i < validFiles.length; i++) {
         const file = validFiles[i]
         try {
-          const { publicUrl } = await S3Service.uploadImage(s3ImageType, file, (progress) => {
+          const { publicUrl } = await CloudStorageService.uploadImage(s3ImageType, file, (progress) => {
             const fileProgress = (i / totalFiles) * 100 + (progress / totalFiles)
             setUploadProgress(Math.min(fileProgress, 100))
           })

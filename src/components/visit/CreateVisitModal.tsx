@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, type ChangeEvent } from 'react'
 import toast from 'react-hot-toast'
 import { createVisit, updateVisit, type CreateVisitRequestDto, type CreateVisitMediaDto, type MediaType, type VisitResponseDto } from '@api/visits'
-import { S3Service } from '@services/s3Service'
+import { CloudStorageService } from '@services/cloudStorageService'
 import { getClinicNames, type ClinicName } from '@api/clinics'
 import { type Treatment } from '@api/treatments'
 
@@ -402,7 +402,7 @@ export default function CreateVisitModal({
             })
           } else if (mediaFile.file) {
             try {
-              const { publicUrl } = await S3Service.uploadImage(
+              const { publicUrl } = await CloudStorageService.uploadImage(
                 'Patient-Media',
                 mediaFile.file,
                 undefined
