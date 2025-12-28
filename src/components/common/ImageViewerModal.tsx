@@ -3,6 +3,8 @@ import toast from 'react-hot-toast'
 import { downloadImage } from '@api/imageDownload'
 import { deleteClinicImage } from '@api/clinics'
 import { deleteTreatmentImage } from '@api/treatments'
+import { deleteMedia } from '@api/visits'
+import ConfirmationModal from '@components/common/ConfirmationModal'
 
 type ImageViewerModalProps = {
   isOpen: boolean
@@ -13,6 +15,9 @@ type ImageViewerModalProps = {
   entityType?: 'clinic' | 'treatment' | 'patient'
   imageIndex?: number
   onImageDeleted?: () => void
+  mediaType?: string | null
+  mediaNotes?: string | null
+  mediaId?: string | null
 }
 
 export default function ImageViewerModal({
@@ -24,14 +29,21 @@ export default function ImageViewerModal({
   entityType,
   imageIndex,
   onImageDeleted,
+  mediaType,
+  mediaNotes,
+  mediaId,
 }: ImageViewerModalProps) {
   const [imageError, setImageError] = useState(false)
   const [isDownloading, setIsDownloading] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false)
 
   useEffect(() => {
     if (isOpen && imageUrl) {
       setImageError(false)
+    }
+    if (!isOpen) {
+      setShowDeleteConfirmation(false)
     }
   }, [isOpen, imageUrl])
 
@@ -93,18 +105,49 @@ export default function ImageViewerModal({
     }
   }
 
-  const handleDelete = async () => {
-    if (!imageUrl || !entityId || !entityType || isDeleting) return
+  const handleDelete = () => {
+    if (!imageUrl || !entityType || isDeleting) return
+
+    if (entityType === 'patient' && !mediaId) {
+      toast.error('Missing media ID information')
+      return
+    }
+
+    if (entityType !== 'patient' && (!entityId || imageIndex === undefined)) {
+      toast.error('Missing required information')
+      return
+    }
+
+    setShowDeleteConfirmation(true)
+  }
+
+  const performDelete = async () => {
+    if (!imageUrl || !entityType || isDeleting) return
 
     if (entityType === 'patient') {
-      toast.error('Patient image deletion will be implemented soon')
+      if (!mediaId) {
+        toast.error('Missing media ID information')
+        return
+      }
+      setIsDeleting(true)
+      try {
+        await deleteMedia(mediaId)
+        toast.success('Image deleted successfully')
+        if (onImageDeleted) {
+          onImageDeleted()
+        }
+        onClose()
+      } catch (error: any) {
+        const errorMessage =
+          error.response?.data?.message || error.message || 'Failed to delete image'
+        toast.error(errorMessage)
+      } finally {
+        setIsDeleting(false)
+      }
       return
     }
 
-    if (imageIndex === undefined) {
-      toast.error('Missing image index information')
-      return
-    }
+    if (!entityId || imageIndex === undefined) return
 
     setIsDeleting(true)
     try {
@@ -128,7 +171,10 @@ export default function ImageViewerModal({
     }
   }
 
-  const canDelete = entityId && entityType && entityType !== 'patient' && imageIndex !== undefined
+  const canDelete =
+    entityType &&
+    ((entityType === 'patient' && mediaId) ||
+      (entityType !== 'patient' && entityId && imageIndex !== undefined))
   const showDeleteButton = !!entityType
 
   return (
@@ -216,6 +262,22 @@ export default function ImageViewerModal({
               className="max-h-[80vh] max-w-full rounded-lg object-contain"
               onError={() => setImageError(true)}
             />
+            {(mediaType || mediaNotes) && (
+              <div className="mt-4 max-w-2xl rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/50">
+                {mediaType && (
+                  <div className="mb-2">
+                    <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">Type: </span>
+                    <span className="text-sm text-slate-900 dark:text-slate-100 capitalize">{mediaType}</span>
+                  </div>
+                )}
+                {mediaNotes && (
+                  <div>
+                    <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">Notes: </span>
+                    <span className="text-sm text-slate-900 dark:text-slate-100 whitespace-pre-line">{mediaNotes}</span>
+                  </div>
+                )}
+              </div>
+            )}
             <div className="mt-4 flex items-center gap-3">
               <button
                 type="button"
@@ -323,6 +385,17 @@ export default function ImageViewerModal({
           </>
         )}
       </div>
+
+      <ConfirmationModal
+        isOpen={showDeleteConfirmation}
+        onClose={() => setShowDeleteConfirmation(false)}
+        onConfirm={performDelete}
+        title="Delete Image"
+        message="Are you sure you want to delete this image? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        confirmButtonClassName="bg-red-600 hover:bg-red-500 dark:bg-red-500 dark:hover:bg-red-400"
+      />
     </div>
   )
 }

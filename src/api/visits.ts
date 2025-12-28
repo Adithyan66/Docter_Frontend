@@ -146,3 +146,7 @@ export const deleteVisit = async (visitId: string): Promise<void> => {
   await httpClient.delete<ApiResponse<void>>(`visit/${visitId}`)
 }
 
+export const deleteMedia = async (mediaId: string): Promise<void> => {
+  await httpClient.delete<ApiResponse<void>>(`media/${mediaId}`)
+}
+

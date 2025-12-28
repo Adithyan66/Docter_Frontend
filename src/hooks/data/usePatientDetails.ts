@@ -42,6 +42,9 @@ export function usePatientDetails(patientId: string | undefined) {
   const [visitsSearch, setVisitsSearch] = useState('')
   const [isSettingDefault, setIsSettingDefault] = useState(false)
   const [viewerImage, setViewerImage] = useState<string | null>(null)
+  const [viewerMediaType, setViewerMediaType] = useState<string | null>(null)
+  const [viewerMediaNotes, setViewerMediaNotes] = useState<string | null>(null)
+  const [viewerMediaId, setViewerMediaId] = useState<string | null>(null)
   const [isViewerOpen, setIsViewerOpen] = useState(false)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -459,6 +462,9 @@ export function usePatientDetails(patientId: string | undefined) {
     visitsSearch,
     setVisitsSearch,
     viewerImage,
+    viewerMediaType,
+    viewerMediaNotes,
+    viewerMediaId,
     isViewerOpen,
     isDeleteModalOpen,
     isDeleting,
@@ -497,6 +503,9 @@ export function usePatientDetails(patientId: string | undefined) {
     handleDeleteVisitClick,
     handleDeleteVisit,
     setViewerImage,
+    setViewerMediaType,
+    setViewerMediaNotes,
+    setViewerMediaId,
     setIsViewerOpen,
     setIsDeleteModalOpen,
     setIsEditCourseModalOpen,

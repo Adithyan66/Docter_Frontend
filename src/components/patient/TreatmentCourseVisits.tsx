@@ -1,5 +1,5 @@
 import Pagination from '@components/common/Pagination'
-import type { VisitResponseDto } from '@api/visits'
+import type { VisitResponseDto, MediaResponseDto } from '@api/visits'
 
 type TreatmentCourseVisitsProps = {
   visits: VisitResponseDto[]
@@ -15,7 +15,7 @@ type TreatmentCourseVisitsProps = {
   onPageChange: (page: number) => void
   onEditVisit: (visit: VisitResponseDto) => void
   onDeleteVisit: (visit: VisitResponseDto) => void
-  onImageClick: (imageUrl: string) => void
+  onImageClick: (media: MediaResponseDto) => void
   isStaff?: boolean
 }
 
@@ -142,7 +142,7 @@ export default function TreatmentCourseVisits({
                               src={media.url}
                               alt={media.notes || `Media ${idx + 1}`}
                               className="h-full w-full rounded-lg object-cover border border-slate-200 dark:border-slate-700 cursor-pointer hover:opacity-80 transition-opacity"
-                              onClick={() => onImageClick(media.url)}
+                              onClick={() => onImageClick(media)}
                             />
                             <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-xs p-1 rounded-b-lg opacity-0 group-hover:opacity-100 transition-opacity">
                               <p className="truncate">{media.type}</p>

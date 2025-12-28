@@ -43,6 +43,9 @@ export default function PatientDetails() {
     visitsSearch,
     setVisitsSearch,
     viewerImage,
+    viewerMediaType,
+    viewerMediaNotes,
+    viewerMediaId,
     isViewerOpen,
     isDeleteModalOpen,
     isTogglingStatus,
@@ -80,6 +83,9 @@ export default function PatientDetails() {
     handleDeleteVisitClick,
     handleDeleteVisit,
     setViewerImage,
+    setViewerMediaType,
+    setViewerMediaNotes,
+    setViewerMediaId,
     setIsViewerOpen,
     setIsDeleteModalOpen,
     setIsEditCourseModalOpen,
@@ -341,10 +347,13 @@ export default function PatientDetails() {
                     onPageChange={handleVisitsPageChange}
                     onEditVisit={handleEditVisit}
                     onDeleteVisit={handleDeleteVisitClick}
-                    onImageClick={(imageUrl) => {
-                      setViewerImage(imageUrl)
-                                              setIsViewerOpen(true)
-                                            }}
+                    onImageClick={(media) => {
+                      setViewerImage(media.url)
+                      setViewerMediaType(media.type || null)
+                      setViewerMediaNotes(media.notes || null)
+                      setViewerMediaId(media.id || null)
+                      setIsViewerOpen(true)
+                    }}
                     isStaff={isStaff}
                                           />
                 </div>
@@ -389,9 +398,16 @@ export default function PatientDetails() {
         onClose={() => {
           setIsViewerOpen(false)
           setViewerImage(null)
+          setViewerMediaType(null)
+          setViewerMediaNotes(null)
+          setViewerMediaId(null)
         }}
         alt={patient.fullName || 'Patient image'}
         entityType="patient"
+        mediaType={viewerMediaType}
+        mediaNotes={viewerMediaNotes}
+        mediaId={viewerMediaId}
+        onImageDeleted={refetchAllData}
       />
 
       <DeleteConfirmationModal
