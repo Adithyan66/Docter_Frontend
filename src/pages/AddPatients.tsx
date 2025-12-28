@@ -158,7 +158,7 @@ export default function AddPatients() {
     handleFieldChange,
     handleFileInputChange,
     handleCameraCapture,
-    removePendingImage,
+    removeProfilePhoto,
     addTag,
     removeTag,
     handleSaveClick,
@@ -242,10 +242,10 @@ export default function AddPatients() {
               <div className="flex flex-col gap-4 md:flex-row md:items-start">
                 <div className="flex-shrink-0">
                   <div className="relative aspect-square w-full max-w-[200px] overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800">
-                    {(pendingImagePreview || form.profilePicUrl) ? (
+                    {pendingImagePreview || (form.profilePicUrl && form.profilePicUrl !== null) ? (
                       <>
                         <img
-                          src={pendingImagePreview || form.profilePicUrl}
+                          src={pendingImagePreview || (form.profilePicUrl ?? '')}
                           alt="Profile preview"
                           className="h-full w-full object-cover"
                         />
@@ -259,7 +259,7 @@ export default function AddPatients() {
                         <button
                           type="button"
                           className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-white/95 text-xs font-semibold text-slate-700 shadow-md transition-all hover:bg-red-50 hover:text-red-600 dark:bg-slate-900/95 dark:text-slate-200 dark:hover:bg-red-900/30 dark:hover:text-red-400"
-                          onClick={removePendingImage}
+                          onClick={removeProfilePhoto}
                         >
                           ×
                         </button>

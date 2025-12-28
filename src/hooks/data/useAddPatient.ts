@@ -10,7 +10,7 @@ type PatientFormState = {
   lastName: string
   fullName: string
   address: string
-  profilePicUrl: string
+  profilePicUrl: string | null
   consultationType: 'one-time' | 'treatment-plan' | ''
   primaryClinic: string
   clinics: string[]
@@ -162,7 +162,7 @@ export function useAddPatient() {
             lastName: patient.lastName || '',
             fullName: patient.fullName || '',
             address: patient.address || '',
-            profilePicUrl: patient.profilePicUrl || '',
+            profilePicUrl: patient.profilePicUrl !== undefined ? patient.profilePicUrl : '',
             consultationType: patient.consultationType || 'one-time',
             primaryClinic: patient.primaryClinic || '',
             clinics: patient.clinics || [],
@@ -295,6 +295,14 @@ export function useAddPatient() {
     setPendingImagePreview(null)
   }
 
+  const removeProfilePhoto = () => {
+    if (pendingImage || pendingImagePreview) {
+      removePendingImage()
+    } else if (form.profilePicUrl) {
+      setForm((prev) => ({ ...prev, profilePicUrl: null }))
+    }
+  }
+
   const addTag = () => {
     if (!form.currentTag.trim()) return
     const trimmedTag = form.currentTag.trim()
@@ -388,7 +396,7 @@ export function useAddPatient() {
       return
     }
 
-    if (form.profilePicUrl.trim() && !validateUrl(form.profilePicUrl)) {
+    if (form.profilePicUrl && form.profilePicUrl.trim() && !validateUrl(form.profilePicUrl)) {
       toast.error('Please enter a valid profile picture URL.')
       return
     }
@@ -397,7 +405,7 @@ export function useAddPatient() {
     setIsUploadingImage(true)
 
     try {
-      let profilePicUrl = form.profilePicUrl.trim()
+      let profilePicUrl: string | null = form.profilePicUrl ? form.profilePicUrl.trim() : null
 
       if (pendingImage) {
         const { publicUrl } = await CloudStorageService.uploadImage('Patient-profile', pendingImage)
@@ -413,7 +421,7 @@ export function useAddPatient() {
         lastName: form.lastName.trim() || undefined,
         fullName: form.fullName.trim() || undefined,
         address: form.address.trim() || undefined,
-        profilePicUrl: profilePicUrl || undefined,
+        profilePicUrl: profilePicUrl === null ? null : (profilePicUrl || undefined),
         consultationType: form.consultationType as 'one-time' | 'treatment-plan',
         primaryClinic: form.primaryClinic.trim(),
         clinics: form.clinics.length > 0 ? form.clinics : undefined,
@@ -486,6 +494,7 @@ export function useAddPatient() {
     handleFileInputChange,
     handleCameraCapture,
     removePendingImage,
+    removeProfilePhoto,
     addTag,
     removeTag,
     toggleClinic,

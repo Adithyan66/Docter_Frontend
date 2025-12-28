@@ -17,7 +17,7 @@ export type PatientPayload = {
   lastName?: string
   fullName?: string
   address?: string
-  profilePicUrl?: string
+  profilePicUrl?: string | null
   consultationType: 'one-time' | 'treatment-plan'
   primaryClinic?: string
   clinics?: string[]
