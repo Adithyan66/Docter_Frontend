@@ -28,11 +28,10 @@ jobs:
 
   deploy:
     needs: test
-    # Deploy on main (prod) OR develop (staging)
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4  # ← FIXED: Missing checkout
+    - uses: actions/checkout@v4
     
     - name: Setup Node.js
       uses: actions/setup-node@v4
@@ -47,22 +46,20 @@ jobs:
       run: npm run build
       env:
         GENERATE_SOURCEMAP: false
-        VITE_API_URL: ${{ github.ref == 'refs/heads/main' && 'https://doctor.api.koodecode.online' || 'https://doctor.api.koodecode.online' }}
     
     - name: Deploy to VM via SCP
-      uses: appleboy/scp-action@v1.0.3
+      uses: appleboy/scp-action@v0.1.4  # ✅ Stable version
       with:
         host: ${{ secrets.VM_IP }}
         username: ${{ secrets.VM_USER }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
-        port: 22
         rm: true
         source: "dist/*"
         target: "/var/www/doctor/frontend/dist/"
         strip_components: 1
     
     - name: Fix permissions & reload nginx
-      uses: appleboy/ssh-action@v1.0.3
+      uses: appleboy/ssh-action@v1.0.3  # ✅ This one exists
       with:
         host: ${{ secrets.VM_IP }}
         username: ${{ secrets.VM_USER }}
