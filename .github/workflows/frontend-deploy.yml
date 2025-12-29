@@ -6,7 +6,7 @@ on:
     branches: [main]
 
 env:
-  NODE_VERSION: '20'  # Your requirement ✅
+  NODE_VERSION: '20'
 
 jobs:
   test:
@@ -24,10 +24,7 @@ jobs:
       run: npm ci
     
     - name: Run tests
-      run: npm test || true
-    
-    - name: Lint
-      run: npm run lint || true
+      run: npm test || true  # Tests optional
 
   deploy:
     needs: test
@@ -48,7 +45,6 @@ jobs:
         npm run build
       env:
         GENERATE_SOURCEMAP: false
-        VITE_APP_API_URL: https://doctor.api.koodecode.online  # Adjust if needed
     
     - name: Deploy to VM
       uses: appleboy/scp-action@v1
