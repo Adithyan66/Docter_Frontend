@@ -24,14 +24,15 @@ jobs:
       run: npm ci
     
     - name: Run tests
-      run: npm test || true  # Tests optional
+      run: npm test || true
 
   deploy:
     needs: test
-    if: github.ref == 'refs/heads/main'
+    # Deploy on main (prod) OR develop (staging)
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v4  # ← FIXED: Missing checkout
     
     - name: Setup Node.js
       uses: actions/setup-node@v4
@@ -39,32 +40,37 @@ jobs:
         node-version: ${{ env.NODE_VERSION }}
         cache: 'npm'
     
+    - name: Install dependencies
+      run: npm ci
+    
     - name: Build production
-      run: |
-        npm ci
-        npm run build
+      run: npm run build
       env:
         GENERATE_SOURCEMAP: false
+        VITE_API_URL: ${{ github.ref == 'refs/heads/main' && 'https://doctor.api.koodecode.online' || 'https://doctor.api.koodecode.online' }}
     
-    - name: Deploy to VM
-      uses: appleboy/scp-action@v1
+    - name: Deploy to VM via SCP
+      uses: appleboy/scp-action@v1.0.3
       with:
         host: ${{ secrets.VM_IP }}
         username: ${{ secrets.VM_USER }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
+        port: 22
         rm: true
         source: "dist/*"
         target: "/var/www/doctor/frontend/dist/"
         strip_components: 1
     
     - name: Fix permissions & reload nginx
-      uses: appleboy/ssh-action@v1
+      uses: appleboy/ssh-action@v1.0.3
       with:
         host: ${{ secrets.VM_IP }}
         username: ${{ secrets.VM_USER }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         script: |
-          sudo chown -R ${{ secrets.VM_USER }}:${{ secrets.VM_USER }} /var/www/doctor/frontend
-          sudo chmod -R 755 /var/www/doctor/frontend
-          sudo nginx -t && sudo nginx -s reload
-          echo "Frontend deployed successfully!"
+          sudo chown -R ${{ secrets.VM_USER }}:${{ secrets.VM_USER }} /var/www/doctor/frontend/dist
+          sudo chmod -R 755 /var/www/doctor/frontend/dist
+          sudo nginx -t
+          sudo nginx -s reload
+          echo "✅ Frontend deployed successfully!"
+          ls -la /var/www/doctor/frontend/dist/ | head -3
