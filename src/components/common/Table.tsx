@@ -59,7 +59,7 @@ export default function Table<T extends { id: string }>({
               <tr
                 key={row.id}
                 onClick={() => onRowClick?.(row)}
-                className={`${rowBgClass} ${onRowClick ? 'cursor-pointer' : ''}`}
+                className={`${rowBgClass} ${onRowClick ? 'cursor-pointer transition-colors duration-200 hover:bg-slate-200/70 dark:hover:bg-slate-700/70' : ''}`}
               >
                 {columns.map((column) => {
                   const hasLeftAlign = column.className?.includes('text-left')
