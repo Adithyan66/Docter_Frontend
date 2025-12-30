@@ -50,13 +50,6 @@ jobs:
         VITE_REFRESH_TOKEN_KEY: ${{ secrets.VITE_REFRESH_TOKEN_KEY }}
         VITE_USER_KEY: ${{ secrets.VITE_USER_KEY }}
         GENERATE_SOURCEMAP: false
-
-    - name: Debug Environment Variables    - name: Debug Secrets
-      run: |
-        echo "Host: ${{ secrets.VM_IP }}"
-        echo "User: ${{ secrets.VM_USER }}"
-        echo "Key length: $(echo '${{ secrets.SSH_PRIVATE_KEY }}' | wc -c) chars"
-    
     
     - name: Deploy to VM via SCP
       uses: appleboy/scp-action@v0.1.4  # ✅ Stable version
