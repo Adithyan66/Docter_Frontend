@@ -42,7 +42,7 @@ jobs:
     - name: Install dependencies
       run: npm ci
     
-    - name: Build production
+        - name: Build production
       run: npm run build
       env:
         VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
@@ -51,16 +51,14 @@ jobs:
         VITE_USER_KEY: ${{ secrets.VITE_USER_KEY }}
         GENERATE_SOURCEMAP: false
 
-
-    - name: Debug Environment Variables    - name: Debug Secrets
+    - name: Debug Secrets
       run: |
         echo "Host: ${{ secrets.VM_IP }}"
         echo "User: ${{ secrets.VM_USER }}"
         echo "Key length: $(echo '${{ secrets.SSH_PRIVATE_KEY }}' | wc -c) chars"
-    
-    
+
     - name: Deploy to VM via SCP
-      uses: appleboy/scp-action@v0.1.4  # ✅ Stable version
+      uses: appleboy/scp-action@v0.1.4
       with:
         host: ${{ secrets.VM_IP }}
         username: ${{ secrets.VM_USER }}
@@ -69,6 +67,7 @@ jobs:
         source: "dist/*"
         target: "/var/www/doctor/frontend/dist/"
         strip_components: 1
+
     
     - name: Fix permissions & reload nginx
       uses: appleboy/ssh-action@v1.0.3  # ✅ This one exists
