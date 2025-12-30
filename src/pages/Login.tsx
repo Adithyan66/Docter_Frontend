@@ -72,8 +72,8 @@ export default function Login() {
             className="w-full h-auto object-contain mb-6"
           />
           <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 bg-clip-text text-transparent">
-            Welcome Back to Dental Clinic Management
-          </h1>
+            Welcome Back to Your Dental Clinic Management System ooo
+          </h1> 
           <p className="mt-3 text-lg text-slate-600 dark:text-slate-300 font-medium">
             Sign in to continue your journey
           </p>
