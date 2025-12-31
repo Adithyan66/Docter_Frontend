@@ -192,11 +192,6 @@
 
 
 
-
-
-
-
-
 name: Frontend CI/CD
 on:
   push:
@@ -280,3 +275,6 @@ jobs:
           sudo nginx -s reload
           echo "✅ Frontend deployed successfully!"
           ls -la /var/www/doctor/frontend/dist/ | head -3
+
+
+
