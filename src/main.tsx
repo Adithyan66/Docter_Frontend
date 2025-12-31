@@ -13,7 +13,8 @@ setLogoutCallback(() => {
   store.dispatch(logout())
 })
 
-function ToastContainer() {
+function ToastContainer() { 
+  
   const { theme } = useTheme()
   
   return (
