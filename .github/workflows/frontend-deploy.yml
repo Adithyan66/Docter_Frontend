@@ -145,8 +145,21 @@ jobs:
         echo "VM_USER: '${{ secrets.VM_USER }}'"
         echo "SSH_PRIVATE_KEY length: $(echo '${{ secrets.SSH_PRIVATE_KEY }}' | wc -c) chars"
     
+    # - name: Deploy to VM via SCP
+    #   uses: appleboy/scp-action@v0.1.4
+    #   with:
+    #     host: ${{ secrets.VM_IP }}
+    #     username: ${{ secrets.VM_USER }}
+    #     key: ${{ secrets.SSH_PRIVATE_KEY }}
+    #     rm: true
+    #     source: "dist/*"
+    #     target: "/var/www/doctor/frontend/dist/"
+    #     strip_components: 1
+
     - name: Deploy to VM via SCP
-      uses: appleboy/scp-action@v0.1.4
+      uses: appleboy/scp-action@v0.1.4  # Force cache refresh
+      env:
+      CACHE_BUSTER: ${{ github.sha }}  # Unique per commit
       with:
         host: ${{ secrets.VM_IP }}
         username: ${{ secrets.VM_USER }}
@@ -155,6 +168,7 @@ jobs:
         source: "dist/*"
         target: "/var/www/doctor/frontend/dist/"
         strip_components: 1
+
     
     - name: Fix permissions & reload nginx
       uses: appleboy/ssh-action@v1.0.3
