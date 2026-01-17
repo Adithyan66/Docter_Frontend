@@ -1,60 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import PageHeader from '@components/common/PageHeader'
+import DatePicker, { formatDate } from '@components/common/DatePicker'
 import calenderIcon from '@assets/calender.png'
 import { useDailyActivities } from '@hooks/data/useDailyActivities'
 import RotatingSpinner from '@components/spinner/TeethRotating'
-
-const ChevronLeftIcon = () => (
-  <svg
-    className="h-5 w-5"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth={2}
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M15 18l-6-6 6-6" />
-  </svg>
-)
-
-const ChevronRightIcon = () => (
-  <svg
-    className="h-5 w-5"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth={2}
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M9 18l6-6-6-6" />
-  </svg>
-)
-
-const getDaysInMonth = (year: number, month: number) => {
-  return new Date(year, month + 1, 0).getDate()
-}
-
-const getFirstDayOfMonth = (year: number, month: number) => {
-  return new Date(year, month, 1).getDay()
-}
-
-const isToday = (year: number, month: number, day: number) => {
-  const today = new Date()
-  return (
-    today.getFullYear() === year &&
-    today.getMonth() === month &&
-    today.getDate() === day
-  )
-}
-
-const formatDate = (year: number, month: number, day: number) => {
-  const monthStr = String(month + 1).padStart(2, '0')
-  const dayStr = String(day).padStart(2, '0')
-  return `${year}-${monthStr}-${dayStr}`
-}
 
 export default function Calendar() {
   const navigate = useNavigate()
@@ -67,26 +17,6 @@ export default function Calendar() {
 
   const { activities, summary, isLoading, isLoadingMore, hasMore, loadMore } =
     useDailyActivities(selectedDate)
-
-  const monthNames = [
-    'January',
-    'February',
-    'March',
-    'April',
-    'May',
-    'June',
-    'July',
-    'August',
-    'September',
-    'October',
-    'November',
-    'December',
-  ]
-
-  const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-
-  const daysInMonth = getDaysInMonth(currentYear, currentMonth)
-  const firstDayOfMonth = getFirstDayOfMonth(currentYear, currentMonth)
 
   const handlePreviousMonth = () => {
     if (currentMonth === 0) {
@@ -106,8 +36,7 @@ export default function Calendar() {
     }
   }
 
-  const handleDateClick = (day: number) => {
-    const dateStr = formatDate(currentYear, currentMonth, day)
+  const handleDateSelect = (dateStr: string) => {
     setSelectedDate(dateStr)
   }
 
@@ -145,41 +74,6 @@ export default function Calendar() {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [loadMore, selectedDate])
 
-  const renderCalendarDays = () => {
-    const days = []
-    const emptyDays = firstDayOfMonth
-
-    for (let i = 0; i < emptyDays; i++) {
-      days.push(
-        <div key={`empty-${i}`} className="aspect-square"></div>
-      )
-    }
-
-    for (let day = 1; day <= daysInMonth; day++) {
-      const isCurrentDay = isToday(currentYear, currentMonth, day)
-      const dateStr = formatDate(currentYear, currentMonth, day)
-      const isSelected = selectedDate === dateStr
-
-      days.push(
-        <button
-          key={day}
-          onClick={() => handleDateClick(day)}
-          className={`aspect-square rounded-lg border transition-all duration-200 cursor-pointer ${
-            isCurrentDay
-              ? 'border-blue-500 bg-gradient-to-br from-blue-100 to-blue-200 font-semibold text-blue-700 shadow-md dark:from-blue-900/30 dark:to-blue-800/30 dark:text-blue-400'
-              : isSelected
-              ? 'border-blue-500 bg-gradient-to-br from-blue-200 to-blue-300 text-blue-900 shadow-md dark:from-blue-800/50 dark:to-blue-700/50 dark:text-blue-200'
-              : 'border-slate-200 bg-white text-slate-700 hover:bg-gradient-to-br hover:from-purple-50 hover:to-purple-100 hover:border-purple-300 hover:shadow-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:from-purple-900/20 dark:hover:to-purple-800/20 dark:hover:border-purple-700'
-          }`}
-        >
-          {day}
-        </button>
-      )
-    }
-
-    return days
-  }
-
   return (
     <section className="space-y-6">
       <PageHeader
@@ -194,37 +88,14 @@ export default function Calendar() {
 
       <div className="flex flex-col gap-6 lg:flex-row">
         <div className="w-full lg:w-[40%] lg:sticky lg:top-4 lg:self-start">
-          <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-slate-50/50 p-8 shadow-lg dark:border-slate-800 dark:bg-slate-900">
-            <div className="mb-6 flex items-center justify-between">
-              <button
-                onClick={handlePreviousMonth}
-                className="rounded-lg p-2 text-slate-600 transition-colors hover:cursor-pointer hover:bg-gradient-to-r hover:from-blue-100 hover:to-blue-200 dark:text-slate-400 dark:hover:from-blue-800/30 dark:hover:to-blue-700/30"
-              >
-                <ChevronLeftIcon />
-              </button>
-              <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
-                {monthNames[currentMonth]} {currentYear}
-              </h2>
-              <button
-                onClick={handleNextMonth}
-                className="rounded-lg p-2 text-slate-600 transition-colors hover:cursor-pointer hover:bg-gradient-to-r hover:from-blue-100 hover:to-blue-200 dark:text-slate-400 dark:hover:from-blue-800/30 dark:hover:to-blue-700/30"
-              >
-                <ChevronRightIcon />
-              </button>
-            </div>
-
-            <div className="grid grid-cols-7 gap-2">
-              {weekDays.map((day) => (
-                <div
-                  key={day}
-                  className="text-center text-xs font-medium text-slate-500 dark:text-slate-400"
-                >
-                  {day}
-                </div>
-              ))}
-              {renderCalendarDays()}
-            </div>
-          </div>
+          <DatePicker
+            selectedDate={selectedDate}
+            currentMonth={currentMonth}
+            currentYear={currentYear}
+            onDateSelect={handleDateSelect}
+            onPreviousMonth={handlePreviousMonth}
+            onNextMonth={handleNextMonth}
+          />
         </div>
 
         <div className="w-full lg:w-[60%]">

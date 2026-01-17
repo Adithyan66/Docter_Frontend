@@ -18,6 +18,7 @@ import NotFound from '@pages/NotFound'
 import Staff from '@pages/Staff'
 import StaffDetails from '@pages/StaffDetails'
 import AddStaff from '@pages/AddStaff'
+import Schedules from '@pages/Schedules'
 
 export default function AppRoutes() {
   return (
@@ -38,6 +39,7 @@ export default function AppRoutes() {
           <Route path="/clinics/edit/:id" element={<AddClinic />} />
           <Route path="/clinics/:id" element={<ClinicDetails />} />
           <Route path="/calendar" element={<Calendar />} />
+          <Route path="/schedules" element={<Schedules />} />
           <Route path="/appointments" element={<Appointments />} />
           <Route path="/treatments/:id" element={<TreatmentDetails />} />
           <Route path="/staff" element={<Staff />} />

@@ -179,6 +179,7 @@ export default function Sidebar({ mobileOpen, onClose, collapsed, onToggleCollap
     { label: clinicLabel, to: clinicLink, icon: ClinicsIcon },
     { label: 'Clinic Staffs', to: '/staff', icon: StaffIcon },
     { label: 'Calendar', to: '/calendar', icon: CalendarIcon },
+    { label: 'Schedules', to: '/schedules', icon: CalendarIcon },
     { label: 'Appointments', to: '/appointments', icon: AppointmentsIcon },
   ]
   const visibleLinks = isStaff
