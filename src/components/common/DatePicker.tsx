@@ -1,3 +1,5 @@
+import { useState } from 'react'
+
 const ChevronLeftIcon = () => (
   <svg
     className="h-5 w-5"
@@ -68,6 +70,9 @@ export default function DatePicker({
   onNextMonth,
   calendarEntries,
 }: DatePickerProps) {
+  const [hoveredDay, setHoveredDay] = useState<number | null>(null)
+  const [tooltipPosition, setTooltipPosition] = useState<{ x: number; y: number } | null>(null)
+
   const monthNames = [
     'January',
     'February',
@@ -93,6 +98,24 @@ export default function DatePicker({
     onDateSelect(dateStr)
   }
 
+  const handleDayMouseEnter = (e: React.MouseEvent<HTMLButtonElement>, day: number) => {
+    const dateStr = formatDate(currentYear, currentMonth, day)
+    const clinics = calendarEntries?.[dateStr] || []
+    if (clinics.length > 0) {
+      setHoveredDay(day)
+      const rect = e.currentTarget.getBoundingClientRect()
+      setTooltipPosition({
+        x: rect.left + rect.width / 2,
+        y: rect.top - 10,
+      })
+    }
+  }
+
+  const handleDayMouseLeave = () => {
+    setHoveredDay(null)
+    setTooltipPosition(null)
+  }
+
   const renderCalendarDays = () => {
     const days = []
     const emptyDays = firstDayOfMonth
@@ -110,37 +133,39 @@ export default function DatePicker({
       const clinics = calendarEntries?.[dateStr] || []
 
       days.push(
-        <button
-          key={day}
-          onClick={() => handleDateClick(day)}
-          className={`aspect-square rounded-lg border transition-all duration-200 cursor-pointer flex flex-col p-1 ${
-            isCurrentDay
-              ? 'border-blue-500 bg-gradient-to-br from-blue-100 to-blue-200 font-semibold text-blue-700 shadow-md dark:from-blue-900/30 dark:to-blue-800/30 dark:text-blue-400'
-              : isSelected
-              ? 'border-blue-500 bg-gradient-to-br from-blue-200 to-blue-300 text-blue-900 shadow-md dark:from-blue-800/50 dark:to-blue-700/50 dark:text-blue-200'
-              : 'border-slate-200 bg-white text-slate-700 hover:bg-gradient-to-br hover:from-purple-50 hover:to-purple-100 hover:border-purple-300 hover:shadow-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:from-purple-900/20 dark:hover:to-purple-800/20 dark:hover:border-purple-700'
-          }`}
-        >
-          <span className="text-sm font-medium">{day}</span>
-          {clinics.length > 0 && (
-            <div className="flex-1 flex flex-col gap-0.5 overflow-hidden mt-0.5 min-h-0">
-              {clinics.slice(0, 2).map((clinic, idx) => (
-                <span
-                  key={idx}
-                  className="text-[8px] leading-tight text-slate-600 dark:text-slate-400 break-words"
-                  title={clinic}
-                >
-                  {clinic}
-                </span>
-              ))}
-              {clinics.length > 2 && (
-                <span className="text-[8px] leading-tight text-slate-500 dark:text-slate-500">
-                  +{clinics.length - 2}
-                </span>
-              )}
-            </div>
-          )}
-        </button>
+        <div key={day} className="relative">
+          <button
+            onClick={() => handleDateClick(day)}
+            onMouseEnter={(e) => handleDayMouseEnter(e, day)}
+            onMouseLeave={handleDayMouseLeave}
+            className={`aspect-square rounded-lg border transition-all duration-200 cursor-pointer flex flex-col p-1 w-full ${
+              isCurrentDay
+                ? 'border-slate-400 bg-gradient-to-br from-slate-100 to-slate-200 font-semibold text-slate-700 shadow-md dark:from-slate-700/30 dark:to-slate-600/30 dark:text-slate-300'
+                : isSelected
+                ? 'border-blue-500 bg-gradient-to-br from-blue-200 to-blue-300 text-blue-900 shadow-md dark:from-blue-800/50 dark:to-blue-700/50 dark:text-blue-200'
+                : 'border-slate-200 bg-white text-slate-700 hover:bg-gradient-to-br hover:from-purple-50 hover:to-purple-100 hover:border-purple-300 hover:shadow-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:from-purple-900/20 dark:hover:to-purple-800/20 dark:hover:border-purple-700'
+            }`}
+          >
+            <span className="text-sm font-medium">{day}</span>
+            {clinics.length > 0 && (
+              <div className="flex-1 flex flex-col gap-0.5 overflow-hidden mt-0.5 min-h-0">
+                {clinics.slice(0, 2).map((clinic, idx) => (
+                  <span
+                    key={idx}
+                    className="text-[8px] leading-tight text-slate-600 dark:text-slate-400 break-words"
+                  >
+                    {clinic}
+                  </span>
+                ))}
+                {clinics.length > 2 && (
+                  <span className="text-[8px] leading-tight text-slate-500 dark:text-slate-500">
+                    +{clinics.length - 2}
+                  </span>
+                )}
+              </div>
+            )}
+          </button>
+        </div>
       )
     }
 
@@ -178,6 +203,41 @@ export default function DatePicker({
         ))}
         {renderCalendarDays()}
       </div>
+
+      {hoveredDay !== null && tooltipPosition && (() => {
+        const dateStr = formatDate(currentYear, currentMonth, hoveredDay)
+        const clinics = calendarEntries?.[dateStr] || []
+        return (
+          <div
+            className="fixed z-50 pointer-events-none"
+            style={{
+              left: `${tooltipPosition.x}px`,
+              top: `${tooltipPosition.y}px`,
+              transform: 'translate(-50%, -100%)',
+            }}
+          >
+            <div className="mb-2 rounded-lg border border-slate-200 bg-white px-4 py-3 shadow-xl dark:border-slate-700 dark:bg-slate-800 min-w-[200px] max-w-[300px]">
+              <div className="mb-2 text-xs font-semibold text-slate-500 dark:text-slate-400">
+                Scheduled Clinics
+              </div>
+              <div className="space-y-1.5">
+                {clinics.map((clinic, idx) => (
+                  <div
+                    key={idx}
+                    className="text-sm font-medium text-slate-900 dark:text-slate-200"
+                  >
+                    • {clinic}
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div
+              className="mx-auto h-0 w-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-slate-200 dark:border-t-slate-700"
+              style={{ width: 0, height: 0 }}
+            />
+          </div>
+        )
+      })()}
     </div>
   )
 }

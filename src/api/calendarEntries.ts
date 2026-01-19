@@ -44,7 +44,10 @@ export type Clinic = {
 export type Patient = {
   id: string
   fullName: string
-  mobile: string
+  mobile?: string
+  email?: string
+  profilePic?: string
+  patientId?: string
 }
 
 export type Treatment = {
@@ -55,11 +58,11 @@ export type Treatment = {
 export type Appointment = {
   patientId: string
   patient: Patient
-  treatmentId: string
-  treatment: Treatment
-  startTime: string
-  endTime: string
-  notes: string
+  treatmentId?: string
+  treatment?: Treatment
+  startTime?: string
+  endTime?: string
+  notes?: string
   completed: boolean
 }
 
@@ -162,6 +165,44 @@ export const addAppointment = async (
   const { data } = await httpClient.post<ApiResponse<AppointmentResponse>>(
     `calendar-entry/${entryId}/appointments`,
     payload
+  )
+  return data.data
+}
+
+export type UpdateAppointmentPayload = {
+  treatmentId?: string
+  startTime?: string
+  endTime?: string
+  notes?: string
+}
+
+export const updateAppointment = async (
+  entryId: string,
+  appointmentIndex: number,
+  payload: UpdateAppointmentPayload
+): Promise<AppointmentResponse> => {
+  const { data } = await httpClient.patch<ApiResponse<AppointmentResponse>>(
+    `calendar-entry/${entryId}/appointments/${appointmentIndex}`,
+    payload
+  )
+  return data.data
+}
+
+export const deleteAppointment = async (
+  entryId: string,
+  appointmentIndex: number
+): Promise<void> => {
+  await httpClient.delete<ApiResponse<void>>(
+    `calendar-entry/${entryId}/appointments/${appointmentIndex}`
+  )
+}
+
+export const toggleAppointmentStatus = async (
+  entryId: string,
+  appointmentIndex: number
+): Promise<AppointmentResponse> => {
+  const { data } = await httpClient.patch<ApiResponse<AppointmentResponse>>(
+    `calendar-entry/${entryId}/appointments/${appointmentIndex}/toggle-completed`
   )
   return data.data
 }

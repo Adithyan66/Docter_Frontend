@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import ImageViewerModal from '@components/common/ImageViewerModal'
+import { processEscapeSequences as defaultProcessEscapeSequences } from '@utils/textUtils'
 
 type TreatmentData = {
   name: string
@@ -38,16 +39,6 @@ type TreatmentCardProps = {
   onEdit?: () => void
   onDelete?: () => void
   processEscapeSequences?: (text: string) => string
-}
-
-const defaultProcessEscapeSequences = (text: string): string => {
-  return text
-    .replace(/\\n/g, '\n')
-    .replace(/\\t/g, '\t')
-    .replace(/\\r/g, '\r')
-    .replace(/\\\\/g, '\\')
-    .replace(/\\'/g, "'")
-    .replace(/\\"/g, '"')
 }
 
 export default function TreatmentCard({

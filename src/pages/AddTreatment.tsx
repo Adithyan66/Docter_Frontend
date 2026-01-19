@@ -4,22 +4,13 @@ import PageHeader from '@components/common/PageHeader'
 import { useAddTreatment } from '@hooks/data/useAddTreatment'
 import treatmentLogo from '@assets/treatment.png'
 import ConfirmationModal from '@components/common/ConfirmationModal'
+import { processEscapeSequences } from '@utils/textUtils'
 
 const labelStyles = 'block text-xs font-medium text-slate-600 mb-1.5 dark:text-slate-300'
 const inputStyles =
   'w-full bg-transparent border-0 border-b-2 border-slate-200 px-0 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-colors focus:border-blue-500 dark:border-slate-700 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-blue-400'
 const textareaStyles =
   'w-full bg-transparent border-0 border-b-2 border-slate-200 px-0 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-colors focus:border-blue-500 resize-none dark:border-slate-700 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-blue-400'
-
-const processEscapeSequences = (text: string): string => {
-  return text
-    .replace(/\\n/g, '\n')
-    .replace(/\\t/g, '\t')
-    .replace(/\\r/g, '\r')
-    .replace(/\\\\/g, '\\')
-    .replace(/\\'/g, "'")
-    .replace(/\\"/g, '"')
-}
 
 export default function AddTreatment() {
   const {

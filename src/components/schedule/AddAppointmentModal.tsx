@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import toast from 'react-hot-toast'
-import { addAppointment } from '@api/calendarEntries'
+import { addAppointment, updateAppointment, type Patient as AppointmentPatient } from '@api/calendarEntries'
 import { getPatients, type Patient } from '@api/patients'
 import { getTreatmentNames, type TreatmentName } from '@api/treatments'
 import ConfirmationModal from '@components/common/ConfirmationModal'
@@ -18,6 +18,15 @@ type AddAppointmentModalProps = {
   clinicName: string
   startTime: string
   endTime: string
+  isEditMode?: boolean
+  appointmentIndex?: number
+  editData?: {
+    patient: AppointmentPatient
+    treatmentId?: string
+    startTime?: string
+    endTime?: string
+    notes?: string
+  }
 }
 
 export default function AddAppointmentModal({
@@ -29,6 +38,9 @@ export default function AddAppointmentModal({
   clinicName,
   startTime,
   endTime,
+  isEditMode = false,
+  appointmentIndex,
+  editData,
 }: AddAppointmentModalProps) {
   const [patients, setPatients] = useState<Patient[]>([])
   const [treatments, setTreatments] = useState<TreatmentName[]>([])
@@ -50,29 +62,43 @@ export default function AddAppointmentModal({
     notes: '',
   })
 
-  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null)
+  const [selectedPatient, setSelectedPatient] = useState<Patient | AppointmentPatient | null>(null)
   const [isTreatmentDropdownOpen, setIsTreatmentDropdownOpen] = useState(false)
-  const [currentStep, setCurrentStep] = useState<1 | 2>(1)
+  const [currentStep, setCurrentStep] = useState<1 | 2>(isEditMode ? 2 : 1)
   const treatmentButtonRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
     if (isOpen) {
       fetchTreatments()
-      fetchPatients(1)
-      setFormData({
-        patientId: '',
-        treatmentId: '',
-        startTime: '09:00',
-        endTime: '10:00',
-        notes: '',
-      })
-      setSelectedPatient(null)
+      if (!isEditMode) {
+        fetchPatients(1)
+      }
+      if (isEditMode && editData) {
+        setFormData({
+          patientId: editData.patient.id,
+          treatmentId: editData.treatmentId || '',
+          startTime: editData.startTime || '09:00',
+          endTime: editData.endTime || '10:00',
+          notes: editData.notes || '',
+        })
+        setSelectedPatient(editData.patient as Patient)
+        setCurrentStep(2)
+      } else {
+        setFormData({
+          patientId: '',
+          treatmentId: '',
+          startTime: '09:00',
+          endTime: '10:00',
+          notes: '',
+        })
+        setSelectedPatient(null)
+        setCurrentStep(1)
+      }
       setSearchQuery('')
       setCurrentPage(1)
-      setCurrentStep(1)
       setShowConfirmModal(false)
     }
-  }, [isOpen, clinicId])
+  }, [isOpen, clinicId, isEditMode, editData])
 
   const fetchPatients = useCallback(
     async (page: number) => {
@@ -181,15 +207,24 @@ export default function AddAppointmentModal({
     setIsSubmitting(true)
 
     try {
-      await addAppointment(entryId, {
-        patientId: formData.patientId,
-        treatmentId: formData.treatmentId || undefined,
-        startTime: formData.startTime || undefined,
-        endTime: formData.endTime || undefined,
-        notes: formData.notes.trim() || undefined,
-      })
-
-      toast.success('Appointment added successfully')
+      if (isEditMode && appointmentIndex !== undefined) {
+        await updateAppointment(entryId, appointmentIndex, {
+          treatmentId: formData.treatmentId || undefined,
+          startTime: formData.startTime || undefined,
+          endTime: formData.endTime || undefined,
+          notes: formData.notes.trim() || undefined,
+        })
+        toast.success('Appointment updated successfully')
+      } else {
+        await addAppointment(entryId, {
+          patientId: formData.patientId,
+          treatmentId: formData.treatmentId || undefined,
+          startTime: formData.startTime || undefined,
+          endTime: formData.endTime || undefined,
+          notes: formData.notes.trim() || undefined,
+        })
+        toast.success('Appointment added successfully')
+      }
       onSuccess?.()
       onClose()
     } catch (error: any) {
@@ -197,7 +232,7 @@ export default function AddAppointmentModal({
         error?.response?.data?.error?.message ||
         error?.response?.data?.message ||
         error?.message ||
-        'Unable to add appointment. Please try again.'
+        (isEditMode ? 'Unable to update appointment. Please try again.' : 'Unable to add appointment. Please try again.')
       toast.error(errorMessage)
     } finally {
       setIsSubmitting(false)
@@ -214,7 +249,7 @@ export default function AddAppointmentModal({
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
-                  Add Appointment
+                  {isEditMode ? 'Update Appointment' : 'Add Appointment'}
                 </h2>
                 <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
                   <span className="font-semibold text-blue-600 dark:text-blue-400">{clinicName}</span>
@@ -361,16 +396,20 @@ export default function AddAppointmentModal({
                     <div className="rounded-xl border-2 border-blue-500 bg-gradient-to-r from-blue-50 to-blue-100 p-4 dark:border-blue-400 dark:from-blue-900/30 dark:to-blue-800/30 shadow-md">
                       <div className="flex items-center gap-3">
                         <img
-                          src={selectedPatient.profilePicUrl || noprofile}
+                          src={(selectedPatient as any).profilePic || (selectedPatient as any).profilePicUrl || noprofile}
                           alt={selectedPatient.fullName}
                           className="h-12 w-12 rounded-full object-cover border-2 border-blue-500 dark:border-blue-400"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement
+                            target.src = noprofile
+                          }}
                         />
                         <div>
                           <p className="font-semibold text-slate-900 dark:text-white">
                             {selectedPatient.fullName}
                           </p>
                           <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
-                            {selectedPatient.patientId}
+                            {(selectedPatient as any).patientId || (selectedPatient as Patient).patientId}
                           </p>
                         </div>
                       </div>
@@ -477,7 +516,7 @@ export default function AddAppointmentModal({
 
             <div className="border-t border-slate-200 bg-gradient-to-r from-slate-50 to-white px-6 py-4 dark:border-slate-700 dark:from-slate-800 dark:to-slate-900">
               <div className="flex justify-between gap-3">
-                {currentStep === 2 && (
+                {currentStep === 2 && !isEditMode && (
                   <button
                     type="button"
                     onClick={handleBack}
@@ -515,10 +554,10 @@ export default function AddAppointmentModal({
                       {isSubmitting ? (
                         <span className="flex items-center gap-2">
                           <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
-                          Adding...
+                          {isEditMode ? 'Updating...' : 'Adding...'}
                         </span>
                       ) : (
-                        'Add Appointment'
+                        isEditMode ? 'Update Appointment' : 'Add Appointment'
                       )}
                     </button>
                   )}
@@ -533,9 +572,9 @@ export default function AddAppointmentModal({
         isOpen={showConfirmModal}
         onClose={() => setShowConfirmModal(false)}
         onConfirm={handleConfirmSave}
-        title="Confirm Add Appointment"
-        message="Are you sure you want to add this appointment?"
-        confirmText="Yes, Add"
+        title={isEditMode ? "Confirm Update Appointment" : "Confirm Add Appointment"}
+        message={isEditMode ? "Are you sure you want to update this appointment?" : "Are you sure you want to add this appointment?"}
+        confirmText={isEditMode ? "Yes, Update" : "Yes, Add"}
         cancelText="Cancel"
         confirmButtonClassName="bg-blue-600 hover:bg-blue-500"
       />
