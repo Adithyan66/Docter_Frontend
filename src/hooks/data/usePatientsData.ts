@@ -5,7 +5,7 @@ import { useDebounce } from '@hooks/utils/useDebounce'
 import { useAppDispatch, useAppSelector } from '@hooks/store'
 import { setSearch, setFilters, setCurrentPage, clearAllFilters } from '@redux/slices/patientsSlice'
 
-const DEFAULT_LIMIT = 10
+const DEFAULT_LIMIT = 20
 
 export function usePatientsData() {
   const dispatch = useAppDispatch()
