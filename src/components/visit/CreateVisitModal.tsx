@@ -1,9 +1,11 @@
-import { useState, useEffect, useRef, type ChangeEvent } from 'react'
+import { useState, useEffect, useRef, type ChangeEvent, useMemo } from 'react'
 import toast from 'react-hot-toast'
 import { createVisit, updateVisit, type CreateVisitRequestDto, type CreateVisitMediaDto, type MediaType, type VisitResponseDto } from '@api/visits'
 import { CloudStorageService } from '@services/cloudStorageService'
 import { getClinicNames, type ClinicName } from '@api/clinics'
 import { type Treatment } from '@api/treatments'
+import DatePicker from '@components/common/DatePicker'
+import { useCalendarEntries } from '@hooks/data/useCalendarEntries'
 
 type CreateVisitModalProps = {
   isOpen: boolean
@@ -59,12 +61,45 @@ export default function CreateVisitModal({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const formatDateTimeLocal = (date: Date): string => {
-    const year = date.getFullYear()
-    const month = String(date.getMonth() + 1).padStart(2, '0')
     const day = String(date.getDate()).padStart(2, '0')
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const year = date.getFullYear()
     const hours = String(date.getHours()).padStart(2, '0')
     const minutes = String(date.getMinutes()).padStart(2, '0')
-    return `${year}-${month}-${day}T${hours}:${minutes}`
+    return `${day}-${month}-${year} ${hours}:${minutes}`
+  }
+
+  const parseDateTimeLocal = (value: string): Date | null => {
+    const trimmed = value.trim()
+    if (!trimmed) return null
+
+    const [datePart, timePart] = trimmed.split(' ')
+    if (!datePart || !timePart) return null
+
+    const [dayStr, monthStr, yearStr] = datePart.split('-')
+    const [hourStr, minuteStr] = timePart.split(':')
+    const day = Number(dayStr)
+    const month = Number(monthStr)
+    const year = Number(yearStr)
+    const hours = Number(hourStr)
+    const minutes = Number(minuteStr)
+
+    if (
+      !day ||
+      !month ||
+      !year ||
+      Number.isNaN(day) ||
+      Number.isNaN(month) ||
+      Number.isNaN(year) ||
+      Number.isNaN(hours) ||
+      Number.isNaN(minutes)
+    ) {
+      return null
+    }
+
+    const date = new Date(year, month - 1, day, hours, minutes)
+    if (Number.isNaN(date.getTime())) return null
+    return date
   }
 
   const calculateNextVisitDate = (visitDateStr: string): string | null => {
@@ -77,8 +112,8 @@ export default function CreateVisitModal({
       return null
     }
 
-    const visitDate = new Date(visitDateStr)
-    if (isNaN(visitDate.getTime())) {
+    const visitDate = parseDateTimeLocal(visitDateStr)
+    if (!visitDate) {
       return null
     }
 
@@ -132,6 +167,20 @@ export default function CreateVisitModal({
   const [mediaFiles, setMediaFiles] = useState<MediaFileForm[]>([])
   const [activeTab, setActiveTab] = useState<'details' | 'prescription' | 'media'>('details')
   const notesTextareaRef = useRef<HTMLTextAreaElement>(null)
+  const [showCalendarModal, setShowCalendarModal] = useState(false)
+  const today = new Date()
+  const [calendarMonth, setCalendarMonth] = useState(today.getMonth())
+  const [calendarYear, setCalendarYear] = useState(today.getFullYear())
+  
+  const { calendarDays, isLoading: isLoadingCalendar } = useCalendarEntries(calendarMonth + 1, calendarYear)
+  
+  const calendarEntriesMap = useMemo(() => {
+    const map: Record<string, string[]> = {}
+    calendarDays.forEach((day) => {
+      map[day.date] = day.clinics
+    })
+    return map
+  }, [calendarDays])
 
   useEffect(() => {
     if (isOpen) {
@@ -369,6 +418,43 @@ export default function CreateVisitModal({
     adjustTextareaHeight(e.target)
   }
 
+  const handleOpenCalendar = () => {
+    const baseSource = formData.nextVisitDate || formData.visitDate
+    const parsed = baseSource ? parseDateTimeLocal(baseSource) : null
+    const baseDate = parsed || new Date()
+
+    setCalendarMonth(baseDate.getMonth())
+    setCalendarYear(baseDate.getFullYear())
+    setShowCalendarModal(true)
+  }
+
+  const handleCalendarDateSelect = (dateStr: string) => {
+    const [year, month, day] = dateStr.split('-').map(Number)
+    const now = new Date()
+    const selectedDate = new Date(year, month - 1, day, now.getHours(), now.getMinutes())
+    const formattedDate = formatDateTimeLocal(selectedDate)
+    setFormData((prev) => ({ ...prev, nextVisitDate: formattedDate }))
+    setShowCalendarModal(false)
+  }
+
+  const handleCalendarPreviousMonth = () => {
+    if (calendarMonth === 0) {
+      setCalendarMonth(11)
+      setCalendarYear(calendarYear - 1)
+    } else {
+      setCalendarMonth(calendarMonth - 1)
+    }
+  }
+
+  const handleCalendarNextMonth = () => {
+    if (calendarMonth === 11) {
+      setCalendarMonth(0)
+      setCalendarYear(calendarYear + 1)
+    } else {
+      setCalendarMonth(calendarMonth + 1)
+    }
+  }
+
   useEffect(() => {
     if (notesTextareaRef.current && activeTab === 'details') {
       adjustTextareaHeight(notesTextareaRef.current)
@@ -381,6 +467,22 @@ export default function CreateVisitModal({
     if (!formData.visitDate) {
       toast.error('Please select a visit date')
       return
+    }
+
+    const visitDateObj = parseDateTimeLocal(formData.visitDate)
+    if (!visitDateObj) {
+      toast.error('Please enter visit date in dd-mm-yyyy hh:mm format')
+      return
+    }
+
+    let nextVisitDateObj: Date | undefined
+    if (!isEditMode && formData.nextVisitDate) {
+      const parsedNext = parseDateTimeLocal(formData.nextVisitDate)
+      if (!parsedNext) {
+        toast.error('Please enter next visit date in dd-mm-yyyy hh:mm format')
+        return
+      }
+      nextVisitDateObj = parsedNext
     }
 
     setIsSubmitting(true)
@@ -443,18 +545,26 @@ export default function CreateVisitModal({
             }
           : undefined
 
-      const payload: CreateVisitRequestDto & { paymentMethod?: PaymentMethod; paymentReference?: string } = {
+      const payload: CreateVisitRequestDto & {
+        paymentMethod?: PaymentMethod
+        paymentReference?: string
+      } = {
         patientId,
         courseId,
         clinicId: formData.clinicId || undefined,
-        visitDate: new Date(formData.visitDate).toISOString(),
-        nextVisitDate: !isEditMode && formData.nextVisitDate ? new Date(formData.nextVisitDate).toISOString() : undefined,
+        visitDate: visitDateObj.toISOString(),
+        nextVisitDate: !isEditMode && nextVisitDateObj ? nextVisitDateObj.toISOString() : undefined,
         notes: formData.notes.trim() || undefined,
         billedAmount: formData.billedAmount ? Number(formData.billedAmount) : undefined,
         prescription: prescriptionPayload,
         media: !isEditMode && mediaUploads.length > 0 ? mediaUploads : undefined,
         paymentMethod: formData.billedAmount ? formData.paymentMethod : undefined,
-        paymentReference: formData.billedAmount && formData.paymentMethod !== 'cash' && formData.paymentReference.trim() ? formData.paymentReference.trim() : undefined,
+        paymentReference:
+          formData.billedAmount &&
+          formData.paymentMethod !== 'cash' &&
+          formData.paymentReference.trim()
+            ? formData.paymentReference.trim()
+            : undefined,
       }
 
       if (isEditMode && visitId) {
@@ -581,10 +691,11 @@ export default function CreateVisitModal({
                       Visit Date & Time <span className="text-red-500">*</span>
                     </label>
                     <input
-                      type="datetime-local"
+                      type="text"
                       value={formData.visitDate}
                       onChange={(e) => setFormData((prev) => ({ ...prev, visitDate: e.target.value }))}
                       className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+                      placeholder="dd-mm-yyyy hh:mm"
                       required
                     />
                   </div>
@@ -616,10 +727,10 @@ export default function CreateVisitModal({
                       <button
                         type="button"
                         onClick={() => setFormData((prev) => ({ ...prev, billedAmount: '500', paymentMethod: 'cash', paymentReference: '' }))}
-                        className={`flex-1 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
+                        className={`flex-1 rounded-lg bg-gradient-to-r px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer ${
                           formData.billedAmount === '500'
-                            ? 'border-blue-500 bg-blue-50 text-blue-700 dark:border-blue-400 dark:bg-blue-900/30 dark:text-blue-400'
-                            : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700'
+                            ? 'from-blue-100 to-blue-200 hover:from-blue-200 hover:to-blue-300 dark:from-blue-800/30 dark:to-blue-700/30 dark:text-slate-200 dark:hover:from-blue-700/40 dark:hover:to-blue-600/40'
+                            : 'from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 dark:from-slate-800/30 dark:to-slate-700/30 dark:text-slate-200 dark:hover:from-slate-700/40 dark:hover:to-slate-600/40'
                         }`}
                       >
                         ₹500
@@ -627,10 +738,10 @@ export default function CreateVisitModal({
                       <button
                         type="button"
                         onClick={() => setFormData((prev) => ({ ...prev, billedAmount: '1000', paymentMethod: 'cash', paymentReference: '' }))}
-                        className={`flex-1 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
+                        className={`flex-1 rounded-lg bg-gradient-to-r px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer ${
                           formData.billedAmount === '1000'
-                            ? 'border-blue-500 bg-blue-50 text-blue-700 dark:border-blue-400 dark:bg-blue-900/30 dark:text-blue-400'
-                            : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700'
+                            ? 'from-blue-100 to-blue-200 hover:from-blue-200 hover:to-blue-300 dark:from-blue-800/30 dark:to-blue-700/30 dark:text-slate-200 dark:hover:from-blue-700/40 dark:hover:to-blue-600/40'
+                            : 'from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 dark:from-slate-800/30 dark:to-slate-700/30 dark:text-slate-200 dark:hover:from-slate-700/40 dark:hover:to-slate-600/40'
                         }`}
                       >
                         ₹1000
@@ -690,17 +801,39 @@ export default function CreateVisitModal({
                     </div>
                   )}
 
-                  {!isEditMode && treatmentDetails && !treatmentDetails.isOneTime && treatmentDetails.regularVisitInterval?.interval && treatmentDetails.regularVisitInterval?.unit ? (
+                  {!isEditMode &&
+                  treatmentDetails &&
+                  !treatmentDetails.isOneTime &&
+                  treatmentDetails.regularVisitInterval?.interval &&
+                  treatmentDetails.regularVisitInterval?.unit ? (
                     <div>
                       <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                         Next Visit Date <span className="text-slate-400">(Optional)</span>
                       </label>
-                      <input
-                        type="datetime-local"
-                        value={formData.nextVisitDate}
-                        onChange={(e) => setFormData((prev) => ({ ...prev, nextVisitDate: e.target.value }))}
-                        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
-                      />
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={formData.nextVisitDate}
+                          onChange={(e) => setFormData((prev) => ({ ...prev, nextVisitDate: e.target.value }))}
+                          className="flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+                          placeholder="dd-mm-yyyy hh:mm"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleOpenCalendar}
+                          className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-blue-100 to-blue-200 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:cursor-pointer hover:from-blue-200 hover:to-blue-300 dark:from-blue-800/30 dark:to-blue-700/30 dark:text-slate-200 dark:hover:from-blue-700/40 dark:hover:to-blue-600/40"
+                        >
+                          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                            />
+                          </svg>
+                          Pick Date
+                        </button>
+                      </div>
                     </div>
                   ) : null}
                 </div>
@@ -1048,6 +1181,51 @@ export default function CreateVisitModal({
           </div>
         </form>
       </div>
+
+      {showCalendarModal && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-2xl rounded-2xl bg-white shadow-xl dark:bg-slate-900 overflow-hidden">
+            <div className="sticky top-0 z-10 border-b border-slate-200 bg-white px-6 py-4 dark:border-slate-700 dark:bg-slate-900">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
+                  Select Next Visit Date
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => setShowCalendarModal(false)}
+                  className="rounded-lg p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-300"
+                >
+                  <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <div className="p-6">
+              {isLoadingCalendar ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent"></div>
+                </div>
+              ) : (
+                <DatePicker
+                  selectedDate={null}
+                  currentMonth={calendarMonth}
+                  currentYear={calendarYear}
+                  onDateSelect={handleCalendarDateSelect}
+                  onPreviousMonth={handleCalendarPreviousMonth}
+                  onNextMonth={handleCalendarNextMonth}
+                  calendarEntries={calendarEntriesMap}
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
