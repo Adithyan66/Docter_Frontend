@@ -65,7 +65,7 @@ export const getFinancialDashboard = async (
   params?: GetFinancialDashboardParams
 ): Promise<FinancialDashboardData> => {
   const { data } = await httpClient.get<ApiResponse<FinancialDashboardData>>(
-    'financial/dashboard',
+    'analytics/financial/dashboard',
     {
       params,
     }
