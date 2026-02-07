@@ -206,4 +206,3 @@ export const toggleAppointmentStatus = async (
   )
   return data.data
 }
-

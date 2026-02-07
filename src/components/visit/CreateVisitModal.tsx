@@ -646,22 +646,6 @@ export default function CreateVisitModal({
                 </button>
                 <button
                   type="button"
-                  onClick={() => setActiveTab('prescription')}
-                  className={`relative whitespace-nowrap px-4 py-2.5 text-sm font-medium transition-all ${
-                    activeTab === 'prescription'
-                      ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
-                  } ${
-                    activeTab === 'prescription'
-                      ? 'rounded-tl-lg rounded-tr-lg'
-                      : ''
-                  }`}
-                >
-                  <div className="absolute left-0 top-1/2 -translate-y-1/2 h-1/2 w-px bg-slate-200 dark:bg-slate-700"></div>
-                  Diagnosis & Prescription
-                </button>
-                <button
-                  type="button"
                   onClick={() => setActiveTab('media')}
                   className={`relative whitespace-nowrap px-4 py-2.5 text-sm font-medium transition-all ${
                     activeTab === 'media'
@@ -675,6 +659,22 @@ export default function CreateVisitModal({
                 >
                   <div className="absolute left-0 top-1/2 -translate-y-1/2 h-1/2 w-px bg-slate-200 dark:bg-slate-700"></div>
                   Media
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('prescription')}
+                  className={`relative whitespace-nowrap px-4 py-2.5 text-sm font-medium transition-all ${
+                    activeTab === 'prescription'
+                      ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
+                  } ${
+                    activeTab === 'prescription'
+                      ? 'rounded-tl-lg rounded-tr-lg'
+                      : ''
+                  }`}
+                >
+                  <div className="absolute left-0 top-1/2 -translate-y-1/2 h-1/2 w-px bg-slate-200 dark:bg-slate-700"></div>
+                  Diagnosis & Prescription
                 </button>
               </div>
             </div>
@@ -850,6 +850,91 @@ export default function CreateVisitModal({
                     className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 resize-none overflow-hidden"
                     placeholder="Enter visit notes..."
                   />
+                </div>
+              </div>
+            )}
+
+            {!isEditMode && activeTab === 'media' && (
+              <div className="space-y-6">
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/50">
+                  <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-3">
+                    Media Files <span className="text-slate-400 font-normal">(Optional)</span>
+                  </h3>
+                  <div className="mb-4">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={handleMediaFileSelect}
+                      className="hidden"
+                      id="media-file-input"
+                    />
+                    <label
+                      htmlFor="media-file-input"
+                      className="inline-block cursor-pointer rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-500 dark:bg-blue-500 dark:hover:bg-blue-400"
+                    >
+                      Select Images
+                    </label>
+                  </div>
+                  {mediaFiles.length > 0 && (
+                    <div className="space-y-3">
+                      {mediaFiles.map((mediaFile, index) => (
+                        <div
+                          key={index}
+                          className="flex gap-3 rounded-lg bg-white p-3 dark:bg-slate-700"
+                        >
+                          <img
+                            src={mediaFile.preview}
+                            alt={`Preview ${index + 1}`}
+                            className="h-20 w-20 rounded-lg object-cover border border-slate-200 dark:border-slate-600"
+                          />
+                          <div className="flex-1 space-y-2">
+                            <div>
+                              <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+                                Type
+                              </label>
+                              <select
+                                value={mediaFile.type}
+                                onChange={(e) => updateMediaType(index, e.target.value as MediaType)}
+                                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+                              >
+                                <option value="image">Image</option>
+                                <option value="xray">X-Ray</option>
+                                <option value="report">Report</option>
+                                <option value="other">Other</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+                                Notes
+                              </label>
+                              <input
+                                type="text"
+                                value={mediaFile.notes}
+                                onChange={(e) => updateMediaNotes(index, e.target.value)}
+                                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+                                placeholder="Optional notes"
+                              />
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => removeMediaFile(index)}
+                            className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                          >
+                            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                              />
+                            </svg>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -1049,91 +1134,6 @@ export default function CreateVisitModal({
                             type="button"
                             onClick={() => removePrescriptionItem(index)}
                             className="ml-3 text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
-                          >
-                            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                              />
-                            </svg>
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {!isEditMode && activeTab === 'media' && (
-              <div className="space-y-6">
-                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/50">
-                  <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-3">
-                    Media Files <span className="text-slate-400 font-normal">(Optional)</span>
-                  </h3>
-                  <div className="mb-4">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      onChange={handleMediaFileSelect}
-                      className="hidden"
-                      id="media-file-input"
-                    />
-                    <label
-                      htmlFor="media-file-input"
-                      className="inline-block cursor-pointer rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-500 dark:bg-blue-500 dark:hover:bg-blue-400"
-                    >
-                      Select Images
-                    </label>
-                  </div>
-                  {mediaFiles.length > 0 && (
-                    <div className="space-y-3">
-                      {mediaFiles.map((mediaFile, index) => (
-                        <div
-                          key={index}
-                          className="flex gap-3 rounded-lg bg-white p-3 dark:bg-slate-700"
-                        >
-                          <img
-                            src={mediaFile.preview}
-                            alt={`Preview ${index + 1}`}
-                            className="h-20 w-20 rounded-lg object-cover border border-slate-200 dark:border-slate-600"
-                          />
-                          <div className="flex-1 space-y-2">
-                            <div>
-                              <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
-                                Type
-                              </label>
-                              <select
-                                value={mediaFile.type}
-                                onChange={(e) => updateMediaType(index, e.target.value as MediaType)}
-                                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
-                              >
-                                <option value="image">Image</option>
-                                <option value="xray">X-Ray</option>
-                                <option value="report">Report</option>
-                                <option value="other">Other</option>
-                              </select>
-                            </div>
-                            <div>
-                              <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
-                                Notes
-                              </label>
-                              <input
-                                type="text"
-                                value={mediaFile.notes}
-                                onChange={(e) => updateMediaNotes(index, e.target.value)}
-                                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
-                                placeholder="Optional notes"
-                              />
-                            </div>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => removeMediaFile(index)}
-                            className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
                           >
                             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path

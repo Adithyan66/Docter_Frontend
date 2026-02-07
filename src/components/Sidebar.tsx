@@ -172,15 +172,15 @@ export default function Sidebar({ mobileOpen, onClose, collapsed, onToggleCollap
   const clinicLink = isStaff && authUser?.clinicId ? `/clinics/${authUser.clinicId}` : '/clinics'
   const clinicLabel = isStaff ? 'Clinic' : 'Clinics'
   const links: SidebarLink[] = [
-    { label: 'Dashboard', to: '/', icon: DashboardIcon },
+    { label: 'Schedules', to: '/schedules', icon: CalendarIcon },
     { label: 'Patients', to: '/patients', icon: PatientsIcon },
     { label: 'Addpatients', to: '/patient/add', icon: AddPatientsIcon },
     { label: 'Treatments', to: '/treatments', icon: TreatmentsIcon },
     { label: clinicLabel, to: clinicLink, icon: ClinicsIcon },
     { label: 'Clinic Staffs', to: '/staff', icon: StaffIcon },
     { label: 'Calendar', to: '/calendar', icon: CalendarIcon },
-    { label: 'Schedules', to: '/schedules', icon: CalendarIcon },
     { label: 'Appointments', to: '/appointments', icon: AppointmentsIcon },
+    { label: 'Dashboard', to: '/', icon: DashboardIcon },
   ]
   const visibleLinks = isStaff
     ? links.filter((link) => !['/', '/treatments', '/staff'].includes(link.to))
