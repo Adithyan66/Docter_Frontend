@@ -21,146 +21,68 @@ type IconProps = {
   className?: string
 }
 
+const iconProps = { strokeWidth: 2, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const }
+
 const DashboardIcon = ({ className }: IconProps) => (
-  <svg
-    className={className}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth={1.8}
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M4 4h7v7H4z" />
-    <path d="M13 4h7v4h-7z" />
-    <path d="M13 10h7v10h-7z" />
-    <path d="M4 13h7v7H4z" />
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" {...iconProps}>
+    <path d="M4 5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5z" />
+    <path d="M14 5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1V5z" />
+    <path d="M4 15a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-4z" />
+    <path d="M14 15a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1v-4z" />
   </svg>
 )
 
 const PatientsIcon = ({ className }: IconProps) => (
-  <svg
-    className={className}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth={1.8}
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z" />
-    <path d="M4 20a6 6 0 0 1 16 0" />
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" {...iconProps}>
+    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+    <circle cx="12" cy="7" r="4" />
   </svg>
 )
 
 const AddPatientsIcon = ({ className }: IconProps) => (
-  <svg
-    className={className}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth={1.8}
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M15 3v6" />
-    <path d="M12 6h6" />
-    <path d="M5 21a5 5 0 0 1 10 0" />
-    <path d="M10 8a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" {...iconProps}>
+    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+    <circle cx="9" cy="7" r="4" />
+    <path d="M19 8v6M22 11h-6" />
+  </svg>
+)
+
+const SchedulesIcon = ({ className }: IconProps) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" {...iconProps}>
+    <path d="M8 2v4M16 2v4M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" />
+    <path d="M8 14h8M8 18h5" />
   </svg>
 )
 
 const CalendarIcon = ({ className }: IconProps) => (
-  <svg
-    className={className}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth={1.8}
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M7 3v4" />
-    <path d="M17 3v4" />
-    <path d="M3 9h18" />
-    <path d="M5 5h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z" />
-    <path d="M8 13h2v2H8z" />
-    <path d="M12 13h2v2h-2z" />
-    <path d="M16 13h2v2h-2z" />
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" {...iconProps}>
+    <path d="M7 3v4M17 3v4M3 9h18M5 5h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z" />
   </svg>
 )
 
 const TreatmentsIcon = ({ className }: IconProps) => (
-  <svg
-    className={className}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth={1.8}
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M18 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z" />
-    <path d="M9 2v4" />
-    <path d="M15 2v4" />
-    <path d="M7 10h10" />
-    <path d="M9 14h2v4H9z" />
-    <path d="M13 14h2v4h-2z" />
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" {...iconProps}>
+    <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
   </svg>
 )
 
 const ClinicsIcon = ({ className }: IconProps) => (
-  <svg
-    className={className}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth={1.8}
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-    <circle cx="12" cy="10" r="3" />
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" {...iconProps}>
+    <path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6M9 9h6" />
   </svg>
 )
 
 const StaffIcon = ({ className }: IconProps) => (
-  <svg
-    className={className}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth={1.8}
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M17 21v-4a4 4 0 0 0-8 0v4" />
-    <circle cx="13" cy="9" r="3" />
-    <path d="M5 8a2 2 0 0 1 2-2" />
-    <path d="M5 12a4 4 0 0 0 4 4" />
-    <path d="M19 8a2 2 0 0 0-2-2" />
-    <path d="M19 12a4 4 0 0 1-4 4" />
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" {...iconProps}>
+    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+    <circle cx="9" cy="7" r="4" />
+    <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
   </svg>
 )
 
 const AppointmentsIcon = ({ className }: IconProps) => (
-  <svg
-    className={className}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth={1.8}
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M6 2v4" />
-    <path d="M18 2v4" />
-    <path d="M3 8h18" />
-    <path d="M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" />
-    <circle cx="8" cy="14" r="1" />
-    <circle cx="12" cy="14" r="1" />
-    <circle cx="16" cy="14" r="1" />
-    <path d="M8 18h8" />
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" {...iconProps}>
+    <path d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
   </svg>
 )
 
@@ -172,7 +94,7 @@ export default function Sidebar({ mobileOpen, onClose, collapsed, onToggleCollap
   const clinicLink = isStaff && authUser?.clinicId ? `/clinics/${authUser.clinicId}` : '/clinics'
   const clinicLabel = isStaff ? 'Clinic' : 'Clinics'
   const links: SidebarLink[] = [
-    { label: 'Schedules', to: '/schedules', icon: CalendarIcon },
+    { label: 'Schedules', to: '/schedules', icon: SchedulesIcon },
     { label: 'Patients', to: '/patients', icon: PatientsIcon },
     { label: 'Addpatients', to: '/patient/add', icon: AddPatientsIcon },
     { label: 'Treatments', to: '/treatments', icon: TreatmentsIcon },
